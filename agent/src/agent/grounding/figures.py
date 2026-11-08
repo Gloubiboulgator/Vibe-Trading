@@ -90,7 +90,7 @@ _CURRENCY_CODES = frozenset(
     {
         "USD", "CNY", "CNH", "RMB", "HKD", "JPY", "EUR", "GBP", "KRW", "INR",
         "CAD", "AUD", "SGD", "TWD", "THB", "IRR", "IRT", "USDT", "USDC",
-        "CHF", "NZD", "BRL", "ARS", "VND",
+        "CHF", "NZD", "BRL", "ARS", "VND", "SEK", "DKK", "NOK",
     }
 )
 

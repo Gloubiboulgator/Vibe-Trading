@@ -108,6 +108,26 @@ _JOINED_CRYPTO_RE = re.compile(
 )
 
 
+# Yahoo suffix of a European listing -> (venue, quote currency).
+_EUROPEAN_LISTINGS: dict[str, tuple[str, str]] = {
+    "PA": ("euronext_paris", "EUR"),
+    "AS": ("euronext_amsterdam", "EUR"),
+    "BR": ("euronext_brussels", "EUR"),
+    "LS": ("euronext_lisbon", "EUR"),
+    "IR": ("euronext_dublin", "EUR"),
+    "DE": ("xetra", "EUR"),
+    "MI": ("borsa_italiana", "EUR"),
+    "MC": ("bme_madrid", "EUR"),
+    "HE": ("nasdaq_helsinki", "EUR"),
+    "VI": ("wiener_borse", "EUR"),
+    "SW": ("six_swiss", "CHF"),
+    "ST": ("nasdaq_stockholm", "SEK"),
+    "CO": ("nasdaq_copenhagen", "DKK"),
+    "OL": ("oslo_bors", "NOK"),
+}
+_EUROPEAN_SUFFIXES = tuple(_EUROPEAN_LISTINGS)
+
+
 _CANONICAL_SYMBOL_RE = re.compile(
     r"(?<![A-Za-z0-9_])(?:"
     r"\d{3,6}\.(?:SH|SZ|BJ|SS|HK|KS|KQ)|"
@@ -126,6 +146,13 @@ _CANONICAL_SYMBOL_RE = re.compile(
     # _market_hooks._MARKET_PATTERNS); test_market_identity_parity keeps the
     # two in step, because .L / .VN / .BA each landed there without landing here.
     r"[A-Z][A-Z0-9&.-]{0,19}\.(?:US|NS|BO|FX|TO|V|BA|SA|L|VN)|"
+    # European listings in Yahoo's spelling (CW8.PA, SAP.DE, NESN.SW). The data
+    # layer serves them through yfinance though no backtest market routes them.
+    # Uppercase only: .de / .co / .br / .pa are also web domains, and a source
+    # URL must not read as a ticker.
+    r"(?-i:(?=[A-Z0-9&-]*[A-Z])[A-Z0-9][A-Z0-9&-]{0,19}\.(?:"
+    + "|".join(_EUROPEAN_SUFFIXES)
+    + r"))|"
     r"[A-Z0-9]{2,15}(?:-|/)(?:USDT|USDC|USD|BTC|ETH)|"
     r"[A-Z]{2,15}(?:" + "|".join(_JOINED_CRYPTO_QUOTE_SUFFIXES) + r")|"
     r"\^[A-Z0-9&.\-]{1,20}|"
@@ -262,6 +289,9 @@ def _infer_venue(symbol: str) -> str | None:
     for suffix, venue in suffixes.items():
         if upper.endswith(suffix):
             return venue
+    european = _EUROPEAN_LISTINGS.get(upper.rpartition(".")[2]) if "." in upper else None
+    if european is not None:
+        return european[0]
     # Yahoo's continuous-front-month futures notation (GC=F, CL=F, SI=F, ...).
     # The exchange category is the venue class. The engine and the
     # correlation helper mirror this pattern; this is the third copy.
@@ -332,6 +362,9 @@ def _infer_currency(symbol: str) -> str | None:
     for suffix, currency in suffixes.items():
         if upper.endswith(suffix):
             return currency
+    european = _EUROPEAN_LISTINGS.get(upper.rpartition(".")[2]) if "." in upper else None
+    if european is not None:
+        return european[1]
     for separator in ("-", "/"):
         if separator in upper:
             quote = upper.rsplit(separator, 1)[-1]

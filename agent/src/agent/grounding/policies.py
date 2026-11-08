@@ -94,6 +94,11 @@ _CURRENCY_ALIASES = {
     "VND": ("vnd", "₫", "越南盾"),
     "BRL": ("brl", "r$", "real brasileiro", "reais", "巴西雷亚尔"),
     "ARS": ("ars", "ar$", "阿根廷比索"),
+    "EUR": ("eur", "€", "欧元"),
+    "CHF": ("chf", "瑞士法郎"),
+    "SEK": ("sek", "瑞典克朗"),
+    "DKK": ("dkk", "丹麦克朗"),
+    "NOK": ("nok", "挪威克朗"),
 }
 
 # "元" counts as CNY only when no other currency's character precedes it
