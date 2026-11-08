@@ -116,6 +116,11 @@ def test_the_model_reads_the_pea_rules_only_when_the_mode_is_on(monkeypatch, tmp
     assert "<pea-mode>" not in off
 
 
+def test_the_rules_name_the_official_exclusions() -> None:
+    for excluded in ("registered office", "SIIC", "preference shares", "warrants", "75 %"):
+        assert excluded in PEA_MODE_BLOCK
+
+
 @pytest.mark.parametrize(("config", "expected"), [({"pea_mode": True}, {"pea_mode": True}), ({}, {})])
 def test_the_session_passes_its_mode_to_the_agent(monkeypatch, tmp_path: Path, config, expected) -> None:
     received: list[dict[str, Any]] = []
