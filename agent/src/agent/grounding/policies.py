@@ -972,6 +972,19 @@ class _PolicyMixin:
             metrics = [float(entry["value"]) for entry in entries if entry.get("call_id") == call_id]
             # Not a call: ``rp::sharpe`` names a field of one backtest's output,
             # ``rp::target_positions.csv`` or ``backtest::rp`` the output itself.
+            if not by_call and not metrics and symbol:
+                # ``get_stock_profile::field`` names a tool, not a call. When
+                # only one call of that tool returned the field for this
+                # figure's symbol, the ref is not ambiguous: refusing it cost
+                # three correction rounds in a row on 2026-11-08 and then an
+                # answer with 18 figures omitted. Two calls still fail closed.
+                by_tool = [
+                    record
+                    for record in records
+                    if record.tool == call_id and record.symbol == symbol
+                ]
+                if len({record.call_id for record in by_tool}) == 1:
+                    by_call = by_tool
             records = by_call if by_call or metrics else self._artifact_scope(key) or []
         else:
             records, entries = self._field_sources(key, symbol)
@@ -1001,6 +1014,24 @@ class _PolicyMixin:
                     if key in (entry.get("call_id"), entry.get("tool"))
                     and entry.get("value") is not None
                 ]
+                if not records and not metrics:
+                    # ``get_stock_profile VRT.US``: a tool and the symbol whose
+                    # calls it means. Read as a symbol-scoped tool ref; before,
+                    # it fell to the price path and a forward P/E of 18.6 was
+                    # compared to a 182 $ close (2026-11-08).
+                    tool_name, _, ref_symbol = key.partition(" ")
+                    ref_symbol = ref_symbol.strip().upper()
+                    if ref_symbol and " " not in ref_symbol:
+                        records = [
+                            record
+                            for record in self._evidence
+                            if record.tool == tool_name
+                            and record.symbol == ref_symbol
+                            and record.status == "observed"
+                            and record.value is not None
+                        ]
+                        if records and symbol is None:
+                            symbol = ref_symbol
                 if not records and not metrics:
                     # Preserve the legacy loose-ref contract: a ref such as a
                     # symbol that names no field/call/tool falls back to the

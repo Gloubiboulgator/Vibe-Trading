@@ -684,6 +684,28 @@ class EvidenceRecord:
     scope: str | None = None
 
 
+#: get_stock_profile leaves that are money: per-share amounts (EPS, quote,
+#: analyst targets) and company totals. A figure written with its currency
+#: ("9.3662 € de BPA attendu") only consults money-denominated evidence, and
+#: these leaves were not, so a correctly quoted EPS was refused as absent from
+#: the call that returned it. Their currency is the listing's (stamped at
+#: ingest), so an ADR reporting in another currency still fails closed.
+_PROFILE_MONEY_FIELDS = frozenset(
+    {
+        "trailingeps",
+        "forwardeps",
+        "currentprice",
+        "targetmeanprice",
+        "targethighprice",
+        "targetlowprice",
+        "enterprisevalue",
+        "totalrevenue",
+        "totalcash",
+        "totaldebt",
+    }
+)  # casefolded, as _leaf_name returns them
+
+
 def _is_price_kind(record: EvidenceRecord) -> bool:
     """Whether a record is money-denominated: a quote, a registered level or an amount.
 
@@ -706,6 +728,10 @@ def _is_price_kind(record: EvidenceRecord) -> bool:
         or _price_field_for_path(record.field) is not None
         or _is_registered_price_indicator(record.tool, record.field)
         or _leaf_name(record.field) in _AMOUNT_FIELDS
+        or (
+            record.tool == "get_stock_profile"
+            and _leaf_name(record.field) in _PROFILE_MONEY_FIELDS
+        )
     )
 
 
