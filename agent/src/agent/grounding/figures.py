@@ -481,6 +481,38 @@ def _spaced_groups(text: str, comma_decimals: bool) -> list[_Token]:
     return tokens
 
 
+# The number in an index's name is part of the name, not a measured figure:
+# "Nasdaq-100", "S&P 500", "CAC 40" in an ETF table were cut as unmatched
+# figures (2026-11-08); "S&P 500" only survived when 500 happened to be a
+# price. Only the designation itself is skipped: a level written after the
+# name ("le CAC 40 à 7 500 points") is still read and checked.
+_INDEX_NAME_RE = re.compile(
+    r"(?<![\w&])(?:"
+    r"S\s?&\s?P(?:\s?/\s?ASX)?[\s-]?(?:100|400|500|600|1500)"
+    r"|Nasdaq[\s-]?100"
+    r"|Russell[\s-]?(?:1000|2000|3000)"
+    r"|(?:Euro\s?)?Stoxx(?:\s(?:Europe|Euro|Global))?[\s-]?(?:50|600|1800)"
+    r"|CAC[\s-]?(?:40|Mid[\s-]?60|Next[\s-]?20)"
+    r"|SBF[\s-]?120|Next[\s-]?150|Euronext[\s-]?100"
+    r"|FTSE[\s-]?(?:100|250|350|MIB\b)|Nikkei[\s-]?225|M?DAX[\s-]?(?:30|40|50)"
+    r"|IBEX[\s-]?35|AEX[\s-]?25|SMI[\s-]?20|OMXS[\s-]?30|KOSPI[\s-]?200"
+    r"|ASX[\s-]?200|TSX[\s-]?60|CSI[\s-]?(?:300|500|1000)|Dow\s?Jones[\s-]?30"
+    r"|(?:沪深|中证|上证|创业板|科创)\s?(?:50|100|300|500|1000)"
+    r")(?![\w.,]\d|\d)",
+    re.IGNORECASE,
+)
+
+
+def _index_name_digits(text: str) -> list[tuple[int, int]]:
+    """Spans of the digits that belong to an index name."""
+    spans = []
+    for match in _INDEX_NAME_RE.finditer(text):
+        digits = re.search(r"\d+$", match.group(0))
+        if digits is not None:
+            spans.append((match.start() + digits.start(), match.end()))
+    return spans
+
+
 def _numbers(text: str, *, decimal_commas: bool | None = None) -> list[_Token]:
     """Every number in normalized text, with a decimal comma read as one (#1418).
 
@@ -582,6 +614,13 @@ def _numbers(text: str, *, decimal_commas: bool | None = None) -> list[_Token]:
         for token in tokens + protected
         for lead in (_sign_before_currency(text, token.start),)
     ]
+    names = _index_name_digits(text)
+    if names:
+        signed = [
+            token
+            for token in signed
+            if not any(token.start < end and start < token.end for start, end in names)
+        ]
     return sorted(signed, key=lambda token: token.start)
 
 

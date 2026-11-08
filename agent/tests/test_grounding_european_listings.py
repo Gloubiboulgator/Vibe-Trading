@@ -255,3 +255,28 @@ def test_a_trailing_currency_symbol_is_cut_with_its_figure(tmp_path: Path) -> No
 
     assert released is not None
     assert "Suggested entry: (omitted※)." in released
+
+
+# --- index names -------------------------------------------------------------------------
+# "PUST (Amundi Nasdaq-100)" was released as "Nasdaq-(omis※)": the number in an index
+# name was read as an unmatched figure. "S&P 500" survived only when 500 was a price.
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["S&P 500", "Nasdaq-100", "Nasdaq 100", "Russell 2000", "Stoxx Europe 600", "Euro Stoxx 50",
+     "CAC 40", "SBF 120", "FTSE 100", "Nikkei 225", "DAX 40", "沪深300"],
+)
+def test_the_number_in_an_index_name_is_not_a_figure(tmp_path: Path, name: str) -> None:
+    result = _ledger(tmp_path, "CW8.PA", 692.3).validate_final_answer(
+        f"| ETF | Indice |\n|---|---|\n| CW8.PA (yfinance) | ETF {name} |"
+    )
+    assert result.valid is True, result.issues
+
+
+def test_a_price_written_after_an_index_name_is_still_checked(tmp_path: Path) -> None:
+    result = _ledger(tmp_path, "CW8.PA", 692.3).validate_final_answer(
+        "CW8.PA (yfinance, ETF S&P 500) a clôturé à 500,00 €."
+    )
+    assert result.valid is False
+    assert "500,00" in [issue.get("claim") for issue in result.issues]
