@@ -145,6 +145,23 @@ def _close_any(value: float, targets: Iterable[float]) -> bool:
     return any(_close(value, target) for target in targets)
 
 
+def _additive_formula(note: str) -> tuple[float, list[float]] | None:
+    """A note that only adds and subtracts numbers ("2100.18 + 432.705 + 441.76").
+
+    Returns the result and the operands, or None when the note multiplies,
+    divides or is not a formula at all.
+    """
+    evaluated = _formula_in_note(note)
+    if evaluated is None:
+        return None
+    result, operands, tree = evaluated
+    allowed = (ast.Expression, ast.BinOp, ast.Add, ast.Sub, ast.UnaryOp, ast.USub,
+               ast.UAdd, ast.Constant)
+    if len(operands) < 2 or not all(isinstance(node, allowed) for node in ast.walk(tree)):
+        return None
+    return result, operands
+
+
 def _nearest(value: float, targets: Iterable[float], limit: int = 3) -> list[float]:
     """The observed values closest to a rejected figure.
 
@@ -591,6 +608,12 @@ class _PolicyMixin:
             if label_visible:
                 scalar_parameters.append(parameter.value / 100 if parameter.percent else parameter.value)
         checked_price = False
+        # Derived figures that passed, and additive derivations that failed
+        # only for want of an observed operand: a total of computed lines
+        # ("2100.18 + 432.705 + 441.76", each line = shares × observed close)
+        # has no observed operand of its own, and was always cut (2026-11-08).
+        verified_derived: list[tuple[Figure, float]] = []
+        pending_totals: list[tuple[Figure, Declaration, list[dict[str, Any]]]] = []
         for figure in figures:
             if figure.shape not in ("measured", "bare"):
                 continue
@@ -677,9 +700,18 @@ class _PolicyMixin:
                 continue
             checked_price = True
             if role == "derived":
-                issues.extend(
-                    GROUNDING_CHECKS.run("figure-derived", self, figure, declaration, symbol, records, scalar_parameters)
+                found = GROUNDING_CHECKS.run(
+                    "figure-derived", self, figure, declaration, symbol, records, scalar_parameters
                 )
+                if not found:
+                    evaluated = _formula_in_note(declaration.note)
+                    verified_derived.append(
+                        (figure, evaluated[0] if evaluated is not None else figure.value)
+                    )
+                elif _additive_formula(declaration.note) is not None:
+                    pending_totals.append((figure, declaration, found))
+                else:
+                    issues.extend(found)
                 continue
             if role == "proposed":
                 issues.extend(
@@ -687,9 +719,50 @@ class _PolicyMixin:
                 )
                 continue
             issues.extend(GROUNDING_CHECKS.run("figure-observed", self, figure, declaration, symbol, records))
+        issues.extend(self._resolve_totals(verified_derived, pending_totals))
         market_records = self._price_records()
         if checked_price and market_records:
             issues.extend(self._validate_price_provenance(content, market_records))
+        return issues
+
+    def _resolve_totals(
+        self,
+        verified: list[tuple[Figure, float]],
+        pending: list[tuple[Figure, Declaration, list[dict[str, Any]]]],
+    ) -> list[dict[str, Any]]:
+        """Accept a sum or difference of derived figures verified in this answer.
+
+        Each term must be another derived figure of the same answer that passed
+        its own check (so it is anchored to observed data), in the same currency,
+        and the stated result must be the arithmetic. Totals of totals resolve
+        in turn; anything else keeps its original issue.
+        """
+        issues: list[dict[str, Any]] = []
+        progress = True
+        while pending and progress:
+            progress = False
+            for item in list(pending):
+                figure, declaration, _ = item
+                result, operands = _additive_formula(declaration.note)  # type: ignore[misc]
+                terms = [
+                    value
+                    for other, computed in verified
+                    if other is not figure
+                    and bool(other.currency) == bool(figure.currency)
+                    and other.currency_code == figure.currency_code
+                    for value in (computed, other.value * float(other.scale or 1.0))
+                ]
+                # A term is a verified line as written, to the cent: the 0.5%
+                # evidence tolerance would let "2110" stand for 2100.18.
+                if all(
+                    any(math.isclose(abs(operand), abs(t), rel_tol=1e-4, abs_tol=0.006) for t in terms)
+                    for operand in operands
+                ) and self._result_matches(figure, result):
+                    verified.append((figure, result))
+                    pending.remove(item)
+                    progress = True
+        for _, _, found in pending:
+            issues.extend(found)
         return issues
 
     @grounding_check(name="figure-symbol", code="numeric_claim_conflict",

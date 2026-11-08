@@ -280,3 +280,65 @@ def test_a_price_written_after_an_index_name_is_still_checked(tmp_path: Path) ->
     )
     assert result.valid is False
     assert "500,00" in [issue.get("claim") for issue in result.issues]
+
+
+# --- a total of computed lines -------------------------------------------------------------
+# "| Total | 2 974,65 € |" declared "2100.18 + 432.705 + 441.76", each line being
+# shares × an observed close: no operand of the total was observed, so it was always cut.
+
+
+def _portfolio_ledger(tmp_path: Path) -> GroundingLedger:
+    ledger = GroundingLedger(run_dir=tmp_path, user_message="portefeuille PEA")
+    ledger.ingest_tool_result(
+        tool_name="get_market_data",
+        arguments={"codes": ["DCAM.PA", "PAEEM.PA", "PCEU.PA"]},
+        result=json.dumps(
+            {
+                sym: [{"trade_date": "2026-11-06T00:00:00", "open": close, "high": close * 1.01,
+                       "low": close * 0.99, "close": close, "volume": 1000}]
+                for sym, close in (("DCAM.PA", 6.177), ("PAEEM.PA", 33.285), ("PCEU.PA", 40.16))
+            }
+        ),
+        call_id="prices",
+        success=True,
+    )
+    return ledger
+
+
+def _portfolio(total: str, note: str) -> str:
+    return (
+        "Cours yfinance du 06/11/2026.\n\n"
+        "| ETF | Parts | Montant |\n|---|---|---|\n"
+        "| DCAM.PA | 340 | 2 100,18 € |\n| PAEEM.PA | 13 | 432,71 € |\n| PCEU.PA | 11 | 441,76 € |\n"
+        f"| **Total** | | **{total} €** |\n\n"
+        "```figures\n"
+        "6.177 | observed | close | DCAM.PA\n33.285 | observed | close | PAEEM.PA\n"
+        "40.16 | observed | close | PCEU.PA\n"
+        "340 | count | parts DCAM.PA\n13 | count | parts PAEEM.PA\n11 | count | parts PCEU.PA\n"
+        "2100.18 | derived | 340 × 6.177 | DCAM.PA\n432.71 | derived | 13 × 33.285 | PAEEM.PA\n"
+        "441.76 | derived | 11 × 40.16 | PCEU.PA\n"
+        f"{note}\n```"
+    )
+
+
+def test_a_total_of_verified_lines_survives(tmp_path: Path) -> None:
+    draft = _portfolio("2 974,65", "2974.65 | derived | 2100.18 + 432.705 + 441.76 | DCAM.PA, PAEEM.PA, PCEU.PA")
+    result = _portfolio_ledger(tmp_path).validate_final_answer(draft)
+    assert result.valid is True, result.issues
+
+
+@pytest.mark.parametrize(
+    ("total", "note"),
+    [
+        # wrong sum of the right lines
+        ("2 994,65", "2994.65 | derived | 2100.18 + 432.705 + 441.76 | DCAM.PA, PAEEM.PA, PCEU.PA"),
+        # a term inflated inside the evidence tolerance
+        ("2 984,47", "2984.47 | derived | 2110 + 432.705 + 441.76 | DCAM.PA, PAEEM.PA, PCEU.PA"),
+        # a term that is no verified line
+        ("3 474,65", "3474.65 | derived | 2100.18 + 432.705 + 441.76 + 500 | DCAM.PA"),
+    ],
+)
+def test_a_wrong_total_is_still_rejected(tmp_path: Path, total: str, note: str) -> None:
+    result = _portfolio_ledger(tmp_path).validate_final_answer(_portfolio(total, note))
+    assert result.valid is False
+    assert total in [issue.get("claim") for issue in result.issues]
