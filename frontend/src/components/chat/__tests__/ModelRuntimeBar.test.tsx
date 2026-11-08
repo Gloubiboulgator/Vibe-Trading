@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { ModelRuntimeBar, normalizeSelection } from "../ModelRuntimeBar";
 import type { LLMSettings } from "@/lib/api";
 
@@ -158,6 +158,20 @@ describe("ModelRuntimeBar", () => {
         />,
       );
       expect(screen.getByText("claude-sonnet-5-5")).toBeInTheDocument();
+    });
+
+    it("offers the provider's live models once the picker opens", async () => {
+      const loadModels = vi.fn().mockResolvedValue(["deepseek/deepseek-v4-pro", "deepseek/deepseek-v4-flash"]);
+      const { container } = render(
+        <ModelRuntimeBar settings={multi} selection={null} onSelectionChange={vi.fn()} loadModels={loadModels} />,
+      );
+      expect(loadModels).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: /OpenRouter/ }));
+      expect(loadModels).toHaveBeenCalledWith("openrouter");
+      await waitFor(() => {
+        const options = [...container.querySelectorAll("datalist option")].map((o) => o.getAttribute("value"));
+        expect(options).toContain("deepseek/deepseek-v4-flash");
+      });
     });
 
     it("locks the picker while a run is streaming", () => {

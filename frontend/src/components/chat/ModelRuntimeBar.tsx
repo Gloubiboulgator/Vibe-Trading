@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { ChevronDown, Cpu, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { LLMProviderOption, LLMSettings, RunLLMSelection } from "@/lib/api";
@@ -15,6 +15,8 @@ interface Props {
   onSelectionChange?: (selection: RunLLMSelection | null) => void;
   /** A run is streaming: show what it uses and lock the picker. */
   running?: boolean;
+  /** Live model ids for a provider, loaded when the picker opens on it. */
+  loadModels?: (provider: string) => Promise<string[]>;
 }
 
 /** Providers a run may switch to: saved API key, plus the saved provider itself. */
@@ -53,10 +55,29 @@ export function ModelRuntimeBar({
   selection = null,
   onSelectionChange,
   running = false,
+  loadModels,
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [liveModels, setLiveModels] = useState<Record<string, string[]>>({});
   const panelId = useId();
+  const pickedProvider = selection?.provider ?? settings?.provider ?? "";
+
+  // The catalog lists a few recommended models; the provider's own list has
+  // every model the saved key can use. Load it once per provider, on open.
+  useEffect(() => {
+    if (!open || !loadModels || !pickedProvider || liveModels[pickedProvider]) return;
+    let cancelled = false;
+    loadModels(pickedProvider)
+      .then((models) => {
+        if (!cancelled) setLiveModels((prev) => ({ ...prev, [pickedProvider]: models }));
+      })
+      .catch(() => {
+        if (!cancelled) setLiveModels((prev) => ({ ...prev, [pickedProvider]: [] }));
+      });
+    return () => { cancelled = true; };
+  }, [open, loadModels, pickedProvider, liveModels]);
+
   if (!settings) return null;
 
   const pickerEnabled = Boolean(onSelectionChange);
@@ -84,6 +105,7 @@ export function ModelRuntimeBar({
     ...(current.provider === settings.provider ? [settings.model_name] : []),
     currentProvider?.default_model ?? "",
     ...(currentProvider?.model_options ?? []),
+    ...(liveModels[current.provider] ?? []),
   ].filter(Boolean)));
 
   const update = (next: RunLLMSelection) => onSelectionChange?.(normalizeSelection(settings, next));

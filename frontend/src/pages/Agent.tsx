@@ -309,6 +309,10 @@ export function Agent() {
     if (next) safeSet(RUN_LLM_STORAGE_KEY, JSON.stringify(next));
     else safeRemove(RUN_LLM_STORAGE_KEY);
   }, []);
+  const loadProviderModels = useCallback(
+    (provider: string) => api.listLLMModels({ provider }).then((res) => res.models),
+    [],
+  );
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [runtimeIdentity, setRuntimeIdentity] = useState<RuntimeIdentity>({});
 
@@ -1859,6 +1863,7 @@ export function Agent() {
         selection={runLlm}
         onSelectionChange={setRunLlm}
         running={status === "streaming"}
+        loadModels={loadProviderModels}
       />
       {historyError && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs">

@@ -279,6 +279,10 @@ def _read_settings_env_values() -> Dict[str, str]:
     return values
 
 
+# Anthropic API version header for the model list (stable since 2023-06-01).
+_ANTHROPIC_API_VERSION = "2023-06-01"
+
+
 def _model_list_url(base_url: str) -> str:
     """Return the OpenAI-compatible model-list endpoint for a provider URL."""
     url = base_url.strip().rstrip("/")
@@ -450,11 +454,22 @@ async def _list_provider_models(
         base_url = f"{base_url.rstrip('/')}/v1"
 
     headers = {"Accept": "application/json"}
-    if api_key:
+    list_url = _model_list_url(base_url)
+    if provider.name == "anthropic":
+        # The Messages API lists models at /v1/models and authenticates with
+        # x-api-key plus a version header; a Bearer request to /models was
+        # refused, so only the default model was ever offered.
+        root = base_url.strip().rstrip("/")
+        root = root[: -len("/v1")] if root.endswith("/v1") else root
+        list_url = f"{root}/v1/models?limit=1000"
+        headers["anthropic-version"] = _ANTHROPIC_API_VERSION
+        if api_key:
+            headers["x-api-key"] = api_key
+    elif api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     try:
         async with httpx.AsyncClient(timeout=12.0, follow_redirects=False) as client:
-            response = await client.get(_model_list_url(base_url), headers=headers)
+            response = await client.get(list_url, headers=headers)
             response.raise_for_status()
             models = _extract_model_ids(response.json())
     except (httpx.HTTPError, ValueError):
