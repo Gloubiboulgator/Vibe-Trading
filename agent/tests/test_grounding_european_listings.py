@@ -196,3 +196,62 @@ def test_an_unobserved_operand_in_a_french_note_is_still_rejected(tmp_path: Path
         "\n\n```figures\n−9,2 % | derived | (650,30 − 716,25) / 716,25 | get_market_data\n```"
     )
     assert result.valid is False
+
+
+# --- the omission note in French ---------------------------------------------------------
+# The marker and the footnote were Chinese or English; a French answer ended with an
+# English "※ 57 figure(s) ... were omitted" paragraph.
+
+
+def _french_ledger(tmp_path: Path, message: str) -> GroundingLedger:
+    ledger = GroundingLedger(run_dir=tmp_path, user_message=message)
+    ledger.ingest_tool_result(
+        tool_name="get_market_data",
+        arguments={"codes": ["CW8.PA"]},
+        result=json.dumps(
+            {"CW8.PA": [{"trade_date": "2026-11-06T00:00:00", "open": 683.65, "high": 692.35,
+                         "low": 682.91, "close": 692.3, "volume": 11736}]}
+        ),
+        call_id="prices",
+        success=True,
+    )
+    return ledger
+
+
+def test_a_french_request_gets_a_french_marker_and_note(tmp_path: Path) -> None:
+    ledger = _french_ledger(tmp_path, "Aide moi à constituer mon portefeuille PEA, j'ai 3000 euros")
+    draft = "CW8.PA (yfinance) a clôturé à 692,30 €. Prix d'entrée conseillé : 650,00 €."
+    released = ledger.redacted_release(draft, ledger.validate_final_answer(draft))
+
+    assert released is not None
+    assert "Prix d'entrée conseillé : (omis※)." in released
+    assert "692,30 €" in released
+    assert "※ 1 chiffre(s) impossible(s) à rapprocher" in released
+    assert "Plage OHLC observée : CW8.PA: 682.91–692.35 EUR" in released
+    assert "aucune conversion de devise" in released
+    assert "omitted" not in released
+
+
+def test_an_english_request_keeps_the_english_note(tmp_path: Path) -> None:
+    ledger = _french_ledger(tmp_path, "Build my portfolio with CW8.PA please")
+    draft = "CW8.PA (yfinance) closed at 692.30 EUR. Suggested entry: 650.00 EUR."
+    released = ledger.redacted_release(draft, ledger.validate_final_answer(draft))
+
+    assert released is not None
+    assert "Suggested entry: (omitted※)." in released
+    assert "could not be matched" in released
+
+
+def test_a_model_written_french_marker_is_stripped() -> None:
+    from src.agent.grounding.release import _strip_release_markers
+
+    assert _strip_release_markers("Prix (omis※) ici.\n※ note du modèle") == "Prix  ici."
+
+
+def test_a_trailing_currency_symbol_is_cut_with_its_figure(tmp_path: Path) -> None:
+    ledger = _french_ledger(tmp_path, "Build my portfolio with CW8.PA please")
+    draft = "CW8.PA (yfinance) closed at 692.30 EUR. Suggested entry: 650.00 €."
+    released = ledger.redacted_release(draft, ledger.validate_final_answer(draft))
+
+    assert released is not None
+    assert "Suggested entry: (omitted※)." in released

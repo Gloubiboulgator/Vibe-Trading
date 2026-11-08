@@ -1150,6 +1150,10 @@ def _currency_suffix_end(text: str, end: int) -> int:
         run = _cjk_run(body)
         if not _is_currency_word(run):
             return end
+    elif body[0] in _CURRENCY_CHARS:
+        # A trailing symbol ("650,00 €", the French order) goes with the figure,
+        # as "650.00 EUR" does, or the cut leaves "(omitted※) €".
+        run = body[0]
     else:
         run = body[: len(body) - len(body.lstrip(string.ascii_letters))]
         if run.upper() not in _CURRENCY_CODES:

@@ -56,6 +56,18 @@ _REDACTION_MARKER_ZH = "（略※）"
 
 _REDACTION_MARKER_EN = "(omitted※)"
 
+_REDACTION_MARKER_FR = "(omis※)"
+
+# Words a French request uses and an English or Spanish one does not. Two of them
+# make the user-facing gate text French; one could be a loanword.
+_FRENCH_WORDS = frozenset(
+    {
+        "je", "j'ai", "j’ai", "les", "des", "est", "une", "pour", "mon", "mes",
+        "avec", "dans", "veux", "vous", "nous", "c'est", "c’est", "quelles", "quel",
+        "moi", "suis", "sur", "aide", "acheter", "actions", "euros", "maintenant",
+    }
+)
+
 MAX_SYMBOL_RESOLUTION_ATTEMPTS = 2
 
 MAX_PRICE_EVIDENCE_ATTEMPTS = 3
@@ -162,8 +174,10 @@ def _strip_release_markers(content: str) -> str:
     Returns:
         The draft with every marker and note-shaped line removed.
     """
-    stripped = content.replace(_REDACTION_MARKER_ZH, "").replace(
-        _REDACTION_MARKER_EN, ""
+    stripped = (
+        content.replace(_REDACTION_MARKER_ZH, "")
+        .replace(_REDACTION_MARKER_EN, "")
+        .replace(_REDACTION_MARKER_FR, "")
     )
     return "\n".join(
         line for line in stripped.splitlines() if not line.lstrip().startswith("※")
@@ -367,8 +381,16 @@ class _ReleaseMixin:
     def safe_fallback(self) -> str:
         """Return a deterministic fail-closed answer after repeated rejection."""
         is_zh = self._user_writes_chinese()
-        joined = self._observed_range_summary(is_zh)
+        is_fr = self._user_writes_french()
+        joined = self._observed_range_summary(is_zh, is_fr=is_fr)
         if joined is not None:
+            if is_fr:
+                return (
+                    "J'ai rejeté la version précédente car ses prix contredisaient les "
+                    f"données des outils. Plage OHLC observée et vérifiée : {joined}. "
+                    "Je n'inventerai pas de prix d'entrée sans calcul visible ou données "
+                    "à jour."
+                )
             if is_zh:
                 return (
                     "为避免输出与工具证据冲突的价格，我已拒绝上一版答案。"
@@ -388,6 +410,13 @@ class _ReleaseMixin:
             for code in (issue.get("code") for issue in validation.get("issues", []))
         }
         if issue_codes & _REDACTABLE_CODES and not self._analysis_completed:
+            if is_fr:
+                return (
+                    "Ma réponse a été refusée par le contrôle de vérification : elle citait "
+                    "des prix que cette session n'a obtenus par aucun outil, donc "
+                    "invérifiables. Relancez la demande pour que l'agent récupère d'abord "
+                    "les données de marché, ou demandez une réponse sans ces prix."
+                )
             if is_zh:
                 return (
                     "我的回答被安全门槛拒绝:草稿引用了本会话未通过工具获取的价格数字,无法核验。"
@@ -403,6 +432,14 @@ class _ReleaseMixin:
             # A completed analysis whose report failed the check: the draft's
             # figures, not prices, are what failed, and the run's output is
             # not lost with it.
+            if is_fr:
+                return (
+                    "Ma réponse n'a pas passé le contrôle des chiffres : certains ne "
+                    "correspondaient pas aux résultats des outils de cette session, elle n'a "
+                    "donc pas été publiée. L'analyse elle-même est terminée ; ses fichiers "
+                    "sont dans le dossier artifacts de cette exécution. Réessayez, ou "
+                    "demandez-moi de lister uniquement les chiffres renvoyés par les outils."
+                )
             if is_zh:
                 return (
                     "我的回答没有通过数字核验：草稿里有数字无法与本会话工具返回的结果对上，"
@@ -415,6 +452,12 @@ class _ReleaseMixin:
                 "The analysis itself completed; its result files are in this run's "
                 "artifacts directory. Retry, or ask me to list only the figures the tools "
                 "returned."
+            )
+        if is_fr:
+            return (
+                "Je n'ai pas pu confirmer de façon sûre l'identité de l'instrument ou ses "
+                "données de prix, donc je n'ai pas formulé de conclusion. Confirmez le "
+                "symbole et la place de cotation."
             )
         if is_zh:
             return (
@@ -430,7 +473,16 @@ class _ReleaseMixin:
         """Return whether user-facing gate text should be Chinese."""
         return bool(re.search(r"[\u3400-\u9fff]", self.user_message))
 
-    def _observed_range_summary(self, is_zh: bool, content: str | None = None) -> str | None:
+    def _user_writes_french(self) -> bool:
+        """Return whether user-facing gate text should be French."""
+        if self._user_writes_chinese():
+            return False
+        words = re.findall(r"[a-z\u00e0\u00e2\u00e7\u00e9\u00e8\u00ea\u00eb\u00ee\u00ef\u00f4\u00fb\u00f9\u00fc\u00ff\u0153\u00e6'\u2019]+", self.user_message.casefold())
+        return sum(word in _FRENCH_WORDS for word in words) >= 2
+
+    def _observed_range_summary(
+        self, is_zh: bool, content: str | None = None, *, is_fr: bool = False
+    ) -> str | None:
         """Summarise the observed OHLC range per symbol, or None without prices.
 
         Args:
@@ -454,10 +506,15 @@ class _ReleaseMixin:
             sources = sorted({record.source for record in records if record.source})
             source_label = "/".join(sources) if sources else "unknown"
             unit = f" {currency}" if currency else ""
+            provenance = (
+                f"(source : {source_label} ; aucune conversion de devise)"
+                if is_fr
+                else f"(source: {source_label}; currency conversion: none)"
+            )
             facts.append(
                 f"{self._answer_symbol_spelling(symbol, content)}: "
                 f"{_format_price(min(values))}–{_format_price(max(values))}{unit} "
-                f"(source: {source_label}; currency conversion: none)"
+                f"{provenance}"
             )
         return "；".join(facts) if is_zh else "; ".join(facts)
 
@@ -785,18 +842,28 @@ class _ReleaseMixin:
                 break
         if any("\u3400" <= char <= "\u9fff" for char in line):
             return _REDACTION_MARKER_ZH
+        latin = _REDACTION_MARKER_FR if self._user_writes_french() else _REDACTION_MARKER_EN
         if any(char.isascii() and char.isalpha() for char in line):
-            return _REDACTION_MARKER_EN
-        return (
-            _REDACTION_MARKER_ZH
-            if self._user_writes_chinese()
-            else _REDACTION_MARKER_EN
-        )
+            return latin
+        return _REDACTION_MARKER_ZH if self._user_writes_chinese() else latin
 
     def _release_note(self, removed: int, content: str | None = None) -> str:
         """Explain the redaction to the user, with the observed range."""
         is_zh = self._user_writes_chinese()
-        joined = self._observed_range_summary(is_zh, content)
+        is_fr = self._user_writes_french()
+        joined = self._observed_range_summary(is_zh, content, is_fr=is_fr)
+        if is_fr:
+            omitted = (
+                f"※ {removed} chiffre(s) impossible(s) à rapprocher des données des outils "
+                "de cette session ont été omis."
+            )
+            if joined is None:
+                return omitted
+            return (
+                f"{omitted} Plage OHLC observée : {joined}. "
+                "Pour un prix d'entrée, demandez-moi de le calculer avec une formule "
+                "visible à partir d'un cours de clôture ou d'une moyenne mobile observés."
+            )
         if joined is None:
             if is_zh:
                 return f"※ 略去 {removed} 处无法与本会话工具数据对上的数值。"
