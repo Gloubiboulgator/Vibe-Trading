@@ -1547,6 +1547,11 @@ class _PolicyMixin:
                 f"{figure.text} is declared count, but {why}, so it was checked as "
                 "observed: " + issue["message"][len(figure.text) + 1 :]
             )
+            if why == "a count cannot carry a currency mark":
+                issue["message"] += (
+                    " If the user gave this amount (their budget), or it is your split "
+                    "of it, declare it cited and say on its line that it is theirs."
+                )
         return found
 
     def _price_band(

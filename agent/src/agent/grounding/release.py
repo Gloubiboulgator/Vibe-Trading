@@ -247,7 +247,9 @@ class _ReleaseMixin:
                 "multiplier/divisor needs a count declaration plus its value and note "
                 "label on the same visible line. Never relabel missing data as a parameter; "
                 "proposed must be derived or lie inside the observed price range; "
-                "cited needs a source in its note; count is not checked.",
+                "cited needs a source in its note, named on the figure's own line; an "
+                "amount the user gave (their budget) or your split of it is cited, "
+                "never count, with the line saying it is theirs; count is not checked.",
                 "Reuse the exact locked symbol and venue.",
                 "Do not attach figures to a symbol no tool call in this session handled; "
                 "report it as not retrieved instead.",

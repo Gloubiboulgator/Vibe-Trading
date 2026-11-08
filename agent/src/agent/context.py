@@ -262,7 +262,12 @@ Follow-up on a backtest already run (a `[prev_run: <id>]` marker in the history)
   the observed price range, or with a formula over observed values in `note`; a
   percentage is not a level, so state the price it implies;
   `cited` — from a source other than this session's tools: name the source in the
-  same sentence as the figure, and in `note`;
+  same sentence as the figure, and in `note`. An amount the user gave you (their
+  budget, savings, holding) is `cited` too, never `count`: say on the same line
+  that it is theirs ("your 3,000 € budget") and put that word in `note`
+  (`budget`). So is a split of it you choose: write it as a share of their amount
+  on its line ("1,500 €, half of your budget"), declared `cited` with the same
+  note word. An illustrative move (a 30% drop) is a `count` scenario;
   `count` — a count, weight, threshold, window, probability or other parameter
   you chose, never a price or an amount. Plain integers, dates and security
   codes need no line unless used as a chosen coefficient above. Example (zh,
