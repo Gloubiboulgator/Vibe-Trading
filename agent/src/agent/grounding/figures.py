@@ -613,6 +613,26 @@ def _sign_before_currency(text: str, start: int) -> int | None:
     return mark - 1
 
 
+# Function words French prose uses and English, Spanish, Portuguese or Italian prose
+# does not. Three different ones make a document French, and French writes decimal
+# commas: without this, a French answer with no %, glued € or "0,xx" read "25,4" as
+# the unchecked integers 25 and 4, so a wrong figure was released (2026-11-08 audit).
+_FRENCH_FUNCTION_WORDS = frozenset(
+    {
+        "les", "des", "est", "sont", "pour", "avec", "dans", "cette", "ces", "vous",
+        "votre", "vos", "nous", "aux", "une", "pas", "mais", "leur", "été", "être",
+        "très", "depuis", "selon", "séance", "cours", "baisse", "hausse",
+    }
+)
+_FRENCH_MIN_WORDS = 3
+
+
+def _writes_french(text: str) -> bool:
+    """Whether a document is written in French prose."""
+    words = set(re.findall(r"[a-zàâçéèêëîïôûùüÿœæ]+", text.casefold()))
+    return len(words & _FRENCH_FUNCTION_WORDS) >= _FRENCH_MIN_WORDS
+
+
 def _writes_decimal_commas(text: str) -> bool:
     """Whether a document writes decimal commas and never a thousands grouping.
 
@@ -647,6 +667,8 @@ def _writes_decimal_commas(text: str) -> bool:
                 )
             ):
                 decimal = True
+    if not decimal and not grouped:
+        decimal = _writes_french(text)
     return decimal and not grouped
 
 
