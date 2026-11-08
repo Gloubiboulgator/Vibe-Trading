@@ -207,6 +207,7 @@ class TestFallbackChains:
             "ar_equity",
             "br_equity",
             "uk_equity",
+            "eu_equity",
             "vietnam_equity",
             "crypto",
             "futures",

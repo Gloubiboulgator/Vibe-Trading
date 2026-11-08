@@ -37,7 +37,22 @@ _UK_EQUITY_PATTERN = re.compile(r"^[A-Z0-9&.\-]+\.L$", re.I)
 # trailing D is not a rule: YPFD.BA is a peso line); the TSX quotes DLR.TO in
 # CAD and DLR-U.TO in USD. Yahoo declares each, and every priced source in
 # these markets' chains is Yahoo or yfinance, so the declared currency decides.
+#: Yahoo suffixes of euro-area venues: Euronext (Paris, Amsterdam, Brussels,
+#: Lisbon, Dublin, Milan), Madrid, the German exchanges (Xetra, Frankfurt and
+#: the regional floors), Vienna, Helsinki and Athens. They form one EUR pool,
+#: ``eu_equity``. Euronext also lists some lines in USD, hence the currency
+#: check below. Nordic, Swiss and Polish venues quote in their own currencies
+#: and are not part of it.
+EURO_AREA_SUFFIXES: tuple[str, ...] = (
+    "PA", "AS", "BR", "LS", "IR", "MI", "MC",
+    "DE", "F", "BE", "DU", "HM", "HA", "MU", "SG",
+    "VI", "HE", "AT",
+)
+EURO_AREA_PATTERN = re.compile(
+    rf"^[A-Z0-9&.\-]+\.(?:{'|'.join(EURO_AREA_SUFFIXES)})$", re.I
+)
 _SINGLE_CURRENCY_VENUES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (EURO_AREA_PATTERN, "EUR"),
     (re.compile(r"^[A-Z0-9&.\-]+\.BA$", re.I), "ARS"),
     (re.compile(r"^[A-Z0-9]+\.SA$", re.I), "BRL"),
     (re.compile(r"^[A-Z0-9&.\-]+\.(?:TO|V)$", re.I), "CAD"),

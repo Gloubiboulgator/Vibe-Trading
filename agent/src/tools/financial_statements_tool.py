@@ -30,6 +30,7 @@ from typing import Any
 
 from backtest.loaders import sec_frames
 from backtest.loaders import yahoo_client
+from backtest.loaders.base import EURO_AREA_SUFFIXES
 from backtest.loaders.eastmoney_client import datacenter_rejection, get_json, resolve_secid
 from backtest.loaders.sec_edgar_client import cik_for, get_company_facts
 from src.agent.tools import BaseTool
@@ -780,6 +781,10 @@ def _classify_market(code: str) -> str | None:
     if suffix == "SA":
         # B3 (Brazil).
         return "br"
+    if suffix in EURO_AREA_SUFFIXES:
+        # Euro-area venues (AI.PA, CRL.MI, SAP.DE): no filing pipeline here,
+        # Yahoo's quoteSummary serves them as it does LSE names.
+        return "eu"
     return None
 
 
@@ -791,8 +796,9 @@ class FinancialStatementsTool(BaseTool):
         "Fetch a single stock's financial statements: balance sheet, income "
         "statement, cash-flow statement, or key per-period indicators (margins, "
         "ROE, EPS, etc.). Markets: A-share (.SH/.SZ/.BJ), US (.US), "
-        "Hong Kong (.HK), UK LSE (.L) and Brazil B3 (.SA). US uses SEC EDGAR "
-        "companyfacts; A-share and HK use Eastmoney; UK uses Yahoo quoteSummary "
+        "Hong Kong (.HK), UK LSE (.L), Brazil B3 (.SA) and the euro area (.PA, "
+        ".AS, .DE, .MI, .MC, ...). US uses SEC EDGAR "
+        "companyfacts; A-share and HK use Eastmoney; UK and the euro area use Yahoo quoteSummary "
         "(annual history); Brazil uses the official CVM DFP/ITR filings from the "
         "local br-data store (values in BRL), falling back to Yahoo. Reports come back newest-first as flat per-period rows. Use "
         'this to read fundamentals before building a valuation or screen. Example: '
@@ -872,13 +878,14 @@ class FinancialStatementsTool(BaseTool):
         market = _classify_market(code)
         if market is None:
             return _error(
-                "code must carry a supported suffix: .SH/.SZ/.BJ, .US, .HK, .L, or .SA"
+                "code must carry a supported suffix: .SH/.SZ/.BJ, .US, .HK, .L, .SA, "
+                "or a euro-area one (.PA, .AS, .DE, .MI, .MC, ...)"
             )
 
         if market == "us":
             result = _fetch_sec_statement(code, statement=statement, period=period)
             source = "sec_edgar"
-        elif market == "uk":
+        elif market in ("uk", "eu"):
             result = _fetch_yahoo_statement(code, statement=statement, period=period)
             source = "yahoo"
         elif market == "br":

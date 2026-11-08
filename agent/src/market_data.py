@@ -9,6 +9,8 @@ import re
 from collections.abc import Callable
 from typing import Any
 
+from backtest.loaders.base import EURO_AREA_PATTERN
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_ROWS = 250
@@ -36,6 +38,8 @@ _SOURCE_PATTERNS = [
     # verbatim; without this they fell through to the tushare default and were
     # routed to China-market loaders that cannot resolve them.
     (re.compile(r"^[A-Z0-9&.\-]+\.L$", re.I), "yahoo"),
+    # Euro area (AI.PA, ASML.AS, SAP.DE, ...): same story as the UK above.
+    (EURO_AREA_PATTERN, "yahoo"),
     # Yahoo futures (GC=F, CL=F) and forex (EURUSD=X) suffix conventions —
     # served verbatim by Yahoo's public chart endpoint (#718). Without these,
     # such symbols fell through to the ``tushare`` default and were routed to

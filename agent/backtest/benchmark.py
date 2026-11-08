@@ -30,6 +30,7 @@ MARKET_BENCHMARKS: dict[str, Optional[str]] = {
     "br_equity":  "BOVA11.SA",  # iShares Ibovespa ETF
     "a_share":    "000300.SH",  # CSI 300 (China A-share core index)
     "uk_equity": "^FTSE",
+    "eu_equity": "^STOXX50E",
     "india_equity": "^NSEI",
     "kr_equity": "^KS11",
     "ar_equity": "^MERV",

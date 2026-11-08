@@ -25,6 +25,7 @@ import pandas as pd
 
 from backtest.loaders import yahoo_client
 from backtest.loaders.base import (
+    EURO_AREA_PATTERN,
     cached_loader_fetch,
     normalize_declared_quote_currency,
     validate_date_range,
@@ -59,7 +60,7 @@ def _is_supported(code: str) -> bool:
     (#1206).
     """
     upper = code.strip().upper()
-    if upper.startswith("^"):
+    if upper.startswith("^") or EURO_AREA_PATTERN.match(upper):
         return True
     return upper.endswith(
         (
@@ -191,12 +192,15 @@ class DataLoader:
     name = "yahoo"
     markets = {
         "us_equity", "hk_equity", "india_equity", "kr_equity", "ca_equity",
-        "vietnam_equity", "uk_equity", "ar_equity", "br_equity",
+        "vietnam_equity", "uk_equity", "eu_equity", "ar_equity", "br_equity",
     }
     # Yahoo chart volume is single shares for US/HK equities
     # (HKUDS/Vibe-Trading#1062; HK verified 2026-08-11, 00700.HK ratio 1.00
     # vs tencent/eastmoney). Other equity markets stay undeclared.
-    volume_units = {"us_equity": "shares", "hk_equity": "shares", "uk_equity": "shares"}
+    volume_units = {
+        "us_equity": "shares", "hk_equity": "shares", "uk_equity": "shares",
+        "eu_equity": "shares",
+    }
     requires_auth = False
 
     def is_available(self) -> bool:

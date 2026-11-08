@@ -11,6 +11,8 @@ import re
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
+from backtest.loaders.base import EURO_AREA_SUFFIXES
+
 _CLAUSE_BOUNDARY_RE = re.compile(r"[,，;；。.!！?？\n]")
 _MARKET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
@@ -34,6 +36,22 @@ _MARKET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         re.compile(
             r"美股|纳斯达克|纽交所|美国(?:市场|上市)|"
             r"\bU\.?S\.?[- ]?(?:listed|stocks?|shares?|market)\b|\bNASDAQ\b|\bNYSE\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
+# Words that prefer a market without naming one listing. A PEA (French equity
+# savings account) holds euro-area listings, and the user states it once for
+# the whole conversation: "Sanofi" then means SAN.PA, not the SNY.US ADR the
+# resolver ranks first. These are standing, non-explicit constraints: they
+# only break a tie toward an exact euro-area match (see identity.py) and never
+# filter the candidates the way an explicit "A股" / "US stocks" does.
+_PREFERENCE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "eu",
+        re.compile(
+            r"\bPEA(?:[- ]PME)?\b|\bEuronext\b|\bBourse de Paris\b|"
+            r"\bCAC\s?40\b|\bSBF\s?120\b",
             re.IGNORECASE,
         ),
     ),
@@ -130,7 +148,12 @@ class ResolutionContext:
                 continue
             # A subject-free constraint is safe only in the current turn. Old
             # global instructions must not silently authorize a new subject.
-            if constraint.source_message_id == "current_user_message":
+            # A standing preference (non-explicit) authorizes nothing on its
+            # own, so it holds for the whole conversation.
+            if (
+                constraint.source_message_id == "current_user_message"
+                or not constraint.explicit
+            ):
                 ranked.append(((_source_rank(constraint), 0), constraint))
         best_by_dimension: dict[str, tuple[int, int]] = {}
         for score, constraint in ranked:
@@ -157,6 +180,8 @@ def candidate_market(candidate: Mapping[str, Any]) -> str | None:
         return "hk"
     if suffix == "US":
         return "us"
+    if suffix in EURO_AREA_SUFFIXES:
+        return "eu"
     raw = (
         str(candidate.get("market") or candidate.get("exchange") or "")
         .strip()
@@ -254,6 +279,20 @@ def _extract_market_constraints(
                     value=value,
                     source_message_id=source_message_id,
                     source_span=match.span(),
+                )
+            )
+    for value, pattern in _PREFERENCE_PATTERNS:
+        for match in pattern.finditer(text or ""):
+            if _constraint_is_negated(text, match.start()):
+                continue
+            constraints.append(
+                IdentityConstraint(
+                    subject_text=None,
+                    dimension="market",
+                    value=value,
+                    source_message_id=source_message_id,
+                    source_span=match.span(),
+                    explicit=False,
                 )
             )
     return constraints

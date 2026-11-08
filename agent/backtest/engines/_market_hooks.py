@@ -17,6 +17,7 @@ from typing import Dict, List
 
 import pandas as pd
 
+from backtest.loaders.base import EURO_AREA_PATTERN
 from backtest.models import Position
 
 # ── Symbol -> market classification (shared by runner.py + composite.py) ──
@@ -121,6 +122,10 @@ _MARKET_PATTERNS = [
     # UK equities: London Stock Exchange (VOD.L, SHEL.L). Yahoo carries the
     # suffix verbatim.
     (re.compile(r"^[A-Z0-9&.\-]+\.L$", re.I), "uk_equity"),
+    # Euro-area equities (AI.PA, ASML.AS, SAP.DE, ...): one EUR pool. Before
+    # this entry they matched nothing and fell to the a_share default, so
+    # every Paris listing was fetched from Chinese sources and came back empty.
+    (EURO_AREA_PATTERN, "eu_equity"),
     # Vietnam equities: HOSE (VIC.VN). Tickers are three letters in practice;
     # the class stays broad to admit fund certificates and ETF codes.
     (re.compile(r"^[A-Z0-9]+\.VN$", re.I), "vietnam_equity"),
@@ -250,6 +255,7 @@ _MARKET_CURRENCY = {
     "ar_equity": "ARS",
     "br_equity": "BRL",
     "uk_equity": "GBP",
+    "eu_equity": "EUR",
     "vietnam_equity": "VND",
     # Every crypto pattern in _MARKET_PATTERNS is USDT-quoted, and USDT is
     # carried at its USD peg. This is the one approximation in the table: a
@@ -427,7 +433,7 @@ def _detect_submarket(codes: List[str]) -> str:
 
     Returns:
         ``"hk"`` for ``.HK``, ``"ca"`` for ``.TO``/``.V``, ``"uk"`` for
-        ``.L``, else ``"us"``.
+        ``.L``, ``"eu"`` for a euro-area suffix, else ``"us"``.
     """
     for code in codes:
         upper = code.upper()
@@ -437,6 +443,8 @@ def _detect_submarket(codes: List[str]) -> str:
             return "ca"
         if upper.endswith(".L"):
             return "uk"
+        if EURO_AREA_PATTERN.match(strip_local_prefix(upper)):
+            return "eu"
     return "us"
 
 

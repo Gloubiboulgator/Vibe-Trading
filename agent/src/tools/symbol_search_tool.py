@@ -30,6 +30,7 @@ import re
 from typing import Any, Dict, List, Optional
 
 from backtest.loaders import eastmoney_client, sec_edgar_client, yahoo_client
+from backtest.loaders.base import EURO_AREA_SUFFIXES
 from src.agent.tools import BaseTool
 from src.market_data import FIAT_CODES, canonical_fx_pair
 
@@ -163,6 +164,8 @@ _MARKET_BY_SUFFIX: Dict[str, str] = {
     "SA": "br",
     "L": "uk",
     "VN": "vn",
+    # Euro-area venues share one EUR market (eu_equity).
+    **{suffix: "eu" for suffix in EURO_AREA_SUFFIXES},
 }
 
 # Quote types Yahoo lists under a plain US ticker (``QQQ``, ``SPY``, ``VFIAX``).

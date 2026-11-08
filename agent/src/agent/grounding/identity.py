@@ -120,6 +120,14 @@ _EUROPEAN_LISTINGS: dict[str, tuple[str, str]] = {
     "MC": ("bme_madrid", "EUR"),
     "HE": ("nasdaq_helsinki", "EUR"),
     "VI": ("wiener_borse", "EUR"),
+    "F": ("frankfurt", "EUR"),
+    "BE": ("borse_berlin", "EUR"),
+    "DU": ("borse_dusseldorf", "EUR"),
+    "HM": ("borse_hamburg", "EUR"),
+    "HA": ("borse_hannover", "EUR"),
+    "MU": ("borse_munchen", "EUR"),
+    "SG": ("borse_stuttgart", "EUR"),
+    "AT": ("athens", "EUR"),
     "SW": ("six_swiss", "CHF"),
     "ST": ("nasdaq_stockholm", "SEK"),
     "CO": ("nasdaq_copenhagen", "DKK"),
@@ -146,8 +154,8 @@ _CANONICAL_SYMBOL_RE = re.compile(
     # _market_hooks._MARKET_PATTERNS); test_market_identity_parity keeps the
     # two in step, because .L / .VN / .BA each landed there without landing here.
     r"[A-Z][A-Z0-9&.-]{0,19}\.(?:US|NS|BO|FX|TO|V|BA|SA|L|VN)|"
-    # European listings in Yahoo's spelling (CW8.PA, SAP.DE, NESN.SW). The data
-    # layer serves them through yfinance though no backtest market routes them.
+    # European listings in Yahoo's spelling (CW8.PA, SAP.DE, NESN.SW). The
+    # euro-area ones route to eu_equity; the others are served by yfinance.
     # Uppercase only: .de / .co / .br / .pa are also web domains, and a source
     # URL must not read as a ticker.
     r"(?-i:(?=[A-Z0-9&-]*[A-Z])[A-Z0-9][A-Z0-9&-]{0,19}\.(?:"
@@ -823,7 +831,23 @@ class _IdentityMixin:
                 )
                 return
 
-        chosen = self._choose_candidate(query, candidates)
+        # A standing preference (a PEA conversation prefers euro-area
+        # listings) settles a tie only through an exact name or ticker match
+        # among the preferred listings; anything less leaves the ordinary
+        # choice below untouched.
+        preferred_markets = {
+            item.value
+            for item in relevant_constraints
+            if item.dimension == "market" and not item.explicit
+        }
+        chosen = None
+        if preferred_markets and not market_values:
+            chosen = self._exact_candidate(
+                query,
+                [c for c in candidates if candidate_market(c) in preferred_markets],
+            )
+        if chosen is None:
+            chosen = self._choose_candidate(query, candidates)
         if chosen is None:
             self._identities[key] = IdentityRecord(
                 query=query,
@@ -943,6 +967,29 @@ class _IdentityMixin:
                 self._identities[key] = replace(
                     record, status="superseded", updated_at=_utc_now()
                 )
+
+    @staticmethod
+    def _exact_candidate(
+        query: str,
+        candidates: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        """Return the one candidate whose name or ticker is the query, if unique."""
+        by_symbol: dict[str, dict[str, Any]] = {}
+        for candidate in candidates:
+            by_symbol.setdefault(_normalize_symbol(candidate.get("symbol")), candidate)
+        normalized_query = re.sub(r"[^a-z0-9\u3400-\u9fff]", "", query.casefold())
+        if not normalized_query:
+            return None
+        exact = []
+        for symbol, candidate in by_symbol.items():
+            base = symbol.split(".", 1)[0].split("-", 1)[0].split("/", 1)[0]
+            comparable = {
+                re.sub(r"[^a-z0-9\u3400-\u9fff]", "", value.casefold())
+                for value in (base, str(candidate.get("name") or ""), symbol)
+            }
+            if normalized_query in comparable:
+                exact.append(candidate)
+        return exact[0] if len(exact) == 1 else None
 
     @staticmethod
     def _choose_candidate(
