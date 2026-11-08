@@ -405,8 +405,31 @@ _FORMULA_QUANTITY_RE = re.compile(
 )
 
 
+#: A single-comma number whose comma cannot be a thousands separator: grouping is
+#: always exactly three digits after a non-zero lead, so "692,30", "0,125" and
+#: "17,9318" are decimals. "1,234" stays grouping, as before.
+_FORMULA_DECIMAL_COMMA_RE = re.compile(r"(?<![\d.,])(\d+),(\d+)(?![\d,]|\.\d)")
+
+#: Space-grouped thousands inside a note ("3 000 / 1 362,50").
+_FORMULA_SPACED_GROUP_RE = re.compile(r"(?<=\d)[   ](?=\d{3}(?![\d]))")
+
+
+def _formula_decimal_commas(text: str) -> str:
+    """Read a note's French-style numbers ("1 362,50") the way its prose writes them."""
+    text = _FORMULA_SPACED_GROUP_RE.sub("", text)
+    return _FORMULA_DECIMAL_COMMA_RE.sub(
+        lambda match: (
+            f"{match[1]}.{match[2]}"
+            if len(match[2]) != 3 or match[1] == "0"
+            else match[0]
+        ),
+        text,
+    )
+
+
 def _expand_formula_units(text: str) -> str:
     """Expand supported numeric suffixes before parsing or label removal."""
+    text = _formula_decimal_commas(text)
     return _FORMULA_QUANTITY_RE.sub(
         lambda match: repr(float(match[1].replace(",", "")) * _MAGNITUDES.get(match[2], 1.0)),
         text,
@@ -435,7 +458,10 @@ def _without_labels(text: str) -> str:
     ("约−1.17pp") is a restatement of the result, not an operand. Nothing is
     read from the words themselves.
     """
-    return _LABEL_RE.sub(" ", _expand_formula_units(_ANNOTATION_RE.sub(" ", text)))
+    # A ticker names what the formula is about ("… pour CW8.PA"); left in, its
+    # digits and dot ("8.") broke the arithmetic once its letters were removed.
+    text = _CANONICAL_SYMBOL_RE.sub(" ", _ANNOTATION_RE.sub(" ", text))
+    return _LABEL_RE.sub(" ", _expand_formula_units(text))
 
 
 def _formula_in_note(note: str) -> tuple[float, list[float], ast.Expression] | None:

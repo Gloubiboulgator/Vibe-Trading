@@ -52,7 +52,11 @@ _NUMBER_RE = re.compile(
 _DATE_RE = re.compile(
     r"(?P<full>(?:19|20)\d{2}(?:\s*[-/年]\s*\d{1,2}\s*[-/月]\s*\d{1,2}\s*[日号]?"
     # A dotted date has both dots and no spacing: "2001.5 - 2002.5" is a range.
-    r"|\.\d{1,2}\.\d{1,2}(?!\d|\.\d)))"
+    r"|\.\d{1,2}\.\d{1,2}(?!\d|\.\d))"
+    # A day-first date with a four-digit year ("13/10/2026", "06.11.2026"), the
+    # European order. Without it a day above 12 read as two measured integers.
+    r"|(?<![\d.,])(?:0?[1-9]|[12]\d|3[01])(?P<dsep>[/.\-])(?:0?[1-9]|1[0-2])(?P=dsep)"
+    r"(?:19|20)\d{2}(?!\d|[.,]\d))"
     # A year-less MM-DD / MM/DD; see _short_date_is_structural.
     r"|(?P<short>(?<![\d.])(?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01])(?!\d|\.\d))"
     r"|(?<![\d.:])(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?![\d:]|\.\d)"

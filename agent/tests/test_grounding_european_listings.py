@@ -115,3 +115,84 @@ def test_a_european_close_in_the_wrong_currency_is_rejected(tmp_path: Path) -> N
         "CW8.PA a clôturé à 692,30 USD."
     )
     assert result.valid is False
+
+
+# --- day-first dates ---------------------------------------------------------------------
+# "716,25 € (13/10/2026)" in a table cell: a day above 12 did not read as a date, so
+# "13" and "10" were measured integers and cut, while "(09/10/2026)" passed as MM/DD.
+
+
+@pytest.mark.parametrize("date", ["13/10/2026", "09/10/2026", "31.12.2025", "13-10-2026", "6/11/2026"])
+def test_a_day_first_date_in_a_table_cell_is_structure(tmp_path: Path, date: str) -> None:
+    result = _ledger(tmp_path, "CW8.PA", 692.3).validate_final_answer(
+        "| ETF | Cours (source yfinance) |\n|---|---|\n"
+        f"| CW8.PA | 692,30 € ({date}) |"
+    )
+    assert result.valid is True, result.issues
+
+
+def test_a_measured_figure_beside_a_day_first_date_is_still_checked(tmp_path: Path) -> None:
+    result = _ledger(tmp_path, "CW8.PA", 692.3).validate_final_answer(
+        "| ETF | Cours (source yfinance) |\n|---|---|\n| CW8.PA | 702,30 € (13/10/2026) |"
+    )
+    assert result.valid is False
+    assert [issue.get("claim") for issue in result.issues if issue.get("claim")] == ["702,30"]
+
+
+# --- French numbers and tickers inside a derived note ------------------------------------
+# "−3,3 % | derived | (692,30 − 716,25) / 716,25 pour CW8.PA": the comma was stripped as
+# grouping (operands 69230 and 71625, never observed) and the ticker's "8." broke the parse,
+# so every drawdown of the live table was cut.
+
+
+def _two_bar_ledger(tmp_path: Path) -> GroundingLedger:
+    ledger = GroundingLedger(run_dir=tmp_path, user_message="cours")
+    ledger.ingest_tool_result(
+        tool_name="get_market_data",
+        arguments={"codes": ["CW8.PA"]},
+        result=json.dumps(
+            {
+                "CW8.PA": [
+                    {"trade_date": "2026-10-13T00:00:00", "open": 717.95, "high": 719.95,
+                     "low": 716.15, "close": 716.25, "volume": 5966},
+                    {"trade_date": "2026-11-06T00:00:00", "open": 683.65, "high": 692.35,
+                     "low": 682.91, "close": 692.3, "volume": 11736},
+                ]
+            }
+        ),
+        call_id="prices",
+        success=True,
+    )
+    return ledger
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "(692,30 − 716,25) / 716,25 pour CW8.PA",
+        "(692,30 − 716,25) / 716,25",
+        "(692.30 − 716.25) / 716.25 for CW8.PA",
+    ],
+)
+def test_a_drawdown_derived_in_french_notation_is_verified(tmp_path: Path, note: str) -> None:
+    result = _two_bar_ledger(tmp_path).validate_final_answer(
+        "CW8.PA (yfinance, EUR) : −3,3 % depuis le plus haut."
+        f"\n\n```figures\n−3,3 % | derived | {note} | get_market_data\n```"
+    )
+    assert result.valid is True, result.issues
+
+
+def test_a_wrong_drawdown_in_french_notation_is_still_rejected(tmp_path: Path) -> None:
+    result = _two_bar_ledger(tmp_path).validate_final_answer(
+        "CW8.PA (yfinance, EUR) : −5,3 % depuis le plus haut."
+        "\n\n```figures\n−5,3 % | derived | (692,30 − 716,25) / 716,25 pour CW8.PA | get_market_data\n```"
+    )
+    assert result.valid is False
+
+
+def test_an_unobserved_operand_in_a_french_note_is_still_rejected(tmp_path: Path) -> None:
+    result = _two_bar_ledger(tmp_path).validate_final_answer(
+        "CW8.PA (yfinance, EUR) : −9,2 % depuis le plus haut."
+        "\n\n```figures\n−9,2 % | derived | (650,30 − 716,25) / 716,25 | get_market_data\n```"
+    )
+    assert result.valid is False
