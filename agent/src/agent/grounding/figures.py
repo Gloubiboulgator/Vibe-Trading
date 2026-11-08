@@ -457,8 +457,11 @@ _DOTTED_GROUPING_RE = re.compile(
 # comma. A run of numbers ("codes 101 102") has the same shape, so it is read as one
 # figure only when it is unambiguous: it has a decimal comma, it carries a currency or
 # percent mark, or the document writes decimal commas.
+# A decimal comma, or a dot with one or two digits ("2 852.64 €": space
+# thousands with a dot decimal, which a mixed French answer writes and which
+# was split into "2" and an unmatched "852.64", 2026-11-08).
 _SPACED_GROUPING_RE = re.compile(
-    r"(?<![A-Za-z0-9_.,])[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+)?(?!\d|[.,]\d)"
+    r"(?<![A-Za-z0-9_.,])[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+|\.\d{1,2})?(?!\d|[.,]\d)"
 )
 
 
@@ -471,6 +474,7 @@ def _spaced_groups(text: str, comma_decimals: bool) -> list[_Token]:
         body = raw[len(sign) :].replace(" ", "")
         if not (
             "," in body
+            or "." in body
             or comma_decimals
             or _percent_mark(text, match.end())[0] > 0
             or _currency_before(text, match.start() + len(sign))

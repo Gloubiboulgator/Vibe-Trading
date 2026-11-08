@@ -487,3 +487,19 @@ def test_an_integer_keeps_the_previous_behaviour(tmp_path: Path) -> None:
     )
     # 6690 is 0.07% from the 6685 print: accepted by the flat band, as before.
     assert ledger.validate_final_answer("AAPL.US cerró en 6690 USD.").valid is True
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # space thousands with a dot decimal, as a mixed French answer writes a total
+        ("| **Total investi** | | **2 852.64 €** |", ["2852.64"]),
+        ("Total : 12 500.5 € investis.", ["12500.5"]),
+        # three dot digits stay ambiguous: not joined
+        ("en 2 852.640", ["2", "852.640"]),
+    ],
+)
+def test_space_thousands_with_a_dot_decimal(text: str, expected: list[str]) -> None:
+    from src.agent.grounding.figures import _numbers
+
+    assert [t.digits for t in _numbers(text)] == expected
