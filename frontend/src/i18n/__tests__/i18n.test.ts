@@ -159,7 +159,7 @@ describe("i18n utilities", () => {
     // the order the switcher renders, and that "en" stays first so the
     // primary-match fallback in Layout resolves regional codes to it.
     const codes = SUPPORTED_LANGUAGES.map((l) => l.code);
-    expect(codes).toEqual(["en", "zh-CN", "ja", "ko", "ar", "fa", "es", "de", "pt-BR", "id", "tr"]);
+    expect(codes).toEqual(["en", "zh-CN", "ja", "ko", "ar", "fa", "es", "de", "pt-BR", "id", "tr", "fr"]);
   });
 
   it("accepts zh-CN as an explicit supported language", async () => {
@@ -191,7 +191,7 @@ describe("new locale content", () => {
     expect(copied).toEqual([]);
   });
 
-  it.each(["tr", "fa"])("%s has no UTF-8 text decoded as Windows-1252", (code) => {
+  it.each(["tr", "fa", "fr"])("%s has no UTF-8 text decoded as Windows-1252", (code) => {
     const broken = Object.entries(collectStrings(locales[code]))
       .filter(([, value]) => /â€|Ã|Â|\uFFFD/.test(value)).map(([key]) => key);
     expect(broken).toEqual([]);
