@@ -1319,6 +1319,11 @@
       "unknownTool": "unknown",
       "swarmStatus": "Swarm status: {{preset}} {{status}}",
       "backtestComplete": "Backtest complete: {{runId}}"
+    },
+    "peaMode": {
+      "label": "PEA-Modus",
+      "on": "PEA-Modus an: Der Agent schlägt nur PEA-fähige Wertpapiere vor und bevorzugt Euro-Notierungen. Klicken zum Ausschalten.",
+      "off": "PEA-Modus einschalten: Der Agent schlägt nur PEA-fähige Wertpapiere vor (Unternehmen aus EU/EWR, zulässige ETFs)."
     }
   },
   "runDetail": {

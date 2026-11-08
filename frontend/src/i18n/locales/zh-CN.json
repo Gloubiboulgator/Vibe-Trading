@@ -1307,6 +1307,11 @@
       "unknownTool": "未知",
       "swarmStatus": "蜂群状态：{{preset}} {{status}}",
       "backtestComplete": "回测完成：{{runId}}"
+    },
+    "peaMode": {
+      "label": "PEA 模式",
+      "on": "PEA 模式已开启：智能体只推荐符合 PEA 条件的证券，并优先选择欧元上市。点击关闭。",
+      "off": "开启 PEA 模式：智能体只推荐符合 PEA 条件的证券（欧盟/欧洲经济区公司、合格 ETF）。"
     }
   },
   "runDetail": {

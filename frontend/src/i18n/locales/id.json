@@ -1319,6 +1319,11 @@
       "unknownTool": "unknown",
       "swarmStatus": "Swarm status: {{preset}} {{status}}",
       "backtestComplete": "Backtest complete: {{runId}}"
+    },
+    "peaMode": {
+      "label": "Mode PEA",
+      "on": "Mode PEA aktif: agen hanya mengusulkan efek yang memenuhi syarat PEA dan memilih pencatatan dalam euro. Klik untuk menonaktifkan.",
+      "off": "Aktifkan mode PEA: agen hanya akan mengusulkan efek yang memenuhi syarat PEA (perusahaan UE/EEA, ETF yang memenuhi syarat)."
     }
   },
   "runDetail": {

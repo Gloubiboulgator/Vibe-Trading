@@ -1279,6 +1279,11 @@
       "unknownTool": "bilinmiyor",
       "swarmStatus": "Sürü durumu: {{preset}} {{status}}",
       "backtestComplete": "Geriye dönük test tamamlandı: {{runId}}"
+    },
+    "peaMode": {
+      "label": "PEA modu",
+      "on": "PEA modu açık: ajan yalnızca PEA'ya uygun menkul kıymetler önerir ve euro kotasyonlarını tercih eder. Kapatmak için tıklayın.",
+      "off": "PEA modunu aç: ajan yalnızca PEA'ya uygun menkul kıymetler önerir (AB/AEA şirketleri, uygun ETF'ler)."
     }
   },
   "runDetail": {

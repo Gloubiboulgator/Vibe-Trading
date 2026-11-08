@@ -100,6 +100,7 @@ class GroundingLedger(
         user_message: str,
         history: Sequence[Mapping[str, Any]] | None = None,
         contextual_identity_constraints: bool = True,
+        standing_markets: Sequence[tuple[str, str]] = (),
     ) -> None:
         """Create a ledger and seed only authoritative prior identities.
 
@@ -112,6 +113,8 @@ class GroundingLedger(
                 instructions cannot authorize a new subject.
             contextual_identity_constraints: Whether explicit market words in
                 the original conversation may narrow resolver candidates.
+            standing_markets: ``(market, source_id)`` preferences set by the
+                session rather than its text (PEA mode).
         """
         self.run_dir = Path(run_dir)
         self.user_message = user_message
@@ -119,6 +122,7 @@ class GroundingLedger(
             user_message,
             history,
             enabled=contextual_identity_constraints,
+            standing_markets=standing_markets,
         )
         self._identities: dict[str, IdentityRecord] = {}
         self._evidence: list[EvidenceRecord] = []

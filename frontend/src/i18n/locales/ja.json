@@ -1307,6 +1307,11 @@
       "unknownTool": "unknown",
       "swarmStatus": "Swarm status: {{preset}} {{status}}",
       "backtestComplete": "Backtest complete: {{runId}}"
+    },
+    "peaMode": {
+      "label": "PEAモード",
+      "on": "PEAモード オン：エージェントはPEA適格銘柄のみを提案し、ユーロ建ての上場を優先します。クリックでオフ。",
+      "off": "PEAモードをオンにする：エージェントはPEA適格銘柄（EU/EEA企業、適格ETF）のみを提案します。"
     }
   },
   "runDetail": {

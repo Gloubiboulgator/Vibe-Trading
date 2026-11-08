@@ -1319,6 +1319,11 @@
       "unknownTool": "unknown",
       "swarmStatus": "Swarm status: {{preset}} {{status}}",
       "backtestComplete": "Backtest complete: {{runId}}"
+    },
+    "peaMode": {
+      "label": "حالت PEA",
+      "on": "حالت PEA روشن است: عامل فقط اوراق بهادار واجد شرایط PEA را پیشنهاد می‌کند و فهرست‌های یورویی را ترجیح می‌دهد. برای خاموش کردن کلیک کنید.",
+      "off": "روشن کردن حالت PEA: عامل فقط اوراق بهادار واجد شرایط PEA (شرکت‌های اتحادیه اروپا/منطقه اقتصادی اروپا، ETFهای واجد شرایط) را پیشنهاد می‌کند."
     }
   },
   "runDetail": {

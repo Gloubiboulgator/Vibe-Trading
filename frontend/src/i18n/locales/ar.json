@@ -1307,6 +1307,11 @@
       "unknownTool": "unknown",
       "swarmStatus": "Swarm status: {{preset}} {{status}}",
       "backtestComplete": "Backtest complete: {{runId}}"
+    },
+    "peaMode": {
+      "label": "وضع PEA",
+      "on": "وضع PEA مفعّل: يقترح الوكيل فقط الأوراق المالية المؤهلة لـ PEA ويفضّل الإدراجات باليورو. انقر للإيقاف.",
+      "off": "تفعيل وضع PEA: سيقترح الوكيل فقط الأوراق المالية المؤهلة لـ PEA (شركات الاتحاد الأوروبي/المنطقة الاقتصادية الأوروبية، صناديق ETF المؤهلة)."
     }
   },
   "runDetail": {

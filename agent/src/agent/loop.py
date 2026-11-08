@@ -36,6 +36,7 @@ from src.agent.tuning import (
     _stall_timeout_seconds as _stall_timeout_seconds,
 )
 
+from src.agent.pea_mode import PEA_SOURCE_ID, PEA_STANDING_MARKET, wrap_user_message as wrap_pea_message
 from src.agent.loop_grounding import validate_and_release
 from src.agent.loop_streaming import TurnStream
 from src.agent.user_language import writes_french
@@ -360,7 +361,14 @@ class AgentLoop(ToolCallLifecycle):
         except Exception as exc:  # noqa: BLE001
             logger.warning("run manifest not written (%s: %s)", type(exc).__name__, exc)
 
-    def run(self, user_message: str, history: Optional[List[Dict[str, Any]]] = None, session_id: str = "") -> Dict[str, Any]:
+    def run(
+        self,
+        user_message: str,
+        history: Optional[List[Dict[str, Any]]] = None,
+        session_id: str = "",
+        *,
+        pea_mode: bool = False,
+    ) -> Dict[str, Any]:
         """Run the ReAct loop synchronously.
 
         Binds ``session_id`` as the active LLM session for the whole run so
@@ -371,6 +379,8 @@ class AgentLoop(ToolCallLifecycle):
             user_message: User message.
             history: Prior conversation messages.
             session_id: Session ID.
+            pea_mode: The user invests through a French PEA (see
+                ``src.agent.pea_mode``).
 
         Returns:
             Execution result dict.
@@ -378,14 +388,23 @@ class AgentLoop(ToolCallLifecycle):
         token = bind_llm_session_id(session_id)
         result = None
         try:
-            result = self._run_bound(user_message, history, session_id)
+            result = self._run_bound(
+                user_message, history, session_id, **({"pea_mode": True} if pea_mode else {}),
+            )
             return result
         finally:
             reset_llm_session_id(token)
             if result is None or result.get("status") not in {"success", "waiting_user"}:
                 self._background_manager.cancel_all()
 
-    def _run_bound(self, user_message: str, history: Optional[List[Dict[str, Any]]] = None, session_id: str = "") -> Dict[str, Any]:
+    def _run_bound(
+        self,
+        user_message: str,
+        history: Optional[List[Dict[str, Any]]] = None,
+        session_id: str = "",
+        *,
+        pea_mode: bool = False,
+    ) -> Dict[str, Any]:
         """Run the ReAct loop with the LLM session already bound.
 
         Args:
@@ -446,6 +465,9 @@ class AgentLoop(ToolCallLifecycle):
             contextual_identity_constraints=(
                 get_env_config().agent_tuning.vibe_contextual_identity_constraints
             ),
+            standing_markets=(
+                ((PEA_STANDING_MARKET, PEA_SOURCE_ID),) if pea_mode else ()
+            ),
         )
 
         context = ContextBuilder(self.registry, self.memory,
@@ -457,6 +479,8 @@ class AgentLoop(ToolCallLifecycle):
                 f"{goal_context}\n\n"
                 f"<user-message>\n{user_message}\n</user-message>"
             )
+        if pea_mode:
+            llm_user_message = wrap_pea_message(llm_user_message)
         goal_store = None
         goal_turn_accounted = False
         messages = context.build_messages(llm_user_message, history)

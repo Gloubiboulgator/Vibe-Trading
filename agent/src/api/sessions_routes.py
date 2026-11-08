@@ -119,6 +119,9 @@ class SendMessageRequest(BaseModel):
     llm: Optional[RunLLMSelection] = Field(
         None, description="Use this provider/model/effort for this run only (saved settings unchanged)",
     )
+    pea_mode: Optional[bool] = Field(
+        None, description="The user invests through a French PEA; stored on the session (None keeps it)",
+    )
 
 
 def _resolve_run_llm(selection: Optional[RunLLMSelection]) -> Optional[tuple[str, str, str]]:
@@ -863,6 +866,7 @@ def register_sessions_routes(app: FastAPI) -> None:
                 content=payload.content,
                 include_shell_tools=_host_shell_tools_enabled_for_request(http_request),
                 **({"llm_override": run_llm} if run_llm else {}),
+                **({"pea_mode": payload.pea_mode} if payload.pea_mode is not None else {}),
             )
             return result
         except SessionBusyError as exc:

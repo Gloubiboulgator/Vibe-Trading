@@ -349,6 +349,7 @@ class SessionService:
         *,
         include_shell_tools: bool = False,
         llm_override: Optional[tuple[str, str, str]] = None,
+        pea_mode: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """Send a message to a session and trigger execution.
 
@@ -359,6 +360,8 @@ class SessionService:
             include_shell_tools: Whether this attempt may use shell tools.
             llm_override: Optional (provider, model, reasoning_effort) used for
                 this run only; saved settings are not modified.
+            pea_mode: When given, stored on the session: the user invests
+                through a French PEA. None keeps the session's last value.
 
         Returns:
             Dictionary containing message_id and attempt_id.
@@ -395,6 +398,8 @@ class SessionService:
             attempt = Attempt(session_id=session_id, parent_attempt_id=session.last_attempt_id, prompt=content)
             self.store.create_attempt(attempt)
             session.config["include_shell_tools"] = include_shell_tools
+            if pea_mode is not None:
+                session.config["pea_mode"] = bool(pea_mode)
             session.last_attempt_id = attempt.attempt_id
             session.updated_at = datetime.now(timezone.utc).isoformat()
             self.store.update_session(session)
@@ -721,6 +726,8 @@ class SessionService:
                         user_message=attempt.prompt,
                         history=history,
                         session_id=session_id,
+                        # Only when on: agent doubles keep the older signature.
+                        **({"pea_mode": True} if (session_config or {}).get("pea_mode") else {}),
                     ),
                 )
             except asyncio.CancelledError:

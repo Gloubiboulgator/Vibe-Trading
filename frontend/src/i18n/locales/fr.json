@@ -1319,6 +1319,11 @@
       "unknownTool": "inconnu",
       "swarmStatus": "État de l'essaim : {{preset}} {{status}}",
       "backtestComplete": "Backtest terminé : {{runId}}"
+    },
+    "peaMode": {
+      "label": "Mode PEA",
+      "on": "Mode PEA activé : l'agent ne propose que des titres éligibles au PEA et préfère les cotations en euros. Cliquer pour désactiver.",
+      "off": "Activer le mode PEA : l'agent ne proposera que des titres éligibles au PEA (sièges UE/EEE, ETF éligibles)."
     }
   },
   "runDetail": {

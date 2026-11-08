@@ -1319,6 +1319,11 @@
       "unknownTool": "unknown",
       "swarmStatus": "Swarm status: {{preset}} {{status}}",
       "backtestComplete": "Backtest complete: {{runId}}"
+    },
+    "peaMode": {
+      "label": "PEA mode",
+      "on": "PEA mode on: the agent proposes only PEA-eligible securities and prefers euro listings. Click to turn off.",
+      "off": "Turn on PEA mode: the agent will propose only PEA-eligible securities (EU/EEA companies, eligible ETFs)."
     }
   },
   "runDetail": {

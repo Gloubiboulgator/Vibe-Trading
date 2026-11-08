@@ -717,7 +717,7 @@ export const api = {
       `/scheduled-runs/proposals/${encodeURIComponent(proposalId)}/discard`,
       { method: "POST" },
     ),
-  sendMessage: (sid: string, content: string, llm?: RunLLMSelection | null) => request<{ message_id: string; attempt_id: string }>(`/sessions/${sid}/messages`, { method: "POST", body: JSON.stringify(llm ? { content, llm } : { content }) }),
+  sendMessage: (sid: string, content: string, llm?: RunLLMSelection | null, peaMode?: boolean) => request<{ message_id: string; attempt_id: string }>(`/sessions/${sid}/messages`, { method: "POST", body: JSON.stringify({ content, ...(llm ? { llm } : {}), ...(peaMode !== undefined ? { pea_mode: peaMode } : {}) }) }),
   cancelSession: (sid: string) => request<{ status: string }>(`/sessions/${sid}/cancel`, { method: "POST" }),
   getSessionMessages: (sid: string) => request<MessageItem[]>(`/sessions/${sid}/messages`),
   createGoal: (sid: string, body: CreateGoalRequest) =>

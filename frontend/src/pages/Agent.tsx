@@ -54,6 +54,8 @@ import {
 import { buildToolTimelineMessages } from "@/pages/agentToolTimeline";
 
 const RUN_LLM_STORAGE_KEY = "vibe.runLlm";
+// PEA mode is a standing choice of the user, kept across chats like the model pick.
+const PEA_MODE_STORAGE_KEY = "vibe.peaMode";
 
 /** Restore the chat's per-run model choice, dropped if no longer usable. */
 function restoreRunLlm(settings: LLMSettings): RunLLMSelection | null {
@@ -308,6 +310,14 @@ export function Agent() {
     setRunLlmState(next);
     if (next) safeSet(RUN_LLM_STORAGE_KEY, JSON.stringify(next));
     else safeRemove(RUN_LLM_STORAGE_KEY);
+  }, []);
+  const [peaMode, setPeaModeState] = useState<boolean>(() => safeGet(PEA_MODE_STORAGE_KEY) === "1");
+  const peaModeRef = useRef(peaMode);
+  const setPeaMode = useCallback((next: boolean) => {
+    peaModeRef.current = next;
+    setPeaModeState(next);
+    if (next) safeSet(PEA_MODE_STORAGE_KEY, "1");
+    else safeRemove(PEA_MODE_STORAGE_KEY);
   }, []);
   const loadProviderModels = useCallback(
     (provider: string) => api.listLLMModels({ provider }).then((res) => res.models),
@@ -1511,7 +1521,7 @@ export function Agent() {
         act().setStatus("streaming");
         forceScrollToBottom();
         setupSSE(sid);
-        const sent = await api.sendMessage(sid, kickoff, usableRunLlm(runLlmRef.current));
+        const sent = await api.sendMessage(sid, kickoff, usableRunLlm(runLlmRef.current), peaModeRef.current);
         if (act().activity?.attemptId.startsWith("pending-")) {
           act().setActivityAttemptId(sent.attempt_id);
         }
@@ -1561,7 +1571,7 @@ export function Agent() {
         setSearchParams({ session: sid }, { replace: true });
       }
       setupSSE(sid);
-      const sent = await api.sendMessage(sid, finalPrompt, usableRunLlm(runLlmRef.current));
+      const sent = await api.sendMessage(sid, finalPrompt, usableRunLlm(runLlmRef.current), peaModeRef.current);
       if (act().activity?.attemptId.startsWith("pending-")) {
         act().setActivityAttemptId(sent.attempt_id);
       }
@@ -1666,7 +1676,7 @@ export function Agent() {
     composerRef.current?.focus();
     try {
       setupSSE(sessionId);
-      const sent = await api.sendMessage(sessionId, prompt, usableRunLlm(runLlmRef.current));
+      const sent = await api.sendMessage(sessionId, prompt, usableRunLlm(runLlmRef.current), peaModeRef.current);
       if (act().activity?.attemptId.startsWith("pending-")) {
         act().setActivityAttemptId(sent.attempt_id);
       }
@@ -1864,6 +1874,8 @@ export function Agent() {
         onSelectionChange={setRunLlm}
         running={status === "streaming"}
         loadModels={loadProviderModels}
+        peaMode={peaMode}
+        onPeaModeChange={setPeaMode}
       />
       {historyError && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs">

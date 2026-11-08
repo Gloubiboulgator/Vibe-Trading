@@ -115,11 +115,27 @@ class ResolutionContext:
         history: Sequence[Mapping[str, Any]] | None = None,
         *,
         enabled: bool = True,
+        standing_markets: Sequence[tuple[str, str]] = (),
     ) -> ResolutionContext:
-        """Build context from user-authored text while preserving that text verbatim."""
+        """Build context from user-authored text while preserving that text verbatim.
+
+        ``standing_markets`` holds ``(market, source_id)`` pairs set outside the
+        conversation text, such as the session's PEA mode. They behave like a
+        "PEA" word in history: a standing preference that only breaks a tie.
+        """
         if not enabled:
             return cls(raw_user_message=raw_user_message)
-        extracted: list[IdentityConstraint] = []
+        extracted: list[IdentityConstraint] = [
+            IdentityConstraint(
+                subject_text=None,
+                dimension="market",
+                value=market,
+                source_message_id=source_id,
+                source_span=(0, 0),
+                explicit=False,
+            )
+            for market, source_id in standing_markets
+        ]
         retained_history = (
             () if _HISTORY_RESET_RE.search(raw_user_message) else history or ()
         )
