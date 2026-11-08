@@ -218,6 +218,93 @@ def test_a_wrong_long_precision_spanish_percentage_is_still_rejected(
     )
 
 
+# --- 1b. space-grouped thousands (French) -----------------------------------------------
+# A French answer groups thousands with a (no-break) space: "1 362,50 €", "150 000 €".
+# Read digit by digit, "1 362,50" became "1" and "362,50" and "3 000 €" left a bare
+# "000", each rejected as an undeclared figure (live DeepSeek PEA run, 2026-11-08).
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("cours 1 362,50 €", ["1362.50"]),
+        ("budget de 3 000 €", ["3000"]),
+        ("plafond 150 000 €", ["150000"]),
+        ("€ 12 500", ["12500"]),
+        ("hausse de 1 234,5 %", ["1234.5"]),
+        ("-1 234 567,89 EUR", ["-1234567.89"]),
+        ("cap. 1 234 567 890,5", ["1234567890.5"]),
+    ],
+)
+def test_space_grouped_thousands_read_as_one_figure(text: str, expected: list[str]) -> None:
+    assert _digits(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # No decimal comma, money or percent mark, in a document that writes none:
+        # a run of numbers, not one grouped figure.
+        ("codes 101 102 103", ["101", "102", "103"]),
+        ("entre 5 et 10 000 lignes", ["5", "10", "000"]),
+        # A four-digit lead or a short group is never thousands grouping.
+        ("1234 567 €", ["1234", "567"]),
+        ("12 34 €", ["12", "34"]),
+        ("2 actions, 15 titres", ["2", "15"]),
+    ],
+)
+def test_spaces_that_are_not_grouping_keep_numbers_apart(text: str, expected: list[str]) -> None:
+    assert _digits(text) == expected
+
+
+def test_a_decimal_comma_document_reads_bare_space_groups_as_thousands() -> None:
+    assert _digits("Rendement 0,25 ; 10 000 lignes")[-1] == "10000"
+
+
+def _close_ledger(tmp_path: Path, close: float) -> GroundingLedger:
+    ledger = GroundingLedger(run_dir=tmp_path, user_message="cours")
+    ledger.ingest_tool_result(
+        tool_name="get_market_data",
+        arguments={"codes": ["AAPL.US"]},
+        result=json.dumps(
+            {
+                "AAPL.US": [
+                    {
+                        "trade_date": "2026-11-06T00:00:00",
+                        "open": 1350.0,
+                        "high": 1370.0,
+                        "low": 1340.0,
+                        "close": close,
+                        "volume": 1234567,
+                    }
+                ]
+            }
+        ),
+        call_id="prices",
+        success=True,
+    )
+    return ledger
+
+
+@pytest.mark.parametrize("space", [" ", "\u00a0", "\u202f"])
+def test_space_grouped_french_prices_survive_the_grounding_gate(
+    tmp_path: Path, space: str
+) -> None:
+    ledger = _close_ledger(tmp_path, 1362.5)
+    result = ledger.validate_final_answer(
+        f"AAPL.US a clôturé à 1{space}362,50 USD, volume 1{space}234{space}567 titres."
+    )
+    assert result.valid is True, result.issues
+
+
+def test_a_wrong_space_grouped_price_is_still_rejected(tmp_path: Path) -> None:
+    result = _close_ledger(tmp_path, 1362.5).validate_final_answer(
+        "AAPL.US a clôturé à 1 326,50 USD."
+    )
+    assert result.valid is False
+    assert [issue.get("claim") for issue in result.issues] == ["1 326,50"]
+
+
 # --- 2. rounding by the digits written ---------------------------------------------------
 
 AUX = {"aux": {"annualized_vol": 0.0125}}

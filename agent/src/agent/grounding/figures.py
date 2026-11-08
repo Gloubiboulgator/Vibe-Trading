@@ -447,6 +447,35 @@ _DOTTED_GROUPING_RE = re.compile(
     r"(?<![\d.,])[+-]?[1-9]\d{0,2}(?:\.\d{3})+(?![\d.,])"
 )
 
+# Space-grouped thousands, the French and SI spelling ("1 362,50 €", "150 000 €"). No-break
+# and narrow no-break spaces are already plain spaces in normalized text. The lead group
+# has one to three digits and every later group exactly three, with an optional decimal
+# comma. A run of numbers ("codes 101 102") has the same shape, so it is read as one
+# figure only when it is unambiguous: it has a decimal comma, it carries a currency or
+# percent mark, or the document writes decimal commas.
+_SPACED_GROUPING_RE = re.compile(
+    r"(?<![A-Za-z0-9_.,])[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+)?(?!\d|[.,]\d)"
+)
+
+
+def _spaced_groups(text: str, comma_decimals: bool) -> list[_Token]:
+    """Space-grouped numbers in normalized text that read as one figure."""
+    tokens: list[_Token] = []
+    for match in _SPACED_GROUPING_RE.finditer(text):
+        raw = match.group(0)
+        sign = raw[0] if raw[0] in "+-" else ""
+        body = raw[len(sign) :].replace(" ", "")
+        if not (
+            "," in body
+            or comma_decimals
+            or _percent_mark(text, match.end())[0] > 0
+            or _currency_before(text, match.start() + len(sign))
+            or _currency_after(text, match.end())
+        ):
+            continue
+        tokens.append(_Token(match.start(), match.end(), sign, body.replace(",", "."), True))
+    return tokens
+
 
 def _numbers(text: str, *, decimal_commas: bool | None = None) -> list[_Token]:
     """Every number in normalized text, with a decimal comma read as one (#1418).
@@ -493,6 +522,11 @@ def _numbers(text: str, *, decimal_commas: bool | None = None) -> list[_Token]:
         if comma_decimals or match.group(0).count(".") >= 2
     ]
     protected = dotted + dotted_grouped
+    protected += [
+        token
+        for token in _spaced_groups(text, comma_decimals)
+        if not any(other.start < token.end and token.start < other.end for other in protected)
+    ]
     tokens: list[_Token] = []
     cursor = 0
     for match in _NUMBER_RE.finditer(text):
