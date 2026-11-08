@@ -59,23 +59,23 @@ export function ModelRuntimeBar({
   const panelId = useId();
   if (!settings) return null;
 
-  // While idle with a per-run choice, show what the next message will use;
-  // otherwise show what the current/last run reported (or saved settings).
-  const preferSelection = Boolean(selection) && !running;
-  const providerId = (preferSelection ? selection?.provider : runtimeProvider)
-    || selection?.provider || settings.provider;
+  const pickerEnabled = Boolean(onSelectionChange);
+  // The read-only bar shows what the run reported. With the picker, a run
+  // that streams shows what it reports, and an idle bar shows what the next
+  // message will use (the per-run choice, else saved settings): showing the
+  // last run's model made a session whose last run used another provider
+  // look as if the saved settings had changed.
+  const showRuntime = running || !pickerEnabled;
+  const next = selection ?? savedSelection(settings);
+  const providerId = (showRuntime ? runtimeProvider : undefined) || next.provider;
   const provider = settings.providers.find((item) => item.name === providerId);
   const providerLabel = provider?.label || providerId || t("agent.unknownProvider");
-  const model = (preferSelection ? selection?.model : runtimeModel)
-    || selection?.model || settings.model_name || t("agent.unknownModel");
-  const reasoningEffort = preferSelection
-    ? selection!.reasoning_effort
-    : runtimeReasoningEffort !== undefined
-      ? runtimeReasoningEffort
-      : selection ? selection.reasoning_effort : settings.reasoning_effort;
+  const model = (showRuntime ? runtimeModel : undefined) || next.model || t("agent.unknownModel");
+  const reasoningEffort = showRuntime && runtimeReasoningEffort !== undefined
+    ? runtimeReasoningEffort
+    : next.reasoning_effort;
   const effortKey = effortLabelKey(reasoningEffort);
   const effortLabel = effortKey ? t(effortKey) : t("settings.providerDefault");
-  const pickerEnabled = Boolean(onSelectionChange);
 
   const current = selection ?? savedSelection(settings);
   const currentProvider = settings.providers.find((item) => item.name === current.provider);

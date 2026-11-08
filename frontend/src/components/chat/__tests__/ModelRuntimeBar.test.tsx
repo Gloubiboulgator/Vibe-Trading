@@ -127,6 +127,39 @@ describe("ModelRuntimeBar", () => {
       expect(normalizeSelection(multi, { provider: "openrouter", model: " deepseek/deepseek-v4-pro ", reasoning_effort: "" })).toBeNull();
     });
 
+    it("shows the saved settings, not the last run's provider, when idle", () => {
+      // The last run of the session used Anthropic through the picker; the next
+      // message will use the saved OpenRouter settings, so the bar says so.
+      render(
+        <ModelRuntimeBar
+          settings={multi}
+          runtimeProvider="anthropic"
+          runtimeModel="claude-sonnet-5-5"
+          runtimeReasoningEffort="high"
+          selection={null}
+          onSelectionChange={vi.fn()}
+        />,
+      );
+      expect(screen.getByText("OpenRouter")).toBeInTheDocument();
+      expect(screen.getByText("deepseek/deepseek-v4-pro")).toBeInTheDocument();
+      expect(screen.queryByText("claude-sonnet-5-5")).not.toBeInTheDocument();
+      expect(screen.getByText(/Reasoning Effort: Provider default/)).toBeInTheDocument();
+    });
+
+    it("shows what the streaming run reports", () => {
+      render(
+        <ModelRuntimeBar
+          settings={multi}
+          runtimeProvider="anthropic"
+          runtimeModel="claude-sonnet-5-5"
+          selection={null}
+          onSelectionChange={vi.fn()}
+          running
+        />,
+      );
+      expect(screen.getByText("claude-sonnet-5-5")).toBeInTheDocument();
+    });
+
     it("locks the picker while a run is streaming", () => {
       render(<ModelRuntimeBar settings={multi} selection={null} onSelectionChange={vi.fn()} running />);
       expect(screen.getByRole("button", { name: /OpenRouter/ })).toBeDisabled();
