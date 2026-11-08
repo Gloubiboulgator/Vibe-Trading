@@ -36,14 +36,108 @@ const METRIC_LABELS_ZH: Record<string, string> = {
   information_ratio: "IR",
 };
 
+const METRIC_LABELS_FR: Record<string, string> = {
+  total_return: "Rendement total",
+  annual_return: "Annualisé",
+  sharpe: "Sharpe",
+  max_drawdown: "Drawdown max",
+  win_rate: "Taux de réussite",
+  trade_count: "Transactions",
+  final_value: "Valeur finale",
+  calmar: "Calmar",
+  sortino: "Sortino",
+  profit_loss_ratio: "Ratio gains/pertes",
+  max_consecutive_loss: "Pertes consécutives max",
+  avg_holding_days: "Détention moy. (jours)",
+  benchmark_return: "Indice de référence",
+  excess_return: "Rendement excédentaire",
+  information_ratio: "IR",
+};
+
 // Canonical metric key set (English labels). Kept exported so consumers and
 // tests have a stable label map; localized lookups go through getMetricLabel.
 export const METRIC_LABELS = METRIC_LABELS_EN;
 
 export function getMetricLabel(k: string): string {
   const lang = i18n.language;
-  if (lang.startsWith('zh')) return METRIC_LABELS_ZH[k] || METRIC_LABELS_EN[k] || k;
+  if (lang?.startsWith('zh')) return METRIC_LABELS_ZH[k] || METRIC_LABELS_EN[k] || k;
+  if (lang?.startsWith('fr')) return METRIC_LABELS_FR[k] || METRIC_LABELS_EN[k] || k;
   return METRIC_LABELS_EN[k] || k;
+}
+
+/**
+ * Locale for every Intl formatter in the app: the active UI language, not the
+ * browser locale. Read off the i18n singleton so module-scope helpers (chart
+ * option builders, label functions) can use it; components that render these
+ * strings subscribe to `useTranslation()` and re-render on language change.
+ */
+export function uiLocale(): string {
+  return i18n.language || "en";
+}
+
+interface FractionDigits {
+  minimumFractionDigits?: number;
+  maximumFractionDigits?: number;
+}
+
+function digitsOptions(digits: number | FractionDigits): FractionDigits {
+  return typeof digits === "number"
+    ? { minimumFractionDigits: digits, maximumFractionDigits: digits }
+    : digits;
+}
+
+/** Money in the UI language, e.g. "$1,234" (en) / "1 234 $US" (fr). */
+export function formatCurrency(
+  value: number,
+  currency: string = "USD",
+  digits: number | FractionDigits = { maximumFractionDigits: 0 },
+): string {
+  return new Intl.NumberFormat(uiLocale(), {
+    style: "currency",
+    currency,
+    ...digitsOptions(digits),
+  }).format(value);
+}
+
+/**
+ * Percent label from a value already expressed in percent units
+ * (12.34 -> "12.34%" in en, "12,34 %" in fr). `signed` prefixes "+" when the
+ * raw value is strictly positive, matching the historical `v > 0 ? "+" : ""`.
+ */
+export function formatPercent(
+  pct: number,
+  digits: number | FractionDigits = 2,
+  { signed = false, grouping = false }: { signed?: boolean; grouping?: boolean } = {},
+): string {
+  const body = new Intl.NumberFormat(uiLocale(), {
+    style: "percent",
+    useGrouping: grouping,
+    ...digitsOptions(digits),
+  }).format(pct / 100);
+  return signed && pct > 0 ? `+${body}` : body;
+}
+
+/** Plain decimal in the UI language (1.5 -> "1.50" in en, "1,50" in fr). */
+export function formatDecimal(
+  value: number,
+  digits: number | FractionDigits = 2,
+  { signed = false, grouping = true }: { signed?: boolean; grouping?: boolean } = {},
+): string {
+  const body = new Intl.NumberFormat(uiLocale(), {
+    useGrouping: grouping,
+    ...digitsOptions(digits),
+  }).format(value);
+  return signed && value > 0 ? `+${body}` : body;
+}
+
+/** Date/time label in the UI language. */
+export function formatDateTime(value: Date | string | number, options?: Intl.DateTimeFormatOptions): string {
+  return new Date(value).toLocaleString(uiLocale(), options);
+}
+
+/** Date label in the UI language. */
+export function formatDate(value: Date | string | number, options?: Intl.DateTimeFormatOptions): string {
+  return new Date(value).toLocaleDateString(uiLocale(), options);
 }
 
 const PCT_KEYS = ["total_return", "annual_return", "win_rate", "max_drawdown", "benchmark_return", "excess_return"];
@@ -52,18 +146,12 @@ const INT_KEYS = ["trade_count", "max_consecutive_loss"];
 const NEUTRAL_KEYS = new Set(["trade_count", "avg_holding_days", "final_value"]);
 
 export function formatMetricVal(k: string, v: number): string {
-  if (PCT_KEYS.includes(k)) {
-    const sign = v > 0 ? "+" : "";
-    return `${sign}${(v * 100).toFixed(2)}%`;
-  }
-  if (RATIO_KEYS.includes(k)) {
-    const sign = v > 0 ? "+" : "";
-    return `${sign}${v.toFixed(2)}`;
-  }
+  if (PCT_KEYS.includes(k)) return formatPercent(v * 100, 2, { signed: true });
+  if (RATIO_KEYS.includes(k)) return formatDecimal(v, 2, { signed: true, grouping: false });
   if (INT_KEYS.includes(k)) return String(Math.round(v));
-  if (k === "final_value") return v.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  if (k === "avg_holding_days") return v.toFixed(1);
-  return v.toFixed(4);
+  if (k === "final_value") return formatDecimal(v, { maximumFractionDigits: 0 });
+  if (k === "avg_holding_days") return formatDecimal(v, 1, { grouping: false });
+  return formatDecimal(v, 4, { grouping: false });
 }
 
 export function metricSentiment(k: string, v: number): "positive" | "neutral" | "negative" {
@@ -92,5 +180,5 @@ export function abbreviateNum(v: number): string {
   if (abs >= 1e9) return (v / 1e9).toFixed(1) + "B";
   if (abs >= 1e6) return (v / 1e6).toFixed(1) + "M";
   if (abs >= 1e4) return (v / 1e3).toFixed(0) + "K";
-  return v.toLocaleString();
+  return v.toLocaleString(uiLocale());
 }

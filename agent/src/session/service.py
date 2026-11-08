@@ -929,15 +929,25 @@ class SessionService:
         Returns:
             The reply text shown in the transcript.
         """
+        from src.agent.user_language import writes_french
+
+        french = writes_french(attempt.prompt)
         if attempt.status == AttemptStatus.COMPLETED:
             if attempt.summary:
                 return attempt.summary
             # Do not dress an empty answer up as a finished strategy run: say
             # that nothing came back so the user knows to retry or rephrase.
+            if french:
+                return (
+                    "L'exécution s'est terminée sans produire de texte. "
+                    "Consultez les artefacts de l'exécution, ou reformulez la demande et réessayez."
+                )
             return (
                 "The run finished without producing any text output. "
                 "Check the run artifacts, or rephrase the request and try again."
             )
         if attempt.status == AttemptStatus.CANCELLED:
-            return "Run cancelled."
+            return "Exécution annulée." if french else "Run cancelled."
+        if french:
+            return f"Échec de l'exécution : {attempt.error or 'erreur inconnue'}"
         return f"Execution failed: {attempt.error or 'unknown error'}"

@@ -14,6 +14,7 @@ import {
   OctagonX,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrency, formatDateTime } from "@/lib/formatters";
 import {
   api,
   type LiveStatus,
@@ -37,7 +38,7 @@ interface Props {
 
 function formatUsd(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return "—";
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  return formatCurrency(value, "USD", { maximumFractionDigits: 0 });
 }
 
 function formatRelative(value: string | number | null | undefined): string {
@@ -270,7 +271,7 @@ function BrokerRow({
                           ? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
                           : "bg-muted text-muted-foreground",
                     ].join(" ")}
-                    title={i18n.t("runnerStatus.expiresAt", { time: new Date(mandate.expires_at).toLocaleString() })}
+                    title={i18n.t("runnerStatus.expiresAt", { time: formatDateTime(mandate.expires_at) })}
                   >
                     <Clock className="h-2.5 w-2.5" />
                     {countdown.expired ? i18n.t("runnerStatus.expired") : i18n.t("runnerStatus.expiresIn", { time: countdown.label })}

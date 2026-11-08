@@ -27,6 +27,15 @@ RECOVERY_MESSAGE = (
     "I stopped because repeated tool attempts did not produce new information, "
     "so I cannot reliably answer. " + _NEXT_STEP
 )
+_NEXT_STEP_FR = (
+    "Relancez la demande, refaites l'étape de recherche manquante sur un périmètre "
+    "plus étroit (moins de symboles, une autre source de données), ou donnez le chemin "
+    "exact du fichier si vous pensiez à un artefact existant."
+)
+RECOVERY_MESSAGE_FR = (
+    "Je me suis arrêté, car les tentatives répétées des outils n'apportaient aucune "
+    "information nouvelle : je ne peux donc pas répondre de façon fiable. " + _NEXT_STEP_FR
+)
 #: How each kind of unproductive tool call is described in the stop message.
 _NOTE_TEXT = {
     "error": "failed",
@@ -36,6 +45,15 @@ _NOTE_TEXT = {
     "cached": "was served from cache",
     "replayed": "was restored after context compaction",
     "compact": "was asked to compact the context",
+}
+_NOTE_TEXT_FR = {
+    "error": "a échoué",
+    "repeat": "a renvoyé des résultats déjà obtenus",
+    "blocked": "a été refusé avant exécution",
+    "skipped": "a été ignoré, car identique à un appel déjà réussi",
+    "cached": "a été servi depuis le cache",
+    "replayed": "a été restauré après compaction du contexte",
+    "compact": "a demandé une compaction du contexte",
 }
 
 
@@ -155,7 +173,7 @@ class ToolProgress:
         self._context_restored = False
         return self.stalled_iterations >= NO_PROGRESS_LIMIT
 
-    def recovery_message(self) -> str:
+    def recovery_message(self, *, french: bool = False) -> str:
         """Say what the stalled iterations kept doing, not just that they stalled.
 
         The fixed message this replaces described one scenario (an answer lost
@@ -163,18 +181,30 @@ class ToolProgress:
         whose request was refused by the identity check read about "the
         previous summary" and could not tell what to change.
 
+        Args:
+            french: Write the message in French (the user wrote French).
+
         Returns:
             The stop message shown to the user.
         """
         if not self._stall_notes:
-            return RECOVERY_MESSAGE
+            return RECOVERY_MESSAGE_FR if french else RECOVERY_MESSAGE
         counts = Counter(self._stall_notes)
+        notes = _NOTE_TEXT_FR if french else _NOTE_TEXT
         parts = []
         for (kind, tool, detail), count in counts.most_common(5):
-            text = f"{tool} {_NOTE_TEXT.get(kind, kind)}"
+            text = f"{tool} {notes.get(kind, kind)}"
             if detail:
                 text += f" ({detail})"
             parts.append(f"{text} x{count}")
+        if french:
+            return (
+                f"Je me suis arrêté, car {self.stalled_iterations} tours d'outils "
+                "d'affilée n'ont apporté aucune information nouvelle : "
+                + " ; ".join(parts)
+                + ". Je ne peux pas répondre de façon fiable à partir de cela. "
+                + _NEXT_STEP_FR
+            )
         return (
             f"I stopped because {self.stalled_iterations} tool rounds in a row "
             "produced no new information: "

@@ -13,7 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { api, type RunListItem } from "@/lib/api";
-import { formatMetricVal } from "@/lib/formatters";
+import { formatMetricVal, uiLocale } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
 const REPORT_SCAN_LIMIT = 100;
@@ -310,7 +310,7 @@ function dateMs(value: string): number {
 function formatRunDate(value: string, unknownLabel: string): string {
   const parsed = new Date(value);
   if (!Number.isFinite(parsed.getTime())) return value || unknownLabel;
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(uiLocale(), {
     month: "short",
     day: "numeric",
     hour: "2-digit",

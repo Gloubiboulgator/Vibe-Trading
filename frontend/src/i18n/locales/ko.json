@@ -88,7 +88,8 @@
     "pixelOffice": "픽셀 오피스",
     "paperTrading": "모의 거래",
     "researchArtifacts": "연구 산출물",
-    "researchLab": "리서치 실험실"
+    "researchLab": "리서치 실험실",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "리비전 비교",
@@ -1293,6 +1294,19 @@
     "failedToResumeConnector": "커넥터 재개에 실패했습니다.",
     "tokenUsage": {
       "live": "토큰"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2006,7 +2020,13 @@
     "noPriceData": "이 종목에는 아직 가격 데이터가 없습니다",
     "noCorrelationData": "비교할 종목을 두 개 이상 선택하세요",
     "noEquityData": "계정 가치 곡선이 아직 없습니다. 먼저 백테스트를 실행하세요",
-    "correlationUndefined": "정의되지 않음(기간 내 가격 변동 없음)"
+    "correlationUndefined": "정의되지 않음(기간 내 가격 변동 없음)",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "toolProgress": {
     "step": "단계 {{step}} · {{tool}}",
@@ -2545,7 +2565,7 @@
     "dailySummary": "매일 {{time}}({{timezone}})에 실행하며 간격 설정을 대체합니다.",
     "usage": "오늘: {{turns}}회 · {{tokens}} 토큰 · 추정 {{cost}}.",
     "estimateUnknown": "요금과 실제 사용량이 있어야 일일 비용을 추정할 수 있습니다.",
-    "estimate": "실제 사용량 기준 일일 모델 비용: 약 ${{cost}}.",
+    "estimate": "실제 사용량 기준 일일 모델 비용: 약 {{cost}}.",
     "configure": "모델 일정 및 비용 한도",
     "interval_seconds": "결정 간격(초)",
     "max_daily_turns": "UTC 일별 최대 결정 횟수",

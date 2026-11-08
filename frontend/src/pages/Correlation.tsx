@@ -7,6 +7,7 @@ import { api, type CorrelationAnalysisResponse } from "@/lib/api";
 import { useAnalysisState } from "@/hooks/useAnalysisState";
 import { shannon } from "@/lib/shannon";
 import { ShannonPortfolio } from "@/components/charts/ShannonPortfolio";
+import { uiLocale } from "@/lib/formatters";
 
 const WINDOWS = [30, 60, 90, 180, 365] as const;
 
@@ -208,7 +209,7 @@ function CorrelationAnalysis() {
       )}
 
       {result && <div className="space-y-2 rounded-lg border bg-card p-3 text-sm" role="status">
-        <p>{fresh ? i18n.t("analysis.updated") : i18n.t("analysis.previousResult")} · {i18n.t("analysis.lastComputed", { time: new Date(computedAt).toLocaleTimeString() })}</p>
+        <p>{fresh ? i18n.t("analysis.updated") : i18n.t("analysis.previousResult")} · {i18n.t("analysis.lastComputed", { time: new Date(computedAt).toLocaleTimeString(uiLocale()) })}</p>
         <p className="text-muted-foreground">{i18n.t("analysis.coverage", { count: result.coverage.observations, start: result.coverage.first_date ?? "–", end: result.coverage.last_date ?? "–" })}</p>
         <p className="text-xs">{i18n.t("analysis.usedAssets", { assets: labels.join(", ") || "–" })}</p>
         {result.coverage.missing.length > 0 && <p className="text-warning">{i18n.t("analysis.missingAssets", { assets: result.coverage.missing.join(", ") })}</p>}

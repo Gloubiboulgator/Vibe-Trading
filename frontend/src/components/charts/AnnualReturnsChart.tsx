@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import i18n from "@/i18n";
+import { formatPercent } from "@/lib/formatters";
 import type { AnnualReturn } from "@/lib/tearsheet";
 import { getChartTheme } from "@/lib/chart-theme";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
@@ -30,7 +31,7 @@ export function AnnualReturnsChart({ data, height = 260 }: Props) {
           if (!Array.isArray(params) || !params.length) return "";
           const p = params[0];
           const v = Number(p.value);
-          const pct = `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
+          const pct = formatPercent(v, 2, { signed: true });
           return `<b>${p.axisValue}</b><br/>${p.marker} ${p.seriesName}: <b>${pct}</b>`;
         },
       },
@@ -44,7 +45,7 @@ export function AnnualReturnsChart({ data, height = 260 }: Props) {
       yAxis: {
         type: "value",
         splitLine: { lineStyle: { color: t.gridColor } },
-        axisLabel: { color: t.textColor, fontSize: 10, formatter: "{value}%" },
+        axisLabel: { color: t.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v, { maximumFractionDigits: 2 }) },
       },
       series: [
         {
@@ -56,7 +57,7 @@ export function AnnualReturnsChart({ data, height = 260 }: Props) {
             label: {
               show: true,
               position: d.ret >= 0 ? "top" : "bottom",
-              formatter: `${d.ret > 0 ? "+" : ""}${(d.ret * 100).toFixed(1)}%`,
+              formatter: formatPercent(d.ret * 100, 1, { signed: true }),
               fontSize: 10,
               color: t.textColor,
             },

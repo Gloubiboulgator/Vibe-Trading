@@ -21,7 +21,13 @@
     "noPriceData": "Bu sembol için henüz fiyat verisi yok",
     "noCorrelationData": "Karşılaştırmak için en az iki sembol seçin",
     "correlationUndefined": "tanımsız (pencerede fiyat değişimi yok)",
-    "noEquityData": "Henüz hesap değeri eğrisi yok; önce geriye dönük test çalıştırın"
+    "noEquityData": "Henüz hesap değeri eğrisi yok; önce geriye dönük test çalıştırın",
+    "equity": "Portföy değeri",
+    "drawdownPct": "Düşüş %",
+    "correlation": "Korelasyon",
+    "save": "Kaydet",
+    "reset": "Sıfırla",
+    "zoom": "Yakınlaştır"
   },
   "layout": {
     "home": "Ana Sayfa",
@@ -54,7 +60,8 @@
     "pixelOffice": "Piksel Ofis",
     "paperTrading": "Sanal işlem",
     "researchArtifacts": "Araştırma çıktıları",
-    "researchLab": "Araştırma laboratuvarı"
+    "researchLab": "Araştırma laboratuvarı",
+    "selectLanguage": "Dil seçin"
   },
   "researchArtifacts": {
     "compareTitle": "Revizyon karşılaştırması",
@@ -1259,6 +1266,19 @@
     "messageTooLong": "Mesaj, ekler ve ekip talimatlarıyla birlikte {{limit}} karakteri aşıyor. Göndermeden önce kısaltın.",
     "tokenUsage": {
       "live": "belirteç"
+    },
+    "executionFailed": "Yürütme başarısız",
+    "unknownError": "Bilinmeyen hata",
+    "export": {
+      "title": "Sohbet dışa aktarımı",
+      "time": "Dışa aktarma zamanı: {{time}}",
+      "user": "Kullanıcı",
+      "assistant": "Asistan",
+      "error": "Hata",
+      "toolCall": "Araç çağrısı: {{tool}}",
+      "unknownTool": "bilinmiyor",
+      "swarmStatus": "Sürü durumu: {{preset}} {{status}}",
+      "backtestComplete": "Geriye dönük test tamamlandı: {{runId}}"
     }
   },
   "runDetail": {
@@ -2545,7 +2565,7 @@
     "dailySummary": "Her gün {{time}} ({{timezone}}); aralık ayarının yerini alır.",
     "usage": "Bugün: {{turns}} karar · {{tokens}} token · tahmini {{cost}}.",
     "estimateUnknown": "Günlük tahmin için fiyatlar ve ölçülen kullanım gerekir.",
-    "estimate": "Ölçülen kullanıma göre günlük tahmini model maliyeti: ${{cost}}.",
+    "estimate": "Ölçülen kullanıma göre günlük tahmini model maliyeti: {{cost}}.",
     "configure": "Model zamanlaması ve harcama sınırları",
     "interval_seconds": "Karar aralığı (saniye)",
     "max_daily_turns": "UTC günü başına azami karar",

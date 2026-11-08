@@ -30,7 +30,7 @@ import {
 import { echarts } from "@/lib/echarts";
 import { getChartTheme } from "@/lib/chart-theme";
 import { useThemeDark } from "@/lib/theme-store";
-import i18n from "@/i18n";
+import { uiLocale } from "@/lib/formatters";
 
 const BROKER_COLORS: Record<string, string> = {
   IBKR: "#f05a47",
@@ -47,16 +47,8 @@ const HOLDING_COLORS = [
 // client-side guard so a lost polling response can never spin forever.
 const PORTFOLIO_RECONNECT_DEADLINE_MS = 360_000;
 
-/**
- * Locale used by every Intl formatter on this page. The formatters live at
- * module scope (chart option builders need them outside React), so they read
- * the language off the i18n singleton rather than through a hook; components
- * that render them subscribe to `useTranslation()` and therefore re-render
- * whenever the language changes.
- */
-function uiLocale(): string {
-  return i18n.language || "en";
-}
+// Intl formatters on this page take the app language from the shared
+// `uiLocale()` helper (lib/formatters), not the browser locale.
 
 function money(value: number | null | undefined, currency: string = "USD") {
   if (value == null || !Number.isFinite(value)) return "—";

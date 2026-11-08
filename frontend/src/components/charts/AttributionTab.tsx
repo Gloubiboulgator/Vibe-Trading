@@ -14,6 +14,7 @@ import type {
 import { AttributionCumulativeChart } from "./AttributionCumulativeChart";
 import { AttributionWaterfallChart } from "./AttributionWaterfallChart";
 import { RollingBetaAlphaChart } from "./RollingBetaAlphaChart";
+import { formatDecimal, formatPercent } from "@/lib/formatters";
 
 type AttrState =
   | { status: "loading" }
@@ -21,11 +22,11 @@ type AttrState =
   | { status: "ready"; data: AttributionResponse };
 
 function fmtPct(v: number, digits = 2): string {
-  return `${(v * 100).toFixed(digits)}%`;
+  return formatPercent(v * 100, digits);
 }
 
 function fmtSignedPct(v: number, digits = 2): string {
-  return `${v > 0 ? "+" : ""}${(v * 100).toFixed(digits)}%`;
+  return formatPercent(v * 100, digits, { signed: true });
 }
 
 function signedTone(v: number): "positive" | "negative" | "neutral" {
@@ -158,17 +159,17 @@ function FactorStatCards({ factor, metrics }: { factor: AttributionFactor | null
           <AttrStat
             label={i18n.t("runDetail.attrAlpha")}
             value={fmtSignedPct(factor.alpha_annualized)}
-            sub={i18n.t("runDetail.attrTStat", { value: factor.alpha_t_stat.toFixed(2) })}
+            sub={i18n.t("runDetail.attrTStat", { value: formatDecimal(factor.alpha_t_stat, 2, { grouping: false }) })}
             tone={signedTone(factor.alpha_annualized)}
           />
-          <AttrStat label={i18n.t("runDetail.attrBeta")} value={factor.beta.toFixed(2)} />
-          <AttrStat label={i18n.t("runDetail.attrRSquared")} value={factor.r_squared.toFixed(2)} />
+          <AttrStat label={i18n.t("runDetail.attrBeta")} value={formatDecimal(factor.beta, 2, { grouping: false })} />
+          <AttrStat label={i18n.t("runDetail.attrRSquared")} value={formatDecimal(factor.r_squared, 2, { grouping: false })} />
         </>
       )}
       {informationRatio !== undefined && (
         <AttrStat
           label={i18n.t("runDetail.attrInformationRatio")}
-          value={`${informationRatio > 0 ? "+" : ""}${informationRatio.toFixed(2)}`}
+          value={formatDecimal(informationRatio, 2, { signed: true, grouping: false })}
           tone={signedTone(informationRatio)}
         />
       )}

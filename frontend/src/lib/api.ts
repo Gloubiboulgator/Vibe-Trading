@@ -1,5 +1,6 @@
 import i18n from "@/i18n";
 import { authHeaders, withAuthTicket } from "@/lib/apiAuth";
+import { uiLocale } from "@/lib/formatters";
 import type {
   OptionsChainResponse,
   OptionsPayoffRequest,
@@ -414,7 +415,7 @@ async function errorFromResponse(res: Response): Promise<ApiError> {
       if (typeof structured.message === "string" && structured.message) detail = structured.message;
       else if (code) detail = code;
       if (code === "message_too_long" && typeof structured.max_length === "number") {
-        detail = i18n.t("agent.messageTooLong", { limit: structured.max_length.toLocaleString() });
+        detail = i18n.t("agent.messageTooLong", { limit: structured.max_length.toLocaleString(uiLocale()) });
       }
     }
   } catch {

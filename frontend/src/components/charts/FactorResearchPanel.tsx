@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import type { FactorReportPayload, FactorResult } from "@/lib/api";
 import { RunCardPanel, RunCardStat } from "@/components/run/RunCard";
 import { CorrelationMatrix } from "./CorrelationMatrix";
+import { formatDecimal, formatPercent } from "@/lib/formatters";
 
 const SLATE = "#8f98a6";
 const IC_MA_WINDOW = 20;
@@ -21,17 +22,17 @@ function num(value: unknown): number | null {
 
 function fixed(value: unknown, digits = 4): string {
   const parsed = num(value);
-  return parsed == null ? "—" : parsed.toFixed(digits);
+  return parsed == null ? "—" : formatDecimal(parsed, digits, { grouping: false });
 }
 
 function pct(value: unknown, digits = 2): string {
   const parsed = num(value);
-  return parsed == null ? "—" : `${(parsed * 100).toFixed(digits)}%`;
+  return parsed == null ? "—" : formatPercent(parsed * 100, digits);
 }
 
 function signedPct(value: unknown, digits = 2): string {
   const parsed = num(value);
-  return parsed == null ? "—" : `${parsed > 0 ? "+" : ""}${(parsed * 100).toFixed(digits)}%`;
+  return parsed == null ? "—" : formatPercent(parsed * 100, digits, { signed: true });
 }
 
 function signTone(value: unknown): "normal" | "positive" | "negative" {

@@ -21,7 +21,13 @@
     "noPriceData": "Noch keine Kursdaten für dieses Symbol",
     "noCorrelationData": "Wählen Sie mindestens zwei Symbole zum Vergleichen",
     "correlationUndefined": "undefiniert (keine Preisbewegung im Zeitraum)",
-    "noEquityData": "Noch keine Kontowert-Kurve — führen Sie zuerst einen Backtest durch"
+    "noEquityData": "Noch keine Kontowert-Kurve — führen Sie zuerst einen Backtest durch",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "navigation": {
     "menu": "Funktionen entdecken",
@@ -94,7 +100,8 @@
     "pixelOffice": "Pixelbüro",
     "paperTrading": "Simulierter Handel",
     "researchArtifacts": "Recherche-Artefakte",
-    "researchLab": "Forschungslabor"
+    "researchLab": "Forschungslabor",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "Revisionsvergleich",
@@ -1299,6 +1306,19 @@
     "failedToResumeConnector": "Connector konnte nicht fortgesetzt werden.",
     "tokenUsage": {
       "live": "Tokens"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2545,7 +2565,7 @@
     "dailySummary": "Täglich um {{time}} ({{timezone}}); ersetzt das Intervall.",
     "usage": "Heute: {{turns}} Entscheidungen · {{tokens}} Token · geschätzt {{cost}}.",
     "estimateUnknown": "Eine Tagesschätzung benötigt Preise und gemessenen Verbrauch.",
-    "estimate": "Geschätzte tägliche Modellkosten: etwa ${{cost}}, anhand des Verbrauchs.",
+    "estimate": "Geschätzte tägliche Modellkosten: etwa {{cost}}, anhand des Verbrauchs.",
     "configure": "Modellzeitplan und Kostenlimits",
     "interval_seconds": "Entscheidungsintervall (Sekunden)",
     "max_daily_turns": "Maximale Entscheidungen pro UTC-Tag",

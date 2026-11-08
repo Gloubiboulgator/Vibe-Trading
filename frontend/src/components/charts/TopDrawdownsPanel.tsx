@@ -1,5 +1,6 @@
 import i18n from "@/i18n";
 import type { DrawdownEpisode } from "@/lib/tearsheet";
+import { formatPercent } from "@/lib/formatters";
 
 interface Props {
   episodes: DrawdownEpisode[];
@@ -27,7 +28,7 @@ export function TopDrawdownsPanel({ episodes }: Props) {
           {episodes.map((ep, i) => (
             <tr key={`${ep.peakTime}-${i}`} className="border-b last:border-0 hover:bg-muted/40">
               <td className="py-2 ps-4 pr-4 font-mono tabular-nums text-muted-foreground">{i + 1}</td>
-              <td className="py-2 pr-4 font-mono tabular-nums text-danger">{(ep.depth * 100).toFixed(2)}%</td>
+              <td className="py-2 pr-4 font-mono tabular-nums text-danger">{formatPercent(ep.depth * 100, 2)}</td>
               <td className="py-2 pr-4 font-mono text-xs">{ep.peakTime}</td>
               <td className="py-2 pr-4 font-mono text-xs">{ep.troughTime}</td>
               <td className="py-2 pr-4 font-mono text-xs">{ep.recoveryTime ?? i18n.t("runDetail.ddNotRecovered")}</td>

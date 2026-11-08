@@ -4,6 +4,7 @@ import type { ValidationData } from "@/lib/api";
 import { DistributionChart } from "@/components/charts/DistributionChart";
 import { MonteCarloPathsChart } from "@/components/charts/MonteCarloPathsChart";
 import { WalkForwardChart } from "@/components/charts/WalkForwardChart";
+import { formatDecimal, formatPercent, uiLocale } from "@/lib/formatters";
 
 interface Props {
   data: ValidationData;
@@ -37,7 +38,7 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
 }
 
 function pctFmt(v: number): string {
-  return (v * 100).toFixed(2) + "%";
+  return formatPercent(v * 100, 2);
 }
 
 function MonteCarloSection({ mc }: { mc: NonNullable<ValidationData["monte_carlo"]> }) {
@@ -50,13 +51,13 @@ function MonteCarloSection({ mc }: { mc: NonNullable<ValidationData["monte_carlo
         <Badge value={sig ? i18n.t("validation.significant") : i18n.t("validation.notSignificant")} good={sig} />
       </div>
       <p className="text-xs text-muted-foreground">
-        {i18n.t("validation.monteCarloDesc", { n: mc.n_simulations.toLocaleString() })}
+        {i18n.t("validation.monteCarloDesc", { n: mc.n_simulations.toLocaleString(uiLocale()) })}
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded-xl border border-border/60 bg-muted/20 p-3">
-        <Stat label={i18n.t("validation.actualSharpe")} value={mc.actual_sharpe.toFixed(2)} />
-        <Stat label={i18n.t("validation.pValueSharpe")} value={mc.p_value_sharpe.toFixed(4)} sub={sig ? "< 0.05" : ">= 0.05"} />
-        <Stat label={i18n.t("validation.simulatedMean")} value={mc.simulated_sharpe_mean.toFixed(2)} sub={`std ${mc.simulated_sharpe_std.toFixed(2)}`} />
-        <Stat label={i18n.t("validation.simulatedRange")} value={`[${mc.simulated_sharpe_p5.toFixed(2)}, ${mc.simulated_sharpe_p95.toFixed(2)}]`} />
+        <Stat label={i18n.t("validation.actualSharpe")} value={formatDecimal(mc.actual_sharpe, 2, { grouping: false })} />
+        <Stat label={i18n.t("validation.pValueSharpe")} value={formatDecimal(mc.p_value_sharpe, 4, { grouping: false })} sub={sig ? "< 0.05" : ">= 0.05"} />
+        <Stat label={i18n.t("validation.simulatedMean")} value={formatDecimal(mc.simulated_sharpe_mean, 2, { grouping: false })} sub={`std ${formatDecimal(mc.simulated_sharpe_std, 2, { grouping: false })}`} />
+        <Stat label={i18n.t("validation.simulatedRange")} value={`[${formatDecimal(mc.simulated_sharpe_p5, 2, { grouping: false })}, ${formatDecimal(mc.simulated_sharpe_p95, 2, { grouping: false })}]`} />
       </div>
       {/* Fan chart: full simulated path envelope over trade order */}
       {mc.equity_paths && mc.equity_paths.steps.length > 0 && (
@@ -73,7 +74,7 @@ function MonteCarloSection({ mc }: { mc: NonNullable<ValidationData["monte_carlo
           <DistributionChart
             samples={mc.sharpe_samples}
             markerValue={mc.actual_sharpe}
-            markerLabel={`${i18n.t("validation.actualLabel")} ${mc.actual_sharpe.toFixed(2)}`}
+            markerLabel={`${i18n.t("validation.actualLabel")} ${formatDecimal(mc.actual_sharpe, 2, { grouping: false })}`}
             bandFrom={mc.simulated_sharpe_p5}
             bandTo={mc.simulated_sharpe_p95}
             height={200}
@@ -82,9 +83,9 @@ function MonteCarloSection({ mc }: { mc: NonNullable<ValidationData["monte_carlo
       ) : (
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-            <span>P5: {mc.simulated_sharpe_p5.toFixed(2)}</span>
-            <span>Actual: {mc.actual_sharpe.toFixed(2)}</span>
-            <span>P95: {mc.simulated_sharpe_p95.toFixed(2)}</span>
+            <span>P5: {formatDecimal(mc.simulated_sharpe_p5, 2, { grouping: false })}</span>
+            <span>{i18n.t("validation.actualLabel")}: {formatDecimal(mc.actual_sharpe, 2, { grouping: false })}</span>
+            <span>P95: {formatDecimal(mc.simulated_sharpe_p95, 2, { grouping: false })}</span>
           </div>
           <div className="relative h-3 rounded-full bg-muted overflow-hidden">
             <div className="absolute inset-y-0 bg-zinc-300 dark:bg-zinc-600 rounded-full" style={barStyle(mc.simulated_sharpe_p5, mc.simulated_sharpe_p95, mc.simulated_sharpe_p5, mc.simulated_sharpe_p95)} />
@@ -106,12 +107,12 @@ function BootstrapSection({ bs }: { bs: NonNullable<ValidationData["bootstrap"]>
         <Badge value={reliable ? i18n.t("validation.ciAbove0") : i18n.t("validation.ciIncludes0")} good={reliable} />
       </div>
       <p className="text-xs text-muted-foreground">
-        {i18n.t("validation.bootstrapDesc", { n: bs.n_bootstrap.toLocaleString(), pct: (bs.confidence * 100).toFixed(0) + "%" })}
+        {i18n.t("validation.bootstrapDesc", { n: bs.n_bootstrap.toLocaleString(uiLocale()), pct: formatPercent(bs.confidence * 100, 0) })}
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded-xl border border-border/60 bg-muted/20 p-3">
-        <Stat label={i18n.t("validation.observedSharpe")} value={bs.observed_sharpe.toFixed(2)} />
-        <Stat label={i18n.t("validation.ci", { pct: (bs.confidence * 100).toFixed(0) + "%" })} value={`[${bs.ci_lower.toFixed(2)}, ${bs.ci_upper.toFixed(2)}]`} />
-        <Stat label={i18n.t("validation.medianSharpe")} value={bs.median_sharpe.toFixed(2)} />
+        <Stat label={i18n.t("validation.observedSharpe")} value={formatDecimal(bs.observed_sharpe, 2, { grouping: false })} />
+        <Stat label={i18n.t("validation.ci", { pct: formatPercent(bs.confidence * 100, 0) })} value={`[${formatDecimal(bs.ci_lower, 2, { grouping: false })}, ${formatDecimal(bs.ci_upper, 2, { grouping: false })}]`} />
+        <Stat label={i18n.t("validation.medianSharpe")} value={formatDecimal(bs.median_sharpe, 2, { grouping: false })} />
         <Stat label={i18n.t("validation.probSharpePositive")} value={pctFmt(bs.prob_positive)} />
       </div>
       {/* Distribution of bootstrap Sharpes, or the compact CI bar fallback */}
@@ -121,18 +122,18 @@ function BootstrapSection({ bs }: { bs: NonNullable<ValidationData["bootstrap"]>
           <DistributionChart
             samples={bs.sharpe_samples}
             markerValue={bs.observed_sharpe}
-            markerLabel={`${i18n.t("validation.actualLabel")} ${bs.observed_sharpe.toFixed(2)}`}
+            markerLabel={`${i18n.t("validation.actualLabel")} ${formatDecimal(bs.observed_sharpe, 2, { grouping: false })}`}
             bandFrom={bs.ci_lower}
             bandTo={bs.ci_upper}
-            bandLabel={i18n.t("validation.ci", { pct: (bs.confidence * 100).toFixed(0) + "%" })}
+            bandLabel={i18n.t("validation.ci", { pct: formatPercent(bs.confidence * 100, 0) })}
             height={200}
           />
         </div>
       ) : (
         <div className="space-y-1">
           <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-            <span>{bs.ci_lower.toFixed(2)}</span>
-            <span>{bs.ci_upper.toFixed(2)}</span>
+            <span>{formatDecimal(bs.ci_lower, 2, { grouping: false })}</span>
+            <span>{formatDecimal(bs.ci_upper, 2, { grouping: false })}</span>
           </div>
           <div className="relative h-3 rounded-full bg-muted overflow-hidden">
             <div className={cn("absolute inset-y-0 rounded-full", reliable ? "bg-emerald-500/30" : "bg-amber-500/30")} style={barStyle(bs.ci_lower, bs.ci_upper, Math.min(bs.ci_lower, 0), Math.max(bs.ci_upper, 1))} />
@@ -159,7 +160,7 @@ function WalkForwardSection({ wf }: { wf: NonNullable<ValidationData["walk_forwa
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 rounded-xl border border-border/60 bg-muted/20 p-3">
         <Stat label={i18n.t("validation.consistency")} value={pctFmt(wf.consistency_rate)} />
         <Stat label={i18n.t("validation.avgReturn")} value={pctFmt(wf.return_mean)} sub={`std ${pctFmt(wf.return_std)}`} />
-        <Stat label={i18n.t("validation.avgSharpe")} value={wf.sharpe_mean.toFixed(2)} sub={`std ${wf.sharpe_std.toFixed(2)}`} />
+        <Stat label={i18n.t("validation.avgSharpe")} value={formatDecimal(wf.sharpe_mean, 2, { grouping: false })} sub={`std ${formatDecimal(wf.sharpe_std, 2, { grouping: false })}`} />
         <Stat label={i18n.t("validation.windows")} value={String(wf.n_windows)} />
       </div>
       {/* Per-window OOS returns over time */}
@@ -189,7 +190,7 @@ function WalkForwardSection({ wf }: { wf: NonNullable<ValidationData["walk_forwa
               <td className="py-1.5 pr-3 font-mono">{w.window}</td>
               <td className="py-1.5 pr-3 font-mono text-muted-foreground">{w.start} ~ {w.end}</td>
               <td className={cn("py-1.5 pr-3 text-right font-mono tabular-nums", w.return > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>{pctFmt(w.return)}</td>
-              <td className="py-1.5 pr-3 text-right font-mono tabular-nums">{w.sharpe.toFixed(2)}</td>
+              <td className="py-1.5 pr-3 text-right font-mono tabular-nums">{formatDecimal(w.sharpe, 2, { grouping: false })}</td>
               <td className="py-1.5 pr-3 text-right font-mono tabular-nums">{pctFmt(w.max_dd)}</td>
               <td className="py-1.5 pr-3 text-right font-mono tabular-nums">{w.trades}</td>
               <td className="py-1.5 text-right font-mono tabular-nums">{pctFmt(w.win_rate)}</td>

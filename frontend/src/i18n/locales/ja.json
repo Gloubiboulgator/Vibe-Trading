@@ -88,7 +88,8 @@
     "pixelOffice": "ピクセルオフィス",
     "paperTrading": "模擬取引",
     "researchArtifacts": "リサーチ成果物",
-    "researchLab": "リサーチラボ"
+    "researchLab": "リサーチラボ",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "リビジョン比較",
@@ -1293,6 +1294,19 @@
     "failedToResumeConnector": "コネクタの再開に失敗しました。",
     "tokenUsage": {
       "live": "トークン"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2006,7 +2020,13 @@
     "noPriceData": "このシンボルにはまだ価格データがありません",
     "noCorrelationData": "比較するシンボルを2つ以上選択してください",
     "noEquityData": "口座価値の推移はまだありません。先にバックテストを実行してください",
-    "correlationUndefined": "未定義（期間内の価格変動なし）"
+    "correlationUndefined": "未定義（期間内の価格変動なし）",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "toolProgress": {
     "step": "ステップ {{step}} · {{tool}}",
@@ -2545,7 +2565,7 @@
     "dailySummary": "毎日 {{time}}（{{timezone}}）に実行し、間隔設定を置き換えます。",
     "usage": "今日：{{turns}} 回 · {{tokens}} トークン · 推定 {{cost}}。",
     "estimateUnknown": "料金と実測使用量が揃うまで日額を推定できません。",
-    "estimate": "実測使用量に基づく日額：約 ${{cost}}。",
+    "estimate": "実測使用量に基づく日額：約 {{cost}}。",
     "configure": "モデルの実行予定と費用上限",
     "interval_seconds": "判断間隔（秒）",
     "max_daily_turns": "UTC 日ごとの判断回数上限",

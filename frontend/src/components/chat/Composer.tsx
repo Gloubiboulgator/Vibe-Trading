@@ -30,6 +30,7 @@ import { api } from "@/lib/api";
 import type { UploadedAttachment } from "@/lib/attachments";
 import { buildChatPrompt, MAX_GOAL_CHARS, MAX_MESSAGE_CHARS, promptExceedsLimit } from "@/lib/chatPrompt";
 import type { AgentActivity } from "@/stores/agent";
+import { uiLocale } from "@/lib/formatters";
 import {
   LiveRuntimeControl,
   LiveRuntimeStatus,
@@ -120,7 +121,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
     const limit = goalComposerActive ? MAX_GOAL_CHARS : MAX_MESSAGE_CHARS;
     const requestText = goalComposerActive ? submitted : buildChatPrompt(submitted, attachments, Boolean(swarmPreset));
     if (promptExceedsLimit(requestText, limit)) {
-      toast.error(t('agent.messageTooLong', { limit: limit.toLocaleString() }));
+      toast.error(t('agent.messageTooLong', { limit: limit.toLocaleString(uiLocale()) }));
       return;
     }
     setInput("");
@@ -192,7 +193,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
           toast.success(t("agent.uploaded", { filename: result.filename }));
         } catch (error) {
           toast.error(t("agent.uploadFailed", {
-            error: error instanceof Error ? error.message : "Unknown error",
+            error: error instanceof Error ? error.message : t("agent.unknownError"),
           }));
         }
       }

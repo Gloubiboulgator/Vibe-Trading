@@ -38,6 +38,7 @@ from src.agent.tuning import (
 
 from src.agent.loop_grounding import validate_and_release
 from src.agent.loop_streaming import TurnStream
+from src.agent.user_language import writes_french
 from src.agent.context import ContextBuilder
 from src.agent.tool_loading import prepare_registry, request_definitions
 from src.agent.grounding import GroundingLedger
@@ -968,7 +969,11 @@ class AgentLoop(ToolCallLifecycle):
                         # which is wrong for non-market tasks, so use a neutral
                         # message here instead.
                         final_content = (
-                            "My final response could not be delivered: it contained "
+                            "Ma réponse finale n'a pas pu être transmise : elle contenait "
+                            "une syntaxe d'appel d'outil au lieu d'un texte. "
+                            "Demandez-moi de continuer."
+                            if writes_french(user_message)
+                            else "My final response could not be delivered: it contained "
                             "tool-call syntax instead of a plain-text answer. "
                             "Please ask me to continue."
                         )
@@ -1128,7 +1133,9 @@ class AgentLoop(ToolCallLifecycle):
                     not self._cancel_event.is_set()
                     and self._tool_progress.finish_iteration()
                 ):
-                    final_content = self._tool_progress.recovery_message()
+                    final_content = self._tool_progress.recovery_message(
+                        french=writes_french(user_message)
+                    )
                     no_progress_reason = "no_progress: " + final_content
                     trace.write(
                         {

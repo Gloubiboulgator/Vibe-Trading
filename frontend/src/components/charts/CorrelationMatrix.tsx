@@ -3,6 +3,7 @@ import i18n from "@/i18n";
 import { getChartTheme } from "@/lib/chart-theme";
 import { escapeHtml } from "@/lib/escapeHtml";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
+import { formatDecimal } from "@/lib/formatters";
 
 interface Props {
   labels: string[];
@@ -64,7 +65,7 @@ export function CorrelationMatrix({ labels, matrix, height = 500 }: Props) {
           const p = params as { data: { value: [number, number, number] } };
           const [x, y, v] = p.data.value;
           const rawCell = matrix[y]?.[x] ?? null;
-          const rText = rawCell === null ? i18n.t("charts.correlationUndefined") : v.toFixed(4);
+          const rText = rawCell === null ? i18n.t("charts.correlationUndefined") : formatDecimal(v, 4, { grouping: false });
           return `<b>${escapeHtml(labels[x] ?? "")}</b> vs <b>${escapeHtml(labels[y] ?? "")}</b><br/>r = <b>${escapeHtml(rText)}</b>`;
         },
       },
@@ -103,7 +104,7 @@ export function CorrelationMatrix({ labels, matrix, height = 500 }: Props) {
       },
       series: [
         {
-          name: "Correlation",
+          name: i18n.t("charts.correlation"),
           type: "heatmap",
           data,
           label: {
@@ -113,7 +114,7 @@ export function CorrelationMatrix({ labels, matrix, height = 500 }: Props) {
               const p = params as { value: [number, number, number] };
               const [x, y] = p.value;
               const rawCell = matrix[y]?.[x] ?? null;
-              return rawCell === null ? "—" : p.value[2].toFixed(2);
+              return rawCell === null ? "—" : formatDecimal(p.value[2], 2, { grouping: false });
             },
           },
           emphasis: {

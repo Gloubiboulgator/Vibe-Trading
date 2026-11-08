@@ -88,7 +88,8 @@
     "pixelOffice": "المكتب البكسلي",
     "paperTrading": "التداول التجريبي",
     "researchArtifacts": "مخرجات البحث",
-    "researchLab": "مختبر الأبحاث"
+    "researchLab": "مختبر الأبحاث",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "مقارنة المراجعات",
@@ -1293,6 +1294,19 @@
     "failedToResumeConnector": "فشل استئناف الموصل.",
     "tokenUsage": {
       "live": "رموز"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2006,7 +2020,13 @@
     "noPriceData": "لا توجد بيانات أسعار لهذا الرمز حتى الآن",
     "noCorrelationData": "اختر رمزين على الأقل للمقارنة",
     "noEquityData": "لا يوجد منحنى لقيمة الحساب حتى الآن — شغّل اختبارًا عكسيًا أولًا",
-    "correlationUndefined": "غير معرّفة (لا يوجد تغير في السعر خلال النافذة)"
+    "correlationUndefined": "غير معرّفة (لا يوجد تغير في السعر خلال النافذة)",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "toolProgress": {
     "step": "الخطوة {{step}} · {{tool}}",
@@ -2545,7 +2565,7 @@
     "dailySummary": "يوميًا عند {{time}} ({{timezone}}) بدلًا من الفاصل الزمني.",
     "usage": "اليوم: {{turns}} قرارًا · {{tokens}} رمزًا · التقدير {{cost}}.",
     "estimateUnknown": "يلزم تحديد الأسعار وقياس الاستخدام لتقدير التكلفة اليومية.",
-    "estimate": "التكلفة اليومية المتوقعة نحو ${{cost}} حسب الاستخدام المقاس.",
+    "estimate": "التكلفة اليومية المتوقعة نحو {{cost}} حسب الاستخدام المقاس.",
     "configure": "جدول النموذج وحدود الإنفاق",
     "interval_seconds": "فاصل القرارات بالثواني",
     "max_daily_turns": "أقصى قرارات لكل يوم UTC",

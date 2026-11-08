@@ -240,7 +240,7 @@ export function CandlestickChart({ data, markers, indicators, height = 500 }: Pr
         },
       },
       toolbox: {
-        feature: { saveAsImage: { title: "Save" }, dataZoom: { title: { zoom: "Zoom", back: "Reset" } }, restore: { title: "Reset" } },
+        feature: { saveAsImage: { title: i18n.t("charts.save") }, dataZoom: { title: { zoom: i18n.t("charts.zoom"), back: i18n.t("charts.reset") } }, restore: { title: i18n.t("charts.reset") } },
         right: 8, top: 0, iconStyle: { borderColor: t.textColor },
       },
       legend: { data: legendNames, textStyle: { color: t.textColor, fontSize: 10 }, right: 80, top: 2, type: "scroll", itemWidth: 12, itemHeight: 8, itemGap: 8 },

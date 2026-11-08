@@ -3,6 +3,7 @@ import { CalendarClock, Check, X } from "lucide-react";
 
 import i18n from "@/i18n";
 import { api, type ScheduledResearchProposal } from "@/lib/api";
+import { uiLocale } from "@/lib/formatters";
 
 interface Props {
   proposal: ScheduledResearchProposal;
@@ -10,7 +11,7 @@ interface Props {
 
 function formatTime(value: number | null | undefined): string {
   if (!value) return i18n.t("scheduled.proposalNoEnd");
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(uiLocale(), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));

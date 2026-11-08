@@ -21,7 +21,13 @@
     "noPriceData": "No price data for this symbol yet",
     "noCorrelationData": "Pick at least two symbols to compare",
     "correlationUndefined": "undefined (no price variation in window)",
-    "noEquityData": "No account-value curve yet — run a backtest first"
+    "noEquityData": "No account-value curve yet — run a backtest first",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "navigation": {
     "menu": "Browse features",
@@ -94,7 +100,8 @@
     "sessionsLoadFailed": "Cannot load conversations.",
     "pixelOffice": "Pixel Office",
     "paperTrading": "Paper trading",
-    "researchLab": "Research Lab"
+    "researchLab": "Research Lab",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "Revision comparison",
@@ -1299,6 +1306,19 @@
     "failedToResumeConnector": "Failed to resume connector.",
     "tokenUsage": {
       "live": "tokens"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2545,7 +2565,7 @@
     "dailySummary": "Daily schedule: {{time}} ({{timezone}}); replaces the interval.",
     "usage": "Today: {{turns}} decisions · {{tokens}} tokens · estimated {{cost}}.",
     "estimateUnknown": "Daily cost cannot be estimated until prices and measured usage are available.",
-    "estimate": "Projected daily model cost: about ${{cost}}, based on measured usage.",
+    "estimate": "Projected daily model cost: about {{cost}}, based on measured usage.",
     "configure": "Model schedule and spending limits",
     "interval_seconds": "Decision interval (seconds)",
     "max_daily_turns": "Maximum decisions per UTC day",

@@ -21,7 +21,13 @@
     "noPriceData": "Ainda não há dados de preço para este símbolo",
     "noCorrelationData": "Escolha pelo menos dois símbolos para comparar",
     "correlationUndefined": "indefinida (sem variação de preço na janela)",
-    "noEquityData": "Ainda não há curva de valor da conta – execute primeiro um backtest"
+    "noEquityData": "Ainda não há curva de valor da conta – execute primeiro um backtest",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "navigation": {
     "menu": "Explorar recursos",
@@ -94,7 +100,8 @@
     "pixelOffice": "Escritório pixel",
     "paperTrading": "Negociação simulada",
     "researchArtifacts": "Artefatos de pesquisa",
-    "researchLab": "Laboratório de pesquisa"
+    "researchLab": "Laboratório de pesquisa",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "Comparação de revisões",
@@ -1299,6 +1306,19 @@
     "failedToResumeConnector": "Falha ao retomar o conector.",
     "tokenUsage": {
       "live": "tokens"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2545,7 +2565,7 @@
     "dailySummary": "Diariamente às {{time}} ({{timezone}}); substitui o intervalo.",
     "usage": "Hoje: {{turns}} decisões · {{tokens}} tokens · estimativa {{cost}}.",
     "estimateUnknown": "São necessários preços e uso medido para estimar o custo diário.",
-    "estimate": "Custo diário projetado: cerca de ${{cost}}, conforme o uso medido.",
+    "estimate": "Custo diário projetado: cerca de {{cost}}, conforme o uso medido.",
     "configure": "Agenda e limites de gastos do modelo",
     "interval_seconds": "Intervalo de decisão (segundos)",
     "max_daily_turns": "Máximo de decisões por dia UTC",

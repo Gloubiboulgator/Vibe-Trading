@@ -24,6 +24,31 @@ from src.session.service import SessionBusyError
 logger = logging.getLogger(__name__)
 
 
+#: Exact replies that commit or discard a pending scheduled-research proposal.
+_COMMIT_TOKENS = frozenset({"确认", "confirm", "confirmer"})
+_DISCARD_TOKENS = frozenset({"取消", "cancel", "annuler"})
+
+
+def _french_confirmation_card(
+    action: str, job: dict, schedule: dict, delivery: dict
+) -> str:
+    """The scheduled-research confirmation card for a user who writes French."""
+    lines = [
+        f"[Confirmation de recherche planifiée · {'création' if action == 'create' else 'annulation'}]",
+        f"Tâche : {job.get('title') or job.get('id') or '?'}",
+        f"Planification : {schedule.get('expression') or '-'} · {schedule.get('timezone') or 'UTC'}",
+        f"Envoi : {delivery.get('target_label') or 'dans l’application uniquement'}",
+    ]
+    if delivery.get("channel") == "email":
+        label = {"html": "HTML", "pdf": "PDF"}.get(delivery.get("format"), "texte brut")
+        lines.append(f"Format de l’e-mail : {label}")
+        if delivery.get("format") == "pdf":
+            protection = "activée" if delivery.get("protect_pdf") is True else "désactivée"
+            lines.append(f"Protection du PDF par mot de passe : {protection}")
+    lines.append('Répondez exactement « confirmer » pour valider, ou « annuler » pour abandonner.')
+    return "\n".join(lines)
+
+
 @dataclass
 class ChannelRuntimeConfig:
     """Runtime controls for IM channel processing."""
@@ -218,24 +243,31 @@ class ChannelRuntime:
                 schedule = job.get("schedule") or {}
                 delivery = job.get("delivery") or {}
                 action = "create" if proposal.get("operation") == "create" else "cancel"
-                email_format = ""
-                if delivery.get("channel") == "email":
-                    label = {"html": "HTML", "pdf": "PDF"}.get(delivery.get("format"), "plain text")
-                    email_format = f"Email format: {label}\n"
-                    if delivery.get("format") == "pdf":
-                        protection = "on" if delivery.get("protect_pdf") is True else "off"
-                        email_format += f"PDF password protection: {protection}\n"
-                reply_content = (
-                    f"{reply_content}\n\n"
-                    f"[Scheduled research confirmation · {action}]\n"
-                    f"Task: {job.get('title') or job.get('id') or '?'}\n"
-                    f"Schedule: {schedule.get('expression') or '-'} · "
-                    f"{schedule.get('timezone') or 'UTC'}\n"
-                    f"Delivery: {delivery.get('target_label') or 'in-app only'}\n"
-                    f"{email_format}"
-                    'Reply exactly "confirm" (确认) to commit, or "cancel" (取消) '
-                    "to discard."
-                )
+                from src.agent.user_language import writes_french
+
+                if writes_french(msg.content):
+                    reply_content = f"{reply_content}\n\n" + _french_confirmation_card(
+                        action, job, schedule, delivery
+                    )
+                else:
+                    email_format = ""
+                    if delivery.get("channel") == "email":
+                        label = {"html": "HTML", "pdf": "PDF"}.get(delivery.get("format"), "plain text")
+                        email_format = f"Email format: {label}\n"
+                        if delivery.get("format") == "pdf":
+                            protection = "on" if delivery.get("protect_pdf") is True else "off"
+                            email_format += f"PDF password protection: {protection}\n"
+                    reply_content = (
+                        f"{reply_content}\n\n"
+                        f"[Scheduled research confirmation · {action}]\n"
+                        f"Task: {job.get('title') or job.get('id') or '?'}\n"
+                        f"Schedule: {schedule.get('expression') or '-'} · "
+                        f"{schedule.get('timezone') or 'UTC'}\n"
+                        f"Delivery: {delivery.get('target_label') or 'in-app only'}\n"
+                        f"{email_format}"
+                        'Reply exactly "confirm" (确认) to commit, or "cancel" (取消) '
+                        "to discard."
+                    )
             await self.bus.publish_outbound(
                 OutboundMessage(
                     channel=msg.channel,
@@ -298,12 +330,14 @@ class ChannelRuntime:
 
         Tokens are exact-match by design so the model can never confirm on the
         user's behalf; both the English and the Chinese spelling are accepted
-        because the 16 IM adapters serve both audiences.
+        because the 16 IM adapters serve both audiences, and the French spelling
+        for French users (who get a French confirmation card).
         """
         token = msg.content.strip().casefold()
-        is_commit = token in {"确认", "confirm"}
-        if not is_commit and token not in {"取消", "cancel"}:
+        is_commit = token in _COMMIT_TOKENS
+        if not is_commit and token not in _DISCARD_TOKENS:
             return False
+        french = token in {"confirmer", "annuler"}
         try:
             from src.scheduled_research.proposals import (
                 commit_proposal,
@@ -316,18 +350,27 @@ class ChannelRuntime:
                 return False
             if is_commit:
                 result = commit_proposal(proposal["proposal_id"])
-                action = (
-                    "created" if proposal.get("operation") == "create" else "cancelled"
-                )
-                content = (
-                    f"✅ Scheduled research job {action}: "
-                    f"{result.get('committed_job_id') or '?'}"
-                )
+                creates = proposal.get("operation") == "create"
+                job_id = result.get("committed_job_id") or "?"
+                if french:
+                    action = "créée" if creates else "annulée"
+                    content = f"✅ Recherche planifiée {action} : {job_id}"
+                else:
+                    action = "created" if creates else "cancelled"
+                    content = f"✅ Scheduled research job {action}: {job_id}"
             else:
                 discard_proposal(proposal["proposal_id"])
-                content = "Discarded this scheduled research change."
+                content = (
+                    "Modification de la recherche planifiée abandonnée."
+                    if french
+                    else "Discarded this scheduled research change."
+                )
         except Exception as exc:  # noqa: BLE001 - keep proposal pending for retry
-            content = f"Scheduled research confirmation failed: {exc}"
+            content = (
+                f"Échec de la confirmation de la recherche planifiée : {exc}"
+                if french
+                else f"Scheduled research confirmation failed: {exc}"
+            )
         await self.bus.publish_outbound(
             OutboundMessage(
                 channel=msg.channel,

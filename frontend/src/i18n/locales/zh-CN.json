@@ -88,7 +88,8 @@
     "pixelOffice": "像素办公室",
     "paperTrading": "模拟交易",
     "researchArtifacts": "研究资料",
-    "researchLab": "研究实验室"
+    "researchLab": "研究实验室",
+    "selectLanguage": "选择语言"
   },
   "researchArtifacts": {
     "compareTitle": "修订比较",
@@ -1293,6 +1294,19 @@
     "failedToResumeConnector": "恢复连接器失败。",
     "tokenUsage": {
       "live": "Token"
+    },
+    "executionFailed": "执行失败",
+    "unknownError": "未知错误",
+    "export": {
+      "title": "对话导出",
+      "time": "导出时间：{{time}}",
+      "user": "用户",
+      "assistant": "助手",
+      "error": "错误",
+      "toolCall": "工具调用：{{tool}}",
+      "unknownTool": "未知",
+      "swarmStatus": "蜂群状态：{{preset}} {{status}}",
+      "backtestComplete": "回测完成：{{runId}}"
     }
   },
   "runDetail": {
@@ -2006,7 +2020,13 @@
     "noPriceData": "这个标的还没有价格数据",
     "noCorrelationData": "至少选两个标的才能比较",
     "correlationUndefined": "无法计算（该标的在窗口内价格无波动）",
-    "noEquityData": "还没有净值曲线——先跑一次回测"
+    "noEquityData": "还没有净值曲线——先跑一次回测",
+    "equity": "净值",
+    "drawdownPct": "回撤 %",
+    "correlation": "相关性",
+    "save": "保存",
+    "reset": "重置",
+    "zoom": "缩放"
   },
   "toolProgress": {
     "step": "步骤 {{step}} · {{tool}}",
@@ -2545,7 +2565,7 @@
     "dailySummary": "每日 {{time}}（{{timezone}}）执行一次，替代间隔调度。",
     "usage": "今日：{{turns}} 次决策 · {{tokens}} 个 token · 估算 {{cost}}。",
     "estimateUnknown": "配置费率并取得实际用量后，才能估算每日费用。",
-    "estimate": "按实测用量估算，每日模型费用约 ${{cost}}。",
+    "estimate": "按实测用量估算，每日模型费用约 {{cost}}。",
     "configure": "模型调度和费用限制",
     "interval_seconds": "决策间隔（秒）",
     "max_daily_turns": "每个 UTC 日的决策次数上限",

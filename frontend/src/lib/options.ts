@@ -9,6 +9,8 @@
  * bid/ask spread width.
  */
 
+import { formatPercent, uiLocale } from "@/lib/formatters";
+
 // ---------------------------------------------------------------------------
 // API contract — POST /options/payoff
 // ---------------------------------------------------------------------------
@@ -405,7 +407,7 @@ export function nearestStrikeIndex(rows: OptionsContractRow[], spot: number): nu
 
 /** Locale date label for an epoch-seconds expiration (e.g. "Aug 15, 2026"). */
 export function expirationLabel(epochSeconds: number): string {
-  return new Date(epochSeconds * 1000).toLocaleDateString(undefined, {
+  return new Date(epochSeconds * 1000).toLocaleDateString(uiLocale(), {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -415,5 +417,5 @@ export function expirationLabel(epochSeconds: number): string {
 /** Format an IV fraction (0.30) as a percent label ("30%"). */
 export function ivLabel(iv: number): string {
   const pct = fractionToPct(iv);
-  return `${Number(pct.toFixed(2)).toLocaleString()}%`;
+  return formatPercent(pct, { maximumFractionDigits: 2 });
 }

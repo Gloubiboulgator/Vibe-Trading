@@ -3,7 +3,7 @@ import i18n from "@/i18n";
 import type { ExpiryCurve } from "@/lib/options";
 import { getChartTheme } from "@/lib/chart-theme";
 import { getPnlColors } from "@/lib/pnl-colors";
-import { abbreviateNum } from "@/lib/formatters";
+import { abbreviateNum, uiLocale } from "@/lib/formatters";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
 
 interface Props {
@@ -43,9 +43,9 @@ export function OptionsPayoffChart({ curve, entrySpot, breakevens, height = 340 
           const [spotVal, pnlVal] = Array.isArray(main.value) ? main.value : [main.axisValue, NaN];
           const pnlNum = Number(pnlVal);
           const pnlText = Number.isFinite(pnlNum)
-            ? pnlNum.toLocaleString(undefined, { maximumFractionDigits: 2 })
+            ? pnlNum.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })
             : "–";
-          return `<b>${Number(spotVal).toLocaleString()}</b><br/>${main.marker} ${pnlLabel}: <b>${pnlText}</b>`;
+          return `<b>${Number(spotVal).toLocaleString(uiLocale())}</b><br/>${main.marker} ${pnlLabel}: <b>${pnlText}</b>`;
         },
       },
       legend: {
@@ -56,8 +56,8 @@ export function OptionsPayoffChart({ curve, entrySpot, breakevens, height = 340 
       },
       toolbox: {
         feature: {
-          saveAsImage: { title: "Save" },
-          restore: { title: "Reset" },
+          saveAsImage: { title: i18n.t("charts.save") },
+          restore: { title: i18n.t("charts.reset") },
         },
         right: 8,
         top: 0,
@@ -77,7 +77,7 @@ export function OptionsPayoffChart({ curve, entrySpot, breakevens, height = 340 
         axisLabel: {
           color: t.textColor,
           fontSize: 10,
-          formatter: (v: number) => v.toLocaleString(),
+          formatter: (v: number) => v.toLocaleString(uiLocale()),
         },
         splitLine: { show: false },
       },
@@ -118,7 +118,7 @@ export function OptionsPayoffChart({ curve, entrySpot, breakevens, height = 340 
                 xAxis: be,
                 lineStyle: { color: t.warningColor, type: "dashed", width: 1 },
                 label: {
-                  formatter: `${beLabel} ${be.toLocaleString()}`,
+                  formatter: `${beLabel} ${be.toLocaleString(uiLocale())}`,
                   position: "middle" as const,
                   fontSize: 10,
                   color: t.warningColor,

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { OptionsGreeks } from "@/lib/options";
+import { uiLocale } from "@/lib/formatters";
 
 type Tone = "positive" | "negative" | "warning" | "neutral";
 
@@ -36,31 +37,31 @@ export function GreeksCards({ greeks }: Props) {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
         <GreekCard
           label={t("options.greeks.delta")}
-          value={greeks.delta.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          value={greeks.delta.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })}
           desc={t("options.greeks.deltaDesc")}
           tone={signTone(greeks.delta)}
         />
         <GreekCard
           label={t("options.greeks.gamma")}
-          value={greeks.gamma.toLocaleString(undefined, { maximumFractionDigits: 4 })}
+          value={greeks.gamma.toLocaleString(uiLocale(), { maximumFractionDigits: 4 })}
           desc={t("options.greeks.gammaDesc")}
           tone="neutral"
         />
         <GreekCard
           label={t("options.greeks.theta")}
-          value={greeks.theta.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          value={greeks.theta.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })}
           desc={t("options.greeks.thetaDesc")}
           tone={greeks.theta < 0 ? "warning" : signTone(greeks.theta)}
         />
         <GreekCard
           label={t("options.greeks.vega")}
-          value={greeks.vega.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          value={greeks.vega.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })}
           desc={t("options.greeks.vegaDesc")}
           tone={signTone(greeks.vega)}
         />
         <GreekCard
           label={t("options.greeks.rho")}
-          value={greeks.rho.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+          value={greeks.rho.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })}
           desc={t("options.greeks.rhoDesc")}
           tone="neutral"
         />

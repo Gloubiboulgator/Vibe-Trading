@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type LiveDecisionBudget, type LiveDecisionSettings } from "@/lib/api";
+import { formatCurrency } from "@/lib/formatters";
 
 /** Operator-owned spending controls; the agent cannot edit these settings. */
 export function RunnerBudgetControls({ broker, budget, running, onRefresh }: {
@@ -30,10 +31,10 @@ export function RunnerBudgetControls({ broker, budget, running, onRefresh }: {
     <p className="font-medium">{t("runnerBudget.warning")}</p>
     <p className="text-muted-foreground">{t("runnerBudget.summary", { minutes: settings.interval_seconds / 60, turns: settings.max_daily_turns, tokens: settings.max_daily_tokens })}</p>
     {settings.daily_at && <p>{t("runnerBudget.dailySummary", { time: settings.daily_at, timezone: settings.timezone })}</p>}
-    {usage && <p>{t("runnerBudget.usage", { turns: usage.turns, tokens: usage.tokens, cost: usage.estimated_cost_usd == null ? "—" : `$${usage.estimated_cost_usd.toFixed(2)}` })}</p>}
+    {usage && <p>{t("runnerBudget.usage", { turns: usage.turns, tokens: usage.tokens, cost: usage.estimated_cost_usd == null ? "—" : formatCurrency(usage.estimated_cost_usd, "USD", 2) })}</p>}
     <p className="text-muted-foreground">{budget.projected_daily_cost_usd == null
       ? t("runnerBudget.estimateUnknown")
-      : t("runnerBudget.estimate", { cost: budget.projected_daily_cost_usd.toFixed(2) })}</p>
+      : t("runnerBudget.estimate", { cost: formatCurrency(budget.projected_daily_cost_usd, "USD", 2) })}</p>
     <details>
       <summary className="cursor-pointer font-medium">{t("runnerBudget.configure")}</summary>
       <form className="mt-3 grid gap-3" onSubmit={async (event) => {

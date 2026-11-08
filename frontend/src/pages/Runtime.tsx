@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { api, type LiveBrokerStatus, type LiveMandateLimits, type LiveStatus } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/formatters";
 
 const RUNTIME_POLL_INTERVAL_MS = 15_000;
 const RUNTIME_CLOCK_INTERVAL_MS = 1_000;
@@ -611,7 +612,7 @@ function summarizeLimits(limits: LiveMandateLimits | undefined, t: TFunction): s
 }
 
 function formatUsd(value: number): string {
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  return formatCurrency(value, "USD", { maximumFractionDigits: 0 });
 }
 
 function formatCountdown(iso: string | undefined, t: TFunction, nowMs: number): string {

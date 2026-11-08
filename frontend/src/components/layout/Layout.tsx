@@ -481,7 +481,7 @@ function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
       {open && menuStyle && (
         <ul
           data-lang-menu
-          aria-label="Select language"
+          aria-label={t("layout.selectLanguage")}
           style={{
             position: "fixed",
             left: menuStyle.left,

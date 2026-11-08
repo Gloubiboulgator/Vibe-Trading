@@ -22,6 +22,7 @@ from src.agent.grounding.figures import (
     strip_figures_block,
 )
 from src.agent.grounding.policies import ValidationResult
+from src.agent.user_language import writes_chinese, writes_french
 
 # Bounded read-only recovery (#1081) through `search_symbol` / `get_market_data`,
 # budgeted separately from rejected drafts so real progress is never cut off.
@@ -57,16 +58,6 @@ _REDACTION_MARKER_ZH = "（略※）"
 _REDACTION_MARKER_EN = "(omitted※)"
 
 _REDACTION_MARKER_FR = "(omis※)"
-
-# Words a French request uses and an English or Spanish one does not. Two of them
-# make the user-facing gate text French; one could be a loanword.
-_FRENCH_WORDS = frozenset(
-    {
-        "je", "j'ai", "j’ai", "les", "des", "est", "une", "pour", "mon", "mes",
-        "avec", "dans", "veux", "vous", "nous", "c'est", "c’est", "quelles", "quel",
-        "moi", "suis", "sur", "aide", "acheter", "actions", "euros", "maintenant",
-    }
-)
 
 MAX_SYMBOL_RESOLUTION_ATTEMPTS = 2
 
@@ -471,14 +462,11 @@ class _ReleaseMixin:
 
     def _user_writes_chinese(self) -> bool:
         """Return whether user-facing gate text should be Chinese."""
-        return bool(re.search(r"[\u3400-\u9fff]", self.user_message))
+        return writes_chinese(self.user_message)
 
     def _user_writes_french(self) -> bool:
         """Return whether user-facing gate text should be French."""
-        if self._user_writes_chinese():
-            return False
-        words = re.findall(r"[a-z\u00e0\u00e2\u00e7\u00e9\u00e8\u00ea\u00eb\u00ee\u00ef\u00f4\u00fb\u00f9\u00fc\u00ff\u0153\u00e6'\u2019]+", self.user_message.casefold())
-        return sum(word in _FRENCH_WORDS for word in words) >= 2
+        return writes_french(self.user_message)
 
     def _observed_range_summary(
         self, is_zh: bool, content: str | None = None, *, is_fr: bool = False

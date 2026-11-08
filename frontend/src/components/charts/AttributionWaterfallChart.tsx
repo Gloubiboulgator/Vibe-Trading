@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import i18n from "@/i18n";
+import { formatPercent } from "@/lib/formatters";
 import type { AttributionBrinson } from "@/lib/api";
 import { getChartTheme } from "@/lib/chart-theme";
 import { getPnlColors } from "@/lib/pnl-colors";
@@ -30,7 +31,7 @@ export function buildWaterfallBars(
 }
 
 function fmtSignedPct(v: number): string {
-  return `${v > 0 ? "+" : ""}${(v * 100).toFixed(2)}%`;
+  return formatPercent(v * 100, 2, { signed: true });
 }
 
 interface Props {
@@ -98,7 +99,7 @@ export function AttributionWaterfallChart({ brinson, height = 300 }: Props) {
       yAxis: {
         type: "value",
         splitLine: { lineStyle: { color: t.gridColor } },
-        axisLabel: { color: t.textColor, fontSize: 10, formatter: "{value}%" },
+        axisLabel: { color: t.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v, { maximumFractionDigits: 2 }) },
       },
       series: [
         {

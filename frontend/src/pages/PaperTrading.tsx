@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { FlaskConical, Plus, Trash2 } from "lucide-react";
+import { uiLocale } from "@/lib/formatters";
 import {
   paperApi,
   type PaperAccount,
@@ -125,7 +126,7 @@ export function PaperTrading() {
   }
   const shown = result ?? account?.last_result;
   const number = (value: number) =>
-    value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    value.toLocaleString(uiLocale(), { maximumFractionDigits: 4 });
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
       <header className="space-y-2">

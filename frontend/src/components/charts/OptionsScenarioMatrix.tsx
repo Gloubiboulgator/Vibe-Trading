@@ -4,6 +4,7 @@ import { downsampleIndices, ivLabel, type ScenarioGrid } from "@/lib/options";
 import { getChartTheme } from "@/lib/chart-theme";
 import { getPnlColors } from "@/lib/pnl-colors";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
+import { uiLocale } from "@/lib/formatters";
 
 const MAX_DISPLAY_COLUMNS = 61;
 
@@ -25,7 +26,7 @@ export function OptionsScenarioMatrix({ grid, height = 380 }: Props) {
     // Downsample the spot axis for display only; cell values keep reading the
     // original grid at the retained indices, so labels stay honest.
     const colIdx = downsampleIndices(grid.spot.length, MAX_DISPLAY_COLUMNS);
-    const spotLabels = colIdx.map((i) => grid.spot[i].toLocaleString());
+    const spotLabels = colIdx.map((i) => grid.spot[i].toLocaleString(uiLocale()));
     const ivLabels = grid.iv_values.map((iv) => ivLabel(iv));
 
     const data: [number, number, number][] = [];
@@ -56,7 +57,7 @@ export function OptionsScenarioMatrix({ grid, height = 380 }: Props) {
           return (
             `<b>${i18n.t("options.scenario.spotAxis")}</b>: ${spotLabels[x] ?? "?"}` +
             `<br/><b>${i18n.t("options.scenario.ivAxis")}</b>: ${ivLabels[y] ?? "?"}` +
-            `<br/><b>${i18n.t("options.scenario.pnl")}</b>: ${v.toLocaleString()}`
+            `<br/><b>${i18n.t("options.scenario.pnl")}</b>: ${v.toLocaleString(uiLocale())}`
           );
         },
       },
@@ -103,7 +104,7 @@ export function OptionsScenarioMatrix({ grid, height = 380 }: Props) {
             color: t.textColor,
             formatter: (params: unknown) => {
               const p = params as { value: [number, number, number] };
-              return p.value[2].toLocaleString(undefined, { maximumFractionDigits: 0 });
+              return p.value[2].toLocaleString(uiLocale(), { maximumFractionDigits: 0 });
             },
           },
           emphasis: {

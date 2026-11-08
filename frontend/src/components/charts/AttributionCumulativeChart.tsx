@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import i18n from "@/i18n";
+import { formatPercent } from "@/lib/formatters";
 import type { AttributionCumulativePoint } from "@/lib/api";
 import { getChartTheme } from "@/lib/chart-theme";
 import { getPnlColors } from "@/lib/pnl-colors";
@@ -36,7 +37,7 @@ export function AttributionCumulativeChart({ data, height = 300 }: Props) {
           if (!Array.isArray(params) || !params.length) return "";
           const point = data[params[0].dataIndex ?? 0];
           if (!point) return "";
-          const pct = (v: number) => `${v > 0 ? "+" : ""}${(v * 100).toFixed(2)}%`;
+          const pct = (v: number) => formatPercent(v * 100, 2, { signed: true });
           return `<b>${escapeHtml(point.date)}</b>`
             + `<br/>${portfolioLabel}: <b>${pct(point.portfolio)}</b>`
             + `<br/>${benchmarkLabel}: <b>${pct(point.benchmark)}</b>`
@@ -51,8 +52,8 @@ export function AttributionCumulativeChart({ data, height = 300 }: Props) {
       },
       toolbox: {
         feature: {
-          saveAsImage: { title: "Save" },
-          restore: { title: "Reset" },
+          saveAsImage: { title: i18n.t("charts.save") },
+          restore: { title: i18n.t("charts.reset") },
         },
         right: 8,
         top: 0,
@@ -68,7 +69,7 @@ export function AttributionCumulativeChart({ data, height = 300 }: Props) {
       yAxis: {
         type: "value",
         splitLine: { lineStyle: { color: t.gridColor } },
-        axisLabel: { color: t.textColor, fontSize: 10, formatter: "{value}%" },
+        axisLabel: { color: t.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v, { maximumFractionDigits: 2 }) },
       },
       dataZoom: [{ type: "inside" }],
       series: [

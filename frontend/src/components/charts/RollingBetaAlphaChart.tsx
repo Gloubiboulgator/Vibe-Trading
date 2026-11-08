@@ -1,5 +1,6 @@
 import { useRef } from "react";
 import i18n from "@/i18n";
+import { formatDecimal, formatPercent } from "@/lib/formatters";
 import type { AttributionRollingPoint } from "@/lib/api";
 import { getChartTheme } from "@/lib/chart-theme";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
@@ -36,8 +37,8 @@ export function RollingBetaAlphaChart({ data, height = 280 }: Props) {
           const point = data[params[0].dataIndex ?? 0];
           if (!point) return "";
           return `<b>${escapeHtml(point.date)}</b>`
-            + `<br/>${betaLabel}: <b>${point.beta.toFixed(2)}</b>`
-            + `<br/>${alphaLabel}: <b>${(point.alpha_annualized * 100).toFixed(2)}%</b>`;
+            + `<br/>${betaLabel}: <b>${formatDecimal(point.beta, 2, { grouping: false })}</b>`
+            + `<br/>${alphaLabel}: <b>${formatPercent(point.alpha_annualized * 100, 2)}</b>`;
         },
       },
       legend: {
@@ -48,8 +49,8 @@ export function RollingBetaAlphaChart({ data, height = 280 }: Props) {
       },
       toolbox: {
         feature: {
-          saveAsImage: { title: "Save" },
-          restore: { title: "Reset" },
+          saveAsImage: { title: i18n.t("charts.save") },
+          restore: { title: i18n.t("charts.reset") },
         },
         right: 8,
         top: 0,
@@ -75,7 +76,7 @@ export function RollingBetaAlphaChart({ data, height = 280 }: Props) {
           name: alphaLabel,
           nameTextStyle: { color: t.textColor, fontSize: 10 },
           splitLine: { show: false },
-          axisLabel: { color: t.textColor, fontSize: 10, formatter: "{value}%" },
+          axisLabel: { color: t.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v, { maximumFractionDigits: 2 }) },
         },
       ],
       dataZoom: [{ type: "inside" }],

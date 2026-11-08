@@ -7,6 +7,7 @@ import { getChartTheme } from "@/lib/chart-theme";
 import { useThemeDark } from "@/lib/theme-store";
 import type { RunData } from "@/lib/api";
 import { runTrades } from "@/lib/runReports";
+import { formatDecimal, formatPercent } from "@/lib/formatters";
 
 const BLUE = "#3676df";
 const DEEP_BLUE = "#2156ae";
@@ -21,12 +22,12 @@ function num(value: unknown): number | null {
 
 function fixed(value: unknown, digits = 2): string {
   const parsed = num(value);
-  return parsed == null ? "—" : parsed.toFixed(digits);
+  return parsed == null ? "—" : formatDecimal(parsed, digits, { grouping: false });
 }
 
 function pct(value: unknown, digits = 1): string {
   const parsed = num(value);
-  return parsed == null ? "—" : `${(parsed * 100).toFixed(digits)}%`;
+  return parsed == null ? "—" : formatPercent(parsed * 100, digits);
 }
 
 function timestamp(row: Record<string, string>): string {
@@ -160,7 +161,7 @@ export function StrategyResearchDashboard({ run }: { run: RunData }) {
       legend: { top: 0, right: 4, textStyle: { color: theme.textColor, fontSize: 10 } },
       grid: { left: 18, right: 22, top: 32, bottom: 18, containLabel: true },
       xAxis: { ...axis, type: "category", data: dates, boundaryGap: false },
-      yAxis: { ...axis, type: "value", axisLabel: { color: theme.textColor, fontSize: 10, formatter: (v: number) => `${v.toFixed(2)}x` } },
+      yAxis: { ...axis, type: "value", axisLabel: { color: theme.textColor, fontSize: 10, formatter: (v: number) => `${formatDecimal(v, 2, { grouping: false })}x` } },
       series: [
         { name: t("runDashboard.seriesStrategy"), type: "line", showSymbol: false, data: equities.map((v) => v == null ? null : v / firstEquity), lineStyle: { color: BLUE, width: 2.5 }, itemStyle: { color: BLUE } },
         ...(benchmarks.some((value) => value != null) ? [{ name: t("runDashboard.seriesBenchmark"), type: "line", showSymbol: false, data: benchmarks.map((v) => v == null ? null : v / firstBenchmark), lineStyle: { color: SLATE, width: 1.5, type: "dashed" }, itemStyle: { color: SLATE } }] : []),
@@ -176,7 +177,7 @@ export function StrategyResearchDashboard({ run }: { run: RunData }) {
       grid: { left: 18, right: 24, top: 32, bottom: 18, containLabel: true },
       xAxis: { ...axis, type: "category", data: dates, boundaryGap: false },
       yAxis: [
-        { ...axis, type: "value", axisLabel: { color: theme.textColor, fontSize: 10, formatter: (v: number) => `${(v * 100).toFixed(0)}%` } },
+        { ...axis, type: "value", axisLabel: { color: theme.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v * 100, 0) } },
         { ...axis, type: "value", splitLine: { show: false }, axisLabel: { color: theme.textColor, fontSize: 10 } },
       ],
       series: [

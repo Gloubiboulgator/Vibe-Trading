@@ -3,6 +3,7 @@ import i18n from "@/i18n";
 import type { AnnualReturn, MonthlyReturn } from "@/lib/tearsheet";
 import { getChartTheme } from "@/lib/chart-theme";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
+import { formatPercent } from "@/lib/formatters";
 
 interface Props {
   data: MonthlyReturn[];
@@ -11,7 +12,7 @@ interface Props {
 }
 
 function fmtSignedPct(v: number, digits = 1): string {
-  return `${v > 0 ? "+" : ""}${(v * 100).toFixed(digits)}%`;
+  return formatPercent(v * 100, digits, { signed: true });
 }
 
 export function MonthlyReturnsHeatmap({ data, annual, height = 300 }: Props) {

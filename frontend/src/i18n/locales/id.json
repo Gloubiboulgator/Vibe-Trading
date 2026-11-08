@@ -21,7 +21,13 @@
     "noPriceData": "Belum ada data harga untuk simbol ini",
     "noCorrelationData": "Pilih setidaknya dua simbol untuk dibandingkan",
     "correlationUndefined": "belum terdefinisi (tidak ada variasi harga pada jendela)",
-    "noEquityData": "Belum ada kurva nilai akun — jalankan backtest terlebih dahulu"
+    "noEquityData": "Belum ada kurva nilai akun — jalankan backtest terlebih dahulu",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "navigation": {
     "menu": "Jelajahi fitur",
@@ -94,7 +100,8 @@
     "pixelOffice": "Kantor piksel",
     "paperTrading": "Trading simulasi",
     "researchArtifacts": "Artefak riset",
-    "researchLab": "Laboratorium riset"
+    "researchLab": "Laboratorium riset",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "Perbandingan revisi",
@@ -1299,6 +1306,19 @@
     "failedToResumeConnector": "Gagal melanjutkan connector.",
     "tokenUsage": {
       "live": "token"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2545,7 +2565,7 @@
     "dailySummary": "Setiap hari pukul {{time}} ({{timezone}}); menggantikan interval.",
     "usage": "Hari ini: {{turns}} keputusan · {{tokens}} token · perkiraan {{cost}}.",
     "estimateUnknown": "Harga dan penggunaan terukur diperlukan untuk perkiraan biaya harian.",
-    "estimate": "Perkiraan biaya model harian: sekitar ${{cost}}, berdasarkan penggunaan.",
+    "estimate": "Perkiraan biaya model harian: sekitar {{cost}}, berdasarkan penggunaan.",
     "configure": "Jadwal dan batas biaya model",
     "interval_seconds": "Interval keputusan (detik)",
     "max_daily_turns": "Keputusan maksimum per hari UTC",

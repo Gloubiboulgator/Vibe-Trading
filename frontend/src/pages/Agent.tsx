@@ -1,3 +1,4 @@
+import i18n from "@/i18n";
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSearchParams } from "react-router";
@@ -36,6 +37,7 @@ import {
   type ComposerHandle,
 } from "@/components/chat/Composer";
 import { GoalPanel } from "@/components/chat/GoalPanel";
+import { uiLocale } from "@/lib/formatters";
 import {
   LiveActionChip,
   LiveRuntimePanel,
@@ -1146,7 +1148,7 @@ export function Agent() {
           archiveActivity("failed");
         }
         clearStreamingView();
-        act().addMessage({ id: "", type: "error", content: String(d.error || "Execution failed"), timestamp: Date.now() });
+        act().addMessage({ id: "", type: "error", content: String(d.error || i18n.t("agent.executionFailed")), timestamp: Date.now() });
         act().setStatus("idle");
         scrollToBottom();
       },
@@ -1479,7 +1481,7 @@ export function Agent() {
     const finalPrompt = buildChatPrompt(prompt, attachments, Boolean(swarmPreset));
     const limit = goalComposerActive ? MAX_GOAL_CHARS : MAX_MESSAGE_CHARS;
     if (promptExceedsLimit(goalComposerActive ? prompt : finalPrompt, limit)) {
-      toast.error(t('agent.messageTooLong', { limit: limit.toLocaleString() }));
+      toast.error(t('agent.messageTooLong', { limit: limit.toLocaleString(uiLocale()) }));
       composerRef.current?.fill(prompt);
       return;
     }
@@ -1741,22 +1743,22 @@ export function Agent() {
 
   const handleExport = useCallback(() => {
     if (messages.length === 0) return;
-    const lines: string[] = [`# Chat Export`, ``, `Export time: ${new Date().toLocaleString()}`, ``];
+    const lines: string[] = [`# ${t("agent.export.title")}`, ``, t("agent.export.time", { time: new Date().toLocaleString(uiLocale()) }), ``];
     for (const msg of messages) {
-      const time = new Date(msg.timestamp).toLocaleString();
+      const time = new Date(msg.timestamp).toLocaleString(uiLocale());
       if (msg.type === "user") {
-        lines.push(`## User (${time})`, ``, msg.content, ``);
+        lines.push(`## ${t("agent.export.user")} (${time})`, ``, msg.content, ``);
       } else if (msg.type === "answer") {
-        lines.push(`## Assistant (${time})`, ``, msg.content, ``);
+        lines.push(`## ${t("agent.export.assistant")} (${time})`, ``, msg.content, ``);
       } else if (msg.type === "error") {
-        lines.push(`## Error (${time})`, ``, msg.content, ``);
+        lines.push(`## ${t("agent.export.error")} (${time})`, ``, msg.content, ``);
       } else if (msg.type === "tool_call") {
-        lines.push(`> Tool call: ${msg.tool || "unknown"}`, ``);
+        lines.push(`> ${t("agent.export.toolCall", { tool: msg.tool || t("agent.export.unknownTool") })}`, ``);
       } else if (msg.type === "swarm_status") {
         const swarmStatus = msg.swarmRunId ? swarmRuns[msg.swarmRunId] : msg.swarmStatus;
-        lines.push(`> Swarm status: ${swarmStatus?.preset || "swarm"} ${swarmStatus?.status || ""}`, ``);
+        lines.push(`> ${t("agent.export.swarmStatus", { preset: swarmStatus?.preset || "swarm", status: swarmStatus?.status || "" }).trimEnd()}`, ``);
       } else if (msg.type === "run_complete") {
-        lines.push(`> Backtest complete: ${msg.runId || ""}`, ``);
+        lines.push(`> ${t("agent.export.backtestComplete", { runId: msg.runId || "" }).trimEnd()}`, ``);
       }
     }
     const blob = new Blob([lines.join("\n")], { type: "text/markdown;charset=utf-8" });
@@ -1766,7 +1768,7 @@ export function Agent() {
     a.download = `chat_${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [messages, swarmRuns]);
+  }, [messages, swarmRuns, t]);
 
   const groups = useMemo(() => groupMessages(messages), [messages]);
   const hasCompletedTurn = useMemo(() => {

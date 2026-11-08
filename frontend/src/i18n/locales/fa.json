@@ -21,7 +21,13 @@
     "noPriceData": "هنوز داده قیمتی برای این نماد وجود ندارد",
     "noCorrelationData": "برای مقایسه حداقل دو نماد انتخاب کنید",
     "correlationUndefined": "تعریف‌نشده (بدون نوسان قیمت در بازه)",
-    "noEquityData": "هنوز منحنی ارزش حسابی وجود ندارد — ابتدا یک بک‌تست اجرا کنید"
+    "noEquityData": "هنوز منحنی ارزش حسابی وجود ندارد — ابتدا یک بک‌تست اجرا کنید",
+    "equity": "Equity",
+    "drawdownPct": "Drawdown %",
+    "correlation": "Correlation",
+    "save": "Save",
+    "reset": "Reset",
+    "zoom": "Zoom"
   },
   "navigation": {
     "menu": "مرور قابلیت‌ها",
@@ -94,7 +100,8 @@
     "pixelOffice": "دفتر پیکسلی",
     "paperTrading": "معاملهٔ آزمایشی",
     "researchArtifacts": "خروجی‌های پژوهش",
-    "researchLab": "آزمایشگاه پژوهش"
+    "researchLab": "آزمایشگاه پژوهش",
+    "selectLanguage": "Select language"
   },
   "researchArtifacts": {
     "compareTitle": "مقایسه بازبینی‌ها",
@@ -1299,6 +1306,19 @@
     "failedToResumeConnector": "ازسرگیری کانکتور ناموفق بود.",
     "tokenUsage": {
       "live": "توکن"
+    },
+    "executionFailed": "Execution failed",
+    "unknownError": "Unknown error",
+    "export": {
+      "title": "Chat Export",
+      "time": "Export time: {{time}}",
+      "user": "User",
+      "assistant": "Assistant",
+      "error": "Error",
+      "toolCall": "Tool call: {{tool}}",
+      "unknownTool": "unknown",
+      "swarmStatus": "Swarm status: {{preset}} {{status}}",
+      "backtestComplete": "Backtest complete: {{runId}}"
     }
   },
   "runDetail": {
@@ -2545,7 +2565,7 @@
     "dailySummary": "روزانه ساعت {{time}} ({{timezone}})؛ جایگزین فاصله زمانی.",
     "usage": "امروز: {{turns}} تصمیم · {{tokens}} توکن · برآورد {{cost}}.",
     "estimateUnknown": "برآورد روزانه به نرخ‌ها و مصرف اندازه‌گیری‌شده نیاز دارد.",
-    "estimate": "هزینه روزانه مدل بر پایه مصرف: حدود ${{cost}}.",
+    "estimate": "هزینه روزانه مدل بر پایه مصرف: حدود {{cost}}.",
     "configure": "زمان‌بندی مدل و سقف هزینه",
     "interval_seconds": "فاصله تصمیم‌ها (ثانیه)",
     "max_daily_turns": "حداکثر تصمیم در روز UTC",

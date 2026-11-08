@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useAnalysisState } from "@/hooks/useAnalysisState";
+import { uiLocale } from "@/lib/formatters";
 import {
   bidAskSpreadPct,
   expirationLabel,
@@ -15,12 +16,12 @@ const DEFAULT_TICKER = "AAPL";
 
 function fmt(v: number | null, maxDigits = 2): string {
   if (v === null || !Number.isFinite(v)) return "–";
-  return v.toLocaleString(undefined, { maximumFractionDigits: maxDigits });
+  return v.toLocaleString(uiLocale(), { maximumFractionDigits: maxDigits });
 }
 
 function fmtInt(v: number | null): string {
   if (v === null || !Number.isFinite(v)) return "–";
-  return Math.round(v).toLocaleString();
+  return Math.round(v).toLocaleString(uiLocale());
 }
 
 function fmtIv(v: number | null): string {
@@ -226,7 +227,7 @@ export function OptionsChainTable() {
 
       {data && <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
         <span>{t("analysis.chainQuote", { ticker: data.ticker, price: fmt(data.underlying_price ?? null) })}</span>
-        <span>{t("analysis.lastFetched", { time: fetchedAt ? new Date(fetchedAt).toLocaleString() : "–" })}</span>
+        <span>{t("analysis.lastFetched", { time: fetchedAt ? new Date(fetchedAt).toLocaleString(uiLocale()) : "–" })}</span>
         {atmStrike !== null && <button type="button" className="text-primary underline" onClick={() => setDraft((d) => ({ ...d, showAll: !d.showAll }))}>{t(showAll ? "analysis.nearAtm" : "analysis.allStrikes")}</button>}
       </div>}
 

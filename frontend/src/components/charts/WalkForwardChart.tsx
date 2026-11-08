@@ -4,6 +4,7 @@ import type { ValidationData } from "@/lib/api";
 import { getChartTheme } from "@/lib/chart-theme";
 import { echarts } from "@/lib/echarts";
 import { useThemeDark } from "@/lib/theme-store";
+import { formatDecimal, formatPercent } from "@/lib/formatters";
 
 type WalkForwardWindow = NonNullable<ValidationData["walk_forward"]>["windows"][number];
 
@@ -38,8 +39,9 @@ export function WalkForwardChart({ windows, height = 200 }: Props) {
           const w = windows[params[0].dataIndex];
           let html = `<b>${w ? `${w.start} ~ ${w.end}` : params[0].axisValue}</b>`;
           for (const p of params) {
-            const suffix = p.seriesName === returnName ? "%" : "";
-            html += `<br/>${p.marker} ${p.seriesName}: <b>${Number(p.value).toFixed(2)}${suffix}</b>`;
+            const v = Number(p.value);
+            const text = p.seriesName === returnName ? formatPercent(v, 2) : formatDecimal(v, 2, { grouping: false });
+            html += `<br/>${p.marker} ${p.seriesName}: <b>${text}</b>`;
           }
           return html;
         },
@@ -60,7 +62,7 @@ export function WalkForwardChart({ windows, height = 200 }: Props) {
         {
           type: "value",
           splitLine: { lineStyle: { color: t.gridColor } },
-          axisLabel: { color: t.textColor, fontSize: 10, formatter: "{value}%" },
+          axisLabel: { color: t.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v, { maximumFractionDigits: 2 }) },
         },
         {
           type: "value",

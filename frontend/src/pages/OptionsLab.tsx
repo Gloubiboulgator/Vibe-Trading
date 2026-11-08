@@ -18,6 +18,7 @@ import { OptionsChainTable } from "@/components/options/OptionsChainTable";
 import { OptionsPayoffChart } from "@/components/charts/OptionsPayoffChart";
 import { OptionsScenarioMatrix } from "@/components/charts/OptionsScenarioMatrix";
 import { useAnalysisState } from "@/hooks/useAnalysisState";
+import { uiLocale } from "@/lib/formatters";
 
 const ANALYZE_DEBOUNCE_MS = 250;
 
@@ -117,7 +118,7 @@ export function OptionsLab() {
 
   const breakevensText = summary
     ? summary.breakevens.length > 0
-      ? summary.breakevens.map((be) => be.toLocaleString()).join(", ")
+      ? summary.breakevens.map((be) => be.toLocaleString(uiLocale())).join(", ")
       : t("options.metrics.none")
     : dash;
 
@@ -125,7 +126,7 @@ export function OptionsLab() {
     ? summary.profit_unbounded
       ? t("options.metrics.unlimited")
       : summary.max_profit !== null
-        ? summary.max_profit.toLocaleString(undefined, { maximumFractionDigits: 2 })
+        ? summary.max_profit.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })
         : t("options.metrics.none")
     : dash;
 
@@ -133,7 +134,7 @@ export function OptionsLab() {
     ? summary.loss_unbounded
       ? t("options.metrics.unlimited")
       : summary.max_loss !== null
-        ? summary.max_loss.toLocaleString(undefined, { maximumFractionDigits: 2 })
+        ? summary.max_loss.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })
         : t("options.metrics.none")
     : dash;
 
@@ -152,7 +153,7 @@ export function OptionsLab() {
       <div role="status" aria-live="polite" className="rounded-lg border bg-card px-3 py-2 text-sm">
         {!req ? t("analysis.invalid") : loading ? t("analysis.updating") : error ? t("analysis.failed") : fresh ? t("analysis.updated") : t("analysis.editing")}
         {result && !fresh && <span className="ms-2 text-warning">{t("analysis.previousResult")}</span>}
-        {updatedAt && <span className="ms-2 text-xs text-muted-foreground">{t("analysis.lastComputed", { time: new Date(updatedAt).toLocaleTimeString() })}</span>}
+        {updatedAt && <span className="ms-2 text-xs text-muted-foreground">{t("analysis.lastComputed", { time: new Date(updatedAt).toLocaleTimeString(uiLocale()) })}</span>}
       </div>
       <div className="grid gap-4 xl:grid-cols-[minmax(26rem,2fr)_minmax(0,3fr)]">
         <div className="min-w-0">
@@ -173,7 +174,7 @@ export function OptionsLab() {
               label={t("options.metrics.entryCost")}
               value={
                 summary
-                  ? summary.entry_cost.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                  ? summary.entry_cost.toLocaleString(uiLocale(), { maximumFractionDigits: 2 })
                   : dash
               }
               badge={summary ? t(`options.metrics.${summary.entry_side}`) : undefined}

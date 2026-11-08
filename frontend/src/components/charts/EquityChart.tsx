@@ -2,7 +2,7 @@ import { useRef } from "react";
 import i18n from "@/i18n";
 import type { EquityPoint } from "@/lib/api";
 import { getChartTheme } from "@/lib/chart-theme";
-import { abbreviateNum } from "@/lib/formatters";
+import { abbreviateNum, formatDecimal, formatPercent, getMetricLabel } from "@/lib/formatters";
 import { escapeHtml } from "@/lib/escapeHtml";
 import { useChartLifecycle } from "@/hooks/useChartLifecycle";
 import type { DrawdownZone } from "@/lib/tearsheet";
@@ -24,6 +24,8 @@ export function EquityChart({ data, height = 300, drawdownZones }: Props) {
     const equity = data.map((d) => Number(d.equity));
     const drawdown = data.map((d) => (Number(d.drawdown) * 100).toFixed(2));
     const minDD = Math.min(...drawdown.map(Number));
+    const equityName = i18n.t("charts.equity");
+    const drawdownName = i18n.t("charts.drawdownPct");
 
     return {
       backgroundColor: "transparent",
@@ -38,23 +40,25 @@ export function EquityChart({ data, height = 300, drawdownZones }: Props) {
           if (!Array.isArray(params) || !params.length) return "";
           let html = `<b>${escapeHtml(String(params[0].axisValue))}</b>`;
           for (const p of params) {
-            const val = p.seriesName === "Drawdown%"
-              ? `${p.value}%`
-              : Number(p.value).toLocaleString();
-            html += `<br/>${p.marker} ${p.seriesName}: <b>${val}</b>`;
+            // Match on the series index (0 = equity, 1 = drawdown), not the
+            // display name, which is translated.
+            const val = p.seriesIndex === 1
+              ? formatPercent(Number(p.value), 2)
+              : formatDecimal(Number(p.value), { maximumFractionDigits: 3 });
+            html += `<br/>${p.marker} ${escapeHtml(String(p.seriesName))}: <b>${val}</b>`;
           }
           return html;
         },
       },
       toolbox: {
         feature: {
-          saveAsImage: { title: "Save" },
-          restore: { title: "Reset" },
+          saveAsImage: { title: i18n.t("charts.save") },
+          restore: { title: i18n.t("charts.reset") },
         },
         right: 8, top: 0,
         iconStyle: { borderColor: t.textColor },
       },
-      legend: { data: ["Equity", "Drawdown%"], textStyle: { color: t.textColor, fontSize: 11 }, right: 60, top: 4 },
+      legend: { data: [equityName, drawdownName], textStyle: { color: t.textColor, fontSize: 11 }, right: 60, top: 4 },
       grid: [
         { left: 8, right: 8, top: 36, height: "56%", containLabel: true },
         { left: 8, right: 8, top: "68%", height: "20%", containLabel: true },
@@ -72,13 +76,13 @@ export function EquityChart({ data, height = 300, drawdownZones }: Props) {
         {
           type: "value", gridIndex: 1,
           splitLine: { lineStyle: { color: t.gridColor } },
-          axisLabel: { color: t.textColor, fontSize: 10, formatter: "{value}%" },
+          axisLabel: { color: t.textColor, fontSize: 10, formatter: (v: number) => formatPercent(v, { maximumFractionDigits: 2 }) },
         },
       ],
       dataZoom: [{ type: "inside", xAxisIndex: [0, 1] }],
       series: [
         {
-          name: "Equity", type: "line", xAxisIndex: 0, yAxisIndex: 0,
+          id: "equity", name: equityName, type: "line", xAxisIndex: 0, yAxisIndex: 0,
           data: equity, smooth: false, symbol: "none",
           lineStyle: { color: t.infoColor, width: 2 },
           areaStyle: {
@@ -99,13 +103,13 @@ export function EquityChart({ data, height = 300, drawdownZones }: Props) {
           } : {}),
         },
         {
-          name: "Drawdown%", type: "line", xAxisIndex: 1, yAxisIndex: 1,
+          id: "drawdown", name: drawdownName, type: "line", xAxisIndex: 1, yAxisIndex: 1,
           data: drawdown, smooth: false, symbol: "none",
           lineStyle: { color: t.downColor, width: 1 },
           areaStyle: { color: t.downColor + "25" },
           markLine: {
             silent: true, symbol: "none",
-            data: [{ yAxis: minDD, label: { formatter: `Max DD: ${minDD}%`, position: "insideEndTop", fontSize: 10, color: t.downColor } }],
+            data: [{ yAxis: minDD, label: { formatter: `${getMetricLabel("max_drawdown")}: ${formatPercent(minDD, 2)}`, position: "insideEndTop", fontSize: 10, color: t.downColor } }],
             lineStyle: { color: t.downColor, type: "dashed", width: 1 },
           },
         },

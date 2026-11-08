@@ -9,6 +9,7 @@ import { echarts, CHART_GROUP, connectCharts } from "@/lib/echarts";
 import { getChartTheme } from "@/lib/chart-theme";
 import { useThemeDark } from "@/lib/theme-store";
 import { SkeletonChart, SkeletonMetrics } from "@/components/common/Skeleton";
+import { formatDecimal, formatPercent, uiLocale } from "@/lib/formatters";
 
 interface MetricDef {
   key: string;
@@ -20,10 +21,10 @@ interface MetricDef {
 function fmt(v: unknown, type: "pct" | "num" | "int" | "days" = "num"): string {
   const n = Number(v);
   if (!Number.isFinite(n)) return "\u2014";
-  if (type === "pct") return (n * 100).toFixed(2) + "%";
-  if (type === "int") return n.toFixed(0);
-  if (type === "days") return n.toFixed(1);
-  return n.toFixed(3);
+  if (type === "pct") return formatPercent(n * 100, 2);
+  if (type === "int") return formatDecimal(n, 0, { grouping: false });
+  if (type === "days") return formatDecimal(n, 1, { grouping: false });
+  return formatDecimal(n, 3, { grouping: false });
 }
 
 type DiffPresentation = {
@@ -164,7 +165,7 @@ function EquityChartOverlay({ leftCurve, rightCurve, leftLabel, rightLabel, reba
           let html = `<b>${params[0].axisValue}</b>`;
           for (const p of params) {
             if (p.value == null) continue;
-            const value = rebase ? Number(p.value).toFixed(2) : Number(p.value).toLocaleString();
+            const value = rebase ? formatDecimal(Number(p.value), 2, { grouping: false }) : Number(p.value).toLocaleString(uiLocale());
             html += `<br/>${p.marker} ${p.seriesName}: <b>${value}</b>`;
           }
           return html;

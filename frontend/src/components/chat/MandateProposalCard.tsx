@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api, type BrokerAccountChoice, type MandateProfile, type MandateProposal } from "@/lib/api";
 import { AgentAvatar } from "./AgentAvatar";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { formatCurrency } from "@/lib/formatters";
 
 interface Props {
   proposal: MandateProposal;
@@ -24,7 +25,7 @@ interface Props {
 
 function formatUsd(value: number): string {
   if (!Number.isFinite(value)) return "—";
-  return `$${value.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  return formatCurrency(value, "USD", { maximumFractionDigits: 0 });
 }
 
 function translateManifestKey(key: string, values: Record<string, string | number>): string {
