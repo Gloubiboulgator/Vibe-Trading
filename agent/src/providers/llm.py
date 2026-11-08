@@ -1108,16 +1108,27 @@ def _make_temperature_safe_anthropic(base_cls: type) -> type:
         return payload
 
     def _remember_and_should_retry(self: Any, exc: BaseException) -> bool:
-        if _is_anthropic_temperature_unsupported_error(exc):
-            if self.model not in _ANTHROPIC_TEMPERATURE_UNSUPPORTED:
-                logger.info(
-                    "Anthropic model %s rejects `temperature`; retrying without it "
-                    "and omitting it for subsequent calls.",
-                    self.model,
-                )
-                _ANTHROPIC_TEMPERATURE_UNSUPPORTED.add(self.model)
-                return True
-        return False
+        if not _is_anthropic_temperature_unsupported_error(exc):
+            return False
+        if self.model not in _ANTHROPIC_TEMPERATURE_UNSUPPORTED:
+            logger.info(
+                "Anthropic model %s rejects `temperature`; retrying without it "
+                "and omitting it for subsequent calls.",
+                self.model,
+            )
+            _ANTHROPIC_TEMPERATURE_UNSUPPORTED.add(self.model)
+        elif getattr(self, "temperature", None) is None:
+            # Already retried without temperature: a real failure, not ours.
+            return False
+        # langchain-anthropic (>=1.7) validates `self.temperature` client-side
+        # for claude-sonnet-5-5 / claude-fable-5 and raises ValueError before
+        # any request, so stripping the payload alone cannot help: clear the
+        # configured value too, then retry once.
+        try:
+            self.temperature = None
+        except Exception:  # noqa: BLE001 - frozen model: payload strip still applies
+            pass
+        return True
 
     def _generate(self: Any, *args: Any, **kwargs: Any) -> Any:
         try:
@@ -1270,7 +1281,7 @@ def _build_anthropic(
     return safe_anthropic(
         model=model,
         max_tokens=get_env_config().llm.anthropic_max_tokens,
-        temperature=None if use_effort else temperature,
+        temperature=None if use_effort or model in _ANTHROPIC_TEMPERATURE_UNSUPPORTED else temperature,
         timeout=get_env_config().llm.timeout_seconds,
         max_retries=get_env_config().llm.max_retries,
         callbacks=callbacks,

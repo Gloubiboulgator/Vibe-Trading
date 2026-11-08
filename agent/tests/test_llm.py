@@ -429,6 +429,38 @@ def test_anthropic_temperature_self_heal_drops_and_retries() -> None:
     assert "deprecates-temp" in llm_mod._ANTHROPIC_TEMPERATURE_UNSUPPORTED
 
 
+def test_anthropic_temperature_self_heal_when_client_validates_configured_value() -> None:
+    """langchain-anthropic rejects claude-sonnet-5-5 temperature client-side.
+
+    It reads ``self.temperature`` (not the payload) and raises ValueError
+    before any request, so the retry must clear the configured value too.
+    """
+    import src.providers.llm as llm_mod
+
+    model = "claude-sonnet-5-5"
+    base = _make_fake_anthropic_base()
+
+    class _ClientValidatingBase(base):  # type: ignore[misc, valid-type]
+        def _get_request_payload(self, *args: object, **kwargs: object) -> dict:
+            if self.temperature is not None and self.temperature != 1:
+                raise ValueError(f"`temperature` is not supported for {self.model} at non-default values.")
+            return super()._get_request_payload(*args, **kwargs)
+
+    llm_mod._ANTHROPIC_TEMPERATURE_UNSUPPORTED.discard(model)
+    try:
+        safe_cls = llm_mod._make_temperature_safe_anthropic(_ClientValidatingBase)
+        first = safe_cls(model=model, temperature=0.0)
+        assert "temperature" not in first._generate([]).payload
+        assert first.temperature is None
+        assert model in llm_mod._ANTHROPIC_TEMPERATURE_UNSUPPORTED
+
+        # A second client built after the model is remembered also recovers.
+        second = safe_cls(model=model, temperature=0.0)
+        assert "temperature" not in second._generate([]).payload
+    finally:
+        llm_mod._ANTHROPIC_TEMPERATURE_UNSUPPORTED.discard(model)
+
+
 def test_anthropic_temperature_preserved_for_supported_model() -> None:
     import src.providers.llm as llm_mod
 
