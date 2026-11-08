@@ -37,7 +37,13 @@ def test_conflicting_exact_recall_matches_do_not_pick_first(tmp_path, monkeypatc
     assert codes.resolve_vendor_code("hk_equity", "00700.HK", lambda *args: response) is None
 
 
-@pytest.mark.parametrize("timestamp", ["bad", None, True, float("inf"), time.time() + 100000])
+@pytest.mark.parametrize(
+    "timestamp",
+    ["bad", None, True, float("inf"), time.time() + 100000],
+    # A fixed id for the future timestamp: one taken from time.time() differs
+    # between pytest-xdist workers, which then refuse to run the suite.
+    ids=["bad", "none", "true", "inf", "future"],
+)
 def test_corrupt_cache_age_triggers_fresh_recall(tmp_path, monkeypatch, timestamp):
     path = tmp_path / "codes.json"
     monkeypatch.setattr(codes, "_cache_path", lambda: path)
