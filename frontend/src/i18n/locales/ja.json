@@ -1189,6 +1189,16 @@
     "reasoningStrength": "推論強度",
     "unknownProvider": "不明なプロバイダー",
     "unknownModel": "不明なモデル",
+    "runPicker": {
+      "change": "このチャットのモデルを変更",
+      "title": "次回以降の検索に使うモデル",
+      "provider": "プロバイダー",
+      "model": "モデル",
+      "effort": "推論の強度",
+      "hint": "次のメッセージ以降にのみ適用されます。保存済みの設定は変更されません。",
+      "reset": "保存済みの設定を使う",
+      "custom": "カスタム"
+    },
     "connectionLostReconnect": "接続が切断されました。再接続しています…",
     "connectionRestored": "接続が復元されました",
     "agentWorking": "作業を始めています…",

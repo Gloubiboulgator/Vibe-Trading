@@ -1189,6 +1189,16 @@
     "reasoningStrength": "推理强度",
     "unknownProvider": "未知提供商",
     "unknownModel": "未知模型",
+    "runPicker": {
+      "change": "更改此对话的模型",
+      "title": "后续搜索使用的模型",
+      "provider": "提供商",
+      "model": "模型",
+      "effort": "推理强度",
+      "hint": "仅对你接下来的消息生效，已保存的设置不会改变。",
+      "reset": "使用已保存的设置",
+      "custom": "自定义"
+    },
     "connectionLostReconnect": "连接已断开，正在重连…",
     "connectionRestored": "连接已恢复",
     "agentWorking": "开始动手了…",

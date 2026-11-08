@@ -6,6 +6,8 @@ V5: Uses AgentLoop instead of the fixed pipeline behind the generate skill.
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import contextvars
 import concurrent.futures
 import logging
 import threading
@@ -346,6 +348,7 @@ class SessionService:
         role: str = "user",
         *,
         include_shell_tools: bool = False,
+        llm_override: Optional[tuple[str, str, str]] = None,
     ) -> Dict[str, Any]:
         """Send a message to a session and trigger execution.
 
@@ -354,6 +357,8 @@ class SessionService:
             content: Message content.
             role: Message role.
             include_shell_tools: Whether this attempt may use shell tools.
+            llm_override: Optional (provider, model, reasoning_effort) used for
+                this run only; saved settings are not modified.
 
         Returns:
             Dictionary containing message_id and attempt_id.
@@ -396,7 +401,9 @@ class SessionService:
             self.event_bus.emit(session_id, "attempt.created", {"attempt_id": attempt.attempt_id, "prompt": content})
 
             task = asyncio.create_task(
-                self._run_attempt(session, attempt, include_shell_tools=include_shell_tools)
+                self._run_attempt(
+                    session, attempt, include_shell_tools=include_shell_tools, llm_override=llm_override,
+                )
             )
             self._active_tasks[session_id] = task
             # _run_attempt now owns the claim and releases it in its finally.
@@ -443,7 +450,14 @@ class SessionService:
             return True
         return False
 
-    async def _run_attempt(self, session: Session, attempt: Attempt, *, include_shell_tools: bool = False) -> None:
+    async def _run_attempt(
+        self,
+        session: Session,
+        attempt: Attempt,
+        *,
+        include_shell_tools: bool = False,
+        llm_override: Optional[tuple[str, str, str]] = None,
+    ) -> None:
         """Execute an Attempt in the background.
 
         The whole body runs under try/finally: this coroutine owns the
@@ -468,12 +482,17 @@ class SessionService:
                 {"attempt_id": attempt.attempt_id, "started_at": wall_started_at},
             )
             messages = self.store.get_messages(session.session_id)
-            result = await self._run_with_agent(
-                attempt,
-                messages=messages,
-                include_shell_tools=include_shell_tools,
-                session_config=dict(session.config),
-            )
+            from src.config.accessor import llm_override as _llm_override_scope
+
+            # The override lives in this task's context only; executor calls in
+            # _run_with_agent copy the context so the agent thread sees it too.
+            with _llm_override_scope(*llm_override) if llm_override else contextlib.nullcontext():
+                result = await self._run_with_agent(
+                    attempt,
+                    messages=messages,
+                    include_shell_tools=include_shell_tools,
+                    session_config=dict(session.config),
+                )
             status = result.get("status")
             if status == "success":
                 attempt.mark_completed(summary=result.get("content", ""))
@@ -664,6 +683,7 @@ class SessionService:
 
             registry = await loop.run_in_executor(
                 _AGENT_EXECUTOR,
+                contextvars.copy_context().run,
                 lambda: build_registry(
                     persistent_memory=pm,
                     include_shell_tools=include_shell_tools,
@@ -696,6 +716,7 @@ class SessionService:
             try:
                 result = await loop.run_in_executor(
                     _AGENT_EXECUTOR,
+                    contextvars.copy_context().run,
                     lambda: agent.run(
                         user_message=attempt.prompt,
                         history=history,

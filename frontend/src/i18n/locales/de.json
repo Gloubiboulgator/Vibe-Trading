@@ -1195,6 +1195,16 @@
     "reasoningStrength": "Reasoning-Aufwand",
     "unknownProvider": "Unbekannter Anbieter",
     "unknownModel": "Unbekanntes Modell",
+    "runPicker": {
+      "change": "Modell für diesen Chat ändern",
+      "title": "Modell für die nächsten Recherchen",
+      "provider": "Anbieter",
+      "model": "Modell",
+      "effort": "Denkaufwand",
+      "hint": "Gilt nur für Ihre nächsten Nachrichten. Gespeicherte Einstellungen bleiben unverändert.",
+      "reset": "Gespeicherte Einstellungen verwenden",
+      "custom": "Angepasst"
+    },
     "connectionLostReconnect": "Verbindung verloren, wird neu verbunden…",
     "connectionRestored": "Verbindung wiederhergestellt",
     "agentWorking": "An die Arbeit gemacht…",

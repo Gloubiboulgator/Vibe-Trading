@@ -57,6 +57,9 @@ class LLMProviderOption(BaseModel):
     # Levels the settings form offers and the update route accepts; "" (unset)
     # is always allowed on top of these.
     reasoning_efforts: List[str] = Field(default_factory=lambda: list(DEFAULT_REASONING_EFFORTS))
+    # Filled in the settings response: whether a run can use this provider
+    # right now (its API key is saved). Drives the per-run picker in the chat.
+    api_key_configured: bool = False
 
 
 class LLMSettingsResponse(BaseModel):
@@ -511,6 +514,23 @@ async def _list_claude_cli_models(
 # ---------------------------------------------------------------------------
 
 
+def is_provider_usable_for_run(
+    provider: LLMProviderOption, env_values: Optional[Dict[str, str]] = None
+) -> bool:
+    """Whether a chat run may switch to this provider without visiting Settings.
+
+    Only plain API-key providers whose key is saved qualify. Login-based
+    providers (OAuth, CLI) and the credential vault stay Settings-only.
+    """
+    if provider.auth_type != "api_key" or not provider.api_key_required or not provider.api_key_env:
+        return False
+    # Saved settings only: the runtime copies the active provider's key into
+    # OPENAI_API_KEY in os.environ, which must not make OpenAI look usable.
+    values = env_values if env_values is not None else _read_settings_env_values()
+    key = values.get(provider.api_key_env, "")
+    return bool(_host()._is_configured_secret(key, LLM_API_KEY_PLACEHOLDERS))
+
+
 def _build_llm_settings_response(
     values: Optional[Dict[str, str]] = None,
 ) -> LLMSettingsResponse:
@@ -562,6 +582,13 @@ def _build_llm_settings_response(
         env_values = {**env_values, "LANGCHAIN_MODEL_NAME": active_model, "OPENAI_BASE_URL": active_url}
         api_key_configured, api_key_hint = bool(active and active["api_key_configured"]), None
         options = [*LLM_PROVIDERS, provider]
+    options = [
+        option.model_copy(update={"api_key_configured": (
+            api_key_configured if option.name == provider.name
+            else is_provider_usable_for_run(option, env_values)
+        )})
+        for option in options
+    ]
     return LLMSettingsResponse(
         provider=provider.name,
         model_name=env_values.get("LANGCHAIN_MODEL_NAME", provider.default_model),

@@ -1195,6 +1195,16 @@
     "reasoningStrength": "Esfuerzo de razonamiento",
     "unknownProvider": "Proveedor desconocido",
     "unknownModel": "Modelo desconocido",
+    "runPicker": {
+      "change": "Cambiar el modelo de este chat",
+      "title": "Modelo para las próximas búsquedas",
+      "provider": "Proveedor",
+      "model": "Modelo",
+      "effort": "Esfuerzo de razonamiento",
+      "hint": "Solo se aplica a tus próximos mensajes. La configuración guardada no cambia.",
+      "reset": "Usar la configuración guardada",
+      "custom": "Personalizado"
+    },
     "connectionLostReconnect": "Conexión perdida, reconectando…",
     "connectionRestored": "Conexión restaurada",
     "agentWorking": "Poniéndose a trabajar…",

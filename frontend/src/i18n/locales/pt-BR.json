@@ -1195,6 +1195,16 @@
     "reasoningStrength": "Esforço de raciocínio",
     "unknownProvider": "Provedor desconhecido",
     "unknownModel": "Modelo desconhecido",
+    "runPicker": {
+      "change": "Trocar o modelo deste chat",
+      "title": "Modelo para as próximas pesquisas",
+      "provider": "Provedor",
+      "model": "Modelo",
+      "effort": "Esforço de raciocínio",
+      "hint": "Vale só para as suas próximas mensagens. As configurações salvas não mudam.",
+      "reset": "Usar as configurações salvas",
+      "custom": "Personalizado"
+    },
     "connectionLostReconnect": "Conexão perdida, reconectando…",
     "connectionRestored": "Conexão restaurada",
     "agentWorking": "Começando a trabalhar…",

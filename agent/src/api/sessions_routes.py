@@ -106,9 +106,40 @@ class SessionResponse(BaseModel):
 MAX_MESSAGE_CHARS = 100_000
 
 
+class RunLLMSelection(BaseModel):
+    """Provider / model / reasoning effort chosen in the chat for one run."""
+    provider: str = Field(..., min_length=1, max_length=64)
+    model: str = Field(..., min_length=1, max_length=200, pattern=r"^[A-Za-z0-9._:/@+\-]+$")
+    reasoning_effort: str = Field("", max_length=32)
+
+
 class SendMessageRequest(BaseModel):
     """Send an interactive research prompt."""
     content: str = Field(..., description="Research prompt", min_length=1, max_length=MAX_MESSAGE_CHARS)
+    llm: Optional[RunLLMSelection] = Field(
+        None, description="Use this provider/model/effort for this run only (saved settings unchanged)",
+    )
+
+
+def _resolve_run_llm(selection: Optional[RunLLMSelection]) -> Optional[tuple[str, str, str]]:
+    """Validate a per-run LLM choice against the provider catalog and saved keys."""
+    if selection is None:
+        return None
+    from src.api.settings_routes import LLM_PROVIDER_BY_NAME, is_provider_usable_for_run
+
+    provider = LLM_PROVIDER_BY_NAME.get(selection.provider.strip().lower())
+    if provider is None or not is_provider_usable_for_run(provider):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Provider {selection.provider!r} is not available: save its API key in Settings first.",
+        )
+    effort = selection.reasoning_effort.strip().lower()
+    if effort and effort not in provider.reasoning_efforts:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Reasoning effort must be empty or one of {', '.join(provider.reasoning_efforts)}.",
+        )
+    return provider.name, selection.model.strip(), effort
 
 
 class MessageResponse(BaseModel):
@@ -825,11 +856,13 @@ def register_sessions_routes(app: FastAPI) -> None:
         svc = _host_get_session_service()
         if not svc:
             raise HTTPException(status_code=501, detail="Session runtime not enabled")
+        run_llm = _resolve_run_llm(payload.llm)
         try:
             result = await svc.send_message(
                 session_id=session_id,
                 content=payload.content,
                 include_shell_tools=_host_shell_tools_enabled_for_request(http_request),
+                **({"llm_override": run_llm} if run_llm else {}),
             )
             return result
         except SessionBusyError as exc:

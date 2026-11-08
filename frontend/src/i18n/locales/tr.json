@@ -1155,6 +1155,16 @@
     "reasoningStrength": "Akıl yürütme düzeyi",
     "unknownProvider": "Bilinmeyen sağlayıcı",
     "unknownModel": "Bilinmeyen model",
+    "runPicker": {
+      "change": "Bu sohbetin modelini değiştir",
+      "title": "Sonraki aramalar için model",
+      "provider": "Sağlayıcı",
+      "model": "Model",
+      "effort": "Akıl yürütme düzeyi",
+      "hint": "Yalnızca sonraki mesajlarınız için geçerlidir. Kayıtlı ayarlar değişmez.",
+      "reset": "Kayıtlı ayarları kullan",
+      "custom": "Özel"
+    },
     "connectionLostReconnect": "Bağlantı kesildi, yeniden bağlanıyor…",
     "connectionRestored": "Bağlantı yeniden kuruldu",
     "agentWorking": "Çalışmaya başlıyorum…",

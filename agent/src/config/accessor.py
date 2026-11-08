@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import os
 import threading
-from typing import TYPE_CHECKING
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import TYPE_CHECKING, Iterator, Optional
 
 if TYPE_CHECKING:
     from src.config.env_schema import EnvConfig
@@ -25,6 +27,8 @@ if TYPE_CHECKING:
 __all__ = [
     "get_env_config",
     "reset_env_config",
+    "llm_override",
+    "current_llm_override",
     "_parse_bool",
     "get_env_or",
     "get_env_value",
@@ -36,6 +40,13 @@ __all__ = [
 
 _instance: EnvConfig | None = None
 _lock = threading.Lock()
+
+# Per-run LLM selection (provider, model, reasoning effort). ``None`` fields
+# keep the configured value. Scoped with a ContextVar so one chat run can use
+# another provider without touching ~/.vibe-trading/.env or other runs.
+_LLMOverride = tuple[Optional[str], Optional[str], Optional[str]]
+_llm_override: ContextVar[_LLMOverride | None] = ContextVar("vibe_llm_override", default=None)
+_override_views: dict[tuple[int, _LLMOverride], EnvConfig] = {}
 
 # ---------------------------------------------------------------------------
 # Truthy / falsy string sets for the unified boolean parser
@@ -57,8 +68,56 @@ def get_env_config() -> EnvConfig:
     config or create duplicate instances.
 
     Returns:
-        The shared :class:`EnvConfig` instance.
+        The shared :class:`EnvConfig` instance, or a read-only view of it with
+        the LLM fields replaced while :func:`llm_override` is active.
     """
+    base = _get_base_config()
+    override = _llm_override.get()
+    if override is None:
+        return base
+    key = (id(base), override)
+    view = _override_views.get(key)
+    if view is None:
+        updates = {
+            field: value
+            for field, value in zip(
+                ("langchain_provider", "langchain_model_name", "langchain_reasoning_effort"),
+                override,
+            )
+            if value is not None
+        }
+        view = base.model_copy(update={"llm": base.llm.model_copy(update=updates)})
+        with _lock:
+            if len(_override_views) > 64:
+                _override_views.clear()
+            _override_views[key] = view
+    return view
+
+
+@contextmanager
+def llm_override(
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    reasoning_effort: Optional[str] = None,
+) -> Iterator[None]:
+    """Use another provider / model / effort for the current context only.
+
+    Code running in a worker thread must be started through
+    ``contextvars.copy_context().run`` to see the override.
+    """
+    token = _llm_override.set((provider, model, reasoning_effort))
+    try:
+        yield
+    finally:
+        _llm_override.reset(token)
+
+
+def current_llm_override() -> _LLMOverride | None:
+    """Return the active per-run LLM override, if any."""
+    return _llm_override.get()
+
+
+def _get_base_config() -> EnvConfig:
     global _instance  # noqa: PLW0603
     if _instance is not None:
         return _instance

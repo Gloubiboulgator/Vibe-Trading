@@ -1195,6 +1195,16 @@
     "reasoningStrength": "Effort de raisonnement",
     "unknownProvider": "Fournisseur inconnu",
     "unknownModel": "Modèle inconnu",
+    "runPicker": {
+      "change": "Changer de modèle pour ce chat",
+      "title": "Modèle des prochaines recherches",
+      "provider": "Fournisseur",
+      "model": "Modèle",
+      "effort": "Effort de raisonnement",
+      "hint": "S'applique uniquement à vos prochains messages. Les paramètres enregistrés ne changent pas.",
+      "reset": "Utiliser les paramètres enregistrés",
+      "custom": "Personnalisé"
+    },
     "connectionLostReconnect": "Connexion perdue, reconnexion…",
     "connectionRestored": "Connexion rétablie",
     "agentWorking": "Au travail…",

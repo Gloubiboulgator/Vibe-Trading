@@ -1195,6 +1195,16 @@
     "reasoningStrength": "Tingkat Reasoning",
     "unknownProvider": "Provider tidak diketahui",
     "unknownModel": "Model tidak diketahui",
+    "runPicker": {
+      "change": "Ganti model untuk obrolan ini",
+      "title": "Model untuk pencarian berikutnya",
+      "provider": "Penyedia",
+      "model": "Model",
+      "effort": "Upaya penalaran",
+      "hint": "Hanya berlaku untuk pesan Anda berikutnya. Pengaturan tersimpan tidak berubah.",
+      "reset": "Gunakan pengaturan tersimpan",
+      "custom": "Kustom"
+    },
     "connectionLostReconnect": "Koneksi terputus, menghubungkan kembali…",
     "connectionRestored": "Koneksi pulih",
     "agentWorking": "Mulai bekerja…",

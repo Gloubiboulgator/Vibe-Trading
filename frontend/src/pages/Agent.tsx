@@ -11,7 +11,8 @@ import {
 } from "@/stores/agent";
 import { useSSE } from "@/hooks/useSSE";
 import { useLlmUsageCounter } from "@/hooks/useLlmUsageCounter";
-import { ApiError, AUTH_REQUIRED_MESSAGE, api, isAuthRequiredError, type GoalSnapshot, type MandateProposal, type MandateCommitted, type ScheduledResearchProposal, type LiveAction, type LiveHalted, type LLMSettings, type RunPreview } from "@/lib/api";
+import { ApiError, AUTH_REQUIRED_MESSAGE, api, isAuthRequiredError, type GoalSnapshot, type MandateProposal, type MandateCommitted, type ScheduledResearchProposal, type LiveAction, type LiveHalted, type LLMSettings, type RunLLMSelection, type RunPreview } from "@/lib/api";
+import { safeGet, safeRemove, safeSet } from "@/lib/storage";
 import {
   extractUploadedAttachments,
 } from "@/lib/attachments";
@@ -21,7 +22,7 @@ import type { AgentMessage, SwarmRunStatus, ToolCallEntry } from "@/types/agent"
 import { AgentAvatar } from "@/components/chat/AgentAvatar";
 import { WelcomeScreen } from "@/components/chat/WelcomeScreen";
 import { MarkdownContent, MessageBubble } from "@/components/chat/MessageBubble";
-import { ModelRuntimeBar } from "@/components/chat/ModelRuntimeBar";
+import { ModelRuntimeBar, normalizeSelection, runnableProviders } from "@/components/chat/ModelRuntimeBar";
 import { ThinkingTimeline } from "@/components/chat/ThinkingTimeline";
 import { ConversationTimeline } from "@/components/chat/ConversationTimeline";
 import { ActivityLine } from "@/components/chat/ActivityLine";
@@ -49,6 +50,30 @@ import {
   stopSwarmRun,
 } from "@/lib/swarmStatus";
 import { buildToolTimelineMessages } from "@/pages/agentToolTimeline";
+
+const RUN_LLM_STORAGE_KEY = "vibe.runLlm";
+
+/** Restore the chat's per-run model choice, dropped if no longer usable. */
+function restoreRunLlm(settings: LLMSettings): RunLLMSelection | null {
+  try {
+    const raw = safeGet(RUN_LLM_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<RunLLMSelection>;
+    if (typeof parsed.provider !== "string" || typeof parsed.model !== "string") return null;
+    const provider = runnableProviders(settings).find((item) => item.name === parsed.provider);
+    if (!provider || !parsed.model.trim()) return null;
+    const effort = typeof parsed.reasoning_effort === "string" ? parsed.reasoning_effort : "";
+    const validEffort = effort === "" || (provider.reasoning_efforts ?? []).includes(effort) ? effort : "";
+    return normalizeSelection(settings, { provider: provider.name, model: parsed.model, reasoning_effort: validEffort });
+  } catch {
+    return null;
+  }
+}
+
+/** Only send a complete choice; an emptied model field falls back to saved settings. */
+function usableRunLlm(selection: RunLLMSelection | null): RunLLMSelection | null {
+  return selection && selection.model.trim() ? { ...selection, model: selection.model.trim() } : null;
+}
 
 /* ---------- Message grouping ---------- */
 type MsgGroup =
@@ -272,6 +297,16 @@ export function Agent() {
   const [visibleRowCount, setVisibleRowCount] = useState(TIMELINE_WINDOW_SIZE);
   const visibleRowsSessionRef = useRef<string | null>(null);
   const [llmSettings, setLlmSettings] = useState<LLMSettings | null>(null);
+  // Per-run provider/model/effort picked in the chat bar (null = saved settings).
+  // Kept in a ref too so the send callbacks read the latest value without new deps.
+  const [runLlm, setRunLlmState] = useState<RunLLMSelection | null>(null);
+  const runLlmRef = useRef<RunLLMSelection | null>(null);
+  const setRunLlm = useCallback((next: RunLLMSelection | null) => {
+    runLlmRef.current = next;
+    setRunLlmState(next);
+    if (next) safeSet(RUN_LLM_STORAGE_KEY, JSON.stringify(next));
+    else safeRemove(RUN_LLM_STORAGE_KEY);
+  }, []);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [runtimeIdentity, setRuntimeIdentity] = useState<RuntimeIdentity>({});
 
@@ -1396,6 +1431,7 @@ export function Agent() {
     api.getLLMSettings().then((s) => {
       sseTimeoutMsRef.current = s.sse_timeout_seconds * 1000;
       setLlmSettings(s);
+      setRunLlm(restoreRunLlm(s));
     }).catch(() => {});
   }, []);
 
@@ -1469,7 +1505,7 @@ export function Agent() {
         act().setStatus("streaming");
         forceScrollToBottom();
         setupSSE(sid);
-        const sent = await api.sendMessage(sid, kickoff);
+        const sent = await api.sendMessage(sid, kickoff, usableRunLlm(runLlmRef.current));
         if (act().activity?.attemptId.startsWith("pending-")) {
           act().setActivityAttemptId(sent.attempt_id);
         }
@@ -1519,7 +1555,7 @@ export function Agent() {
         setSearchParams({ session: sid }, { replace: true });
       }
       setupSSE(sid);
-      const sent = await api.sendMessage(sid, finalPrompt);
+      const sent = await api.sendMessage(sid, finalPrompt, usableRunLlm(runLlmRef.current));
       if (act().activity?.attemptId.startsWith("pending-")) {
         act().setActivityAttemptId(sent.attempt_id);
       }
@@ -1624,7 +1660,7 @@ export function Agent() {
     composerRef.current?.focus();
     try {
       setupSSE(sessionId);
-      const sent = await api.sendMessage(sessionId, prompt);
+      const sent = await api.sendMessage(sessionId, prompt, usableRunLlm(runLlmRef.current));
       if (act().activity?.attemptId.startsWith("pending-")) {
         act().setActivityAttemptId(sent.attempt_id);
       }
@@ -1818,6 +1854,9 @@ export function Agent() {
         runtimeProvider={visibleRuntimeIdentity.provider}
         runtimeModel={visibleRuntimeIdentity.model}
         runtimeReasoningEffort={visibleRuntimeIdentity.reasoningEffort}
+        selection={runLlm}
+        onSelectionChange={setRunLlm}
+        running={status === "streaming"}
       />
       {historyError && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs">

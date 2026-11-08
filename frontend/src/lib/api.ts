@@ -716,7 +716,7 @@ export const api = {
       `/scheduled-runs/proposals/${encodeURIComponent(proposalId)}/discard`,
       { method: "POST" },
     ),
-  sendMessage: (sid: string, content: string) => request<{ message_id: string; attempt_id: string }>(`/sessions/${sid}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
+  sendMessage: (sid: string, content: string, llm?: RunLLMSelection | null) => request<{ message_id: string; attempt_id: string }>(`/sessions/${sid}/messages`, { method: "POST", body: JSON.stringify(llm ? { content, llm } : { content }) }),
   cancelSession: (sid: string) => request<{ status: string }>(`/sessions/${sid}/cancel`, { method: "POST" }),
   getSessionMessages: (sid: string) => request<MessageItem[]>(`/sessions/${sid}/messages`),
   createGoal: (sid: string, body: CreateGoalRequest) =>
@@ -1059,6 +1059,17 @@ export interface LLMProviderOption {
   login_command?: string | null;
   /** Reasoning effort levels the provider accepts, besides "" (provider default). */
   reasoning_efforts?: string[];
+  /** Suggested model ids for this provider. */
+  model_options?: string[];
+  /** True when the provider's API key is saved, so a chat run can switch to it. */
+  api_key_configured?: boolean;
+}
+
+/** Provider / model / effort used for one chat run, without changing saved settings. */
+export interface RunLLMSelection {
+  provider: string;
+  model: string;
+  reasoning_effort: string;
 }
 
 export interface LLMSettings {
