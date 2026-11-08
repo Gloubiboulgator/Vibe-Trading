@@ -672,6 +672,11 @@ def _writes_french(text: str) -> bool:
     return len(words & _FRENCH_FUNCTION_WORDS) >= _FRENCH_MIN_WORDS
 
 
+# A dot fraction that cannot be a thousands group: one, two, or four and more
+# digits ("1283.6", "40.16", "0.6185"). Three digits ("6.177") are ambiguous.
+_DOT_DECIMAL_RE = re.compile(r"(?<![\d.,])\d+\.(?:\d{1,2}|\d{4,})(?![\d.,])")
+
+
 def _writes_decimal_commas(text: str) -> bool:
     """Whether a document writes decimal commas and never a thousands grouping.
 
@@ -706,7 +711,11 @@ def _writes_decimal_commas(text: str) -> bool:
                 )
             ):
                 decimal = True
-    if not decimal and not grouped:
+    if not decimal and not grouped and not _DOT_DECIMAL_RE.search(text):
+        # French prose alone means decimal commas only when the document does
+        # not itself write dot decimals: "6.177 €" beside "1283.6" and "40.16"
+        # in a French answer is a dot-decimal document, and reading it as
+        # French turned 6.177 into 6177 (2026-11-08).
         decimal = _writes_french(text)
     return decimal and not grouped
 

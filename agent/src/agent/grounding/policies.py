@@ -41,6 +41,7 @@ from src.agent.grounding.figures import (
     Figure,
     FiguresBlock,
     _lines_with_offsets,
+    _numbers,
     segment_bounds,
 )
 
@@ -2108,12 +2109,41 @@ class _PolicyMixin:
         # every member separately: never borrow an operand from session pools
         # when any declared member is empty or does not exist.
         ref_parts = re.split(r"[,;]", declaration.ref)
+        # Instruments the ref names one by one ("DCAM.PA, PCEU.PA, PEMS.PA" for
+        # a portfolio total): each part anchors on that instrument's own
+        # observed prints, so the arithmetic is attributed even though the
+        # figure itself belongs to no single instrument.
+        observed_symbols = {
+            _normalize_symbol(record.symbol)
+            for record in self._evidence
+            if record.symbol and record.status == "observed"
+        }
+        named_symbols: set[str] = set()
         if len(ref_parts) > 1:
-            scoped_parts = [
-                self._referenced(part.strip(), symbol, None, pool_ambiguous=True)
-                if part.strip() else None
-                for part in ref_parts
-            ]
+            scoped_parts = []
+            for part in ref_parts:
+                part = part.strip()
+                scoped_part = (
+                    self._referenced(part, symbol, None, pool_ambiguous=True) if part else None
+                )
+                if (
+                    part
+                    and (scoped_part is None or (not scoped_part[0] and not scoped_part[1]))
+                    and _normalize_symbol(part) in observed_symbols
+                ):
+                    named_symbols.add(_normalize_symbol(part))
+                    scoped_part = (
+                        [
+                            record
+                            for record in self._evidence
+                            if record.status == "observed"
+                            and record.value is not None
+                            and record.symbol
+                            and _normalize_symbol(record.symbol) == _normalize_symbol(part)
+                        ],
+                        [],
+                    )
+                scoped_parts.append(scoped_part)
             if any(part is None or (not part[0] and not part[1]) for part in scoped_parts):
                 return "no_evidence"
             scoped = (
@@ -2135,7 +2165,11 @@ class _PolicyMixin:
                     or (record.source == "document" and record.field == "document.figure")
                 )
                 and (currency_code is None or record.currency == currency_code)
-                and not (unattributed and record.symbol)
+                and not (
+                    unattributed
+                    and record.symbol
+                    and _normalize_symbol(record.symbol) not in named_symbols
+                )
             )
             # A literal percent in a formula is parsed as its fraction, while
             # document.ratio records retain the percent as printed. This
@@ -2490,6 +2524,8 @@ class _PolicyMixin:
                 )
             ]
         folded = line.casefold()
+        if self._is_user_amount(figure, line):
+            return []
         if not any(token in folded for token in _note_tokens(declaration.note)):
             return [
                 self._figure_issue(
@@ -2503,6 +2539,44 @@ class _PolicyMixin:
                 )
             ]
         return []
+
+    def _is_user_amount(self, figure: Figure, line: str) -> bool:
+        """Whether a cited figure is an amount the user wrote, or a share of one.
+
+        The user is the source of their own budget: "3 000 €" from "j'ai 3000
+        euros" needs no source on its line. A split of it ("2 100 € (70 %)")
+        passes when the percent that produces it is written on the same line,
+        so the reader sees how it was obtained. The prompt tells the model to
+        cite such amounts; the visible-source rule then cut every one of them
+        (2026-11-08).
+        """
+        message = getattr(self, "user_message", "") or ""
+        if not message:
+            return False
+        amounts = [
+            float(token.digits)
+            for token in _numbers(message)
+            if token.digits and float(token.digits) >= 1
+        ]
+        if not amounts:
+            return False
+        value = abs(figure.value) * float(figure.scale or 1.0)
+
+        def same(a: float, b: float) -> bool:
+            return math.isclose(a, b, rel_tol=1e-9, abs_tol=0.51)
+
+        if any(same(value, amount) for amount in amounts):
+            return True
+        shares = [
+            float(match.group(1).replace(",", "."))
+            for match in re.finditer(r"(\d{1,3}(?:[.,]\d+)?)\s*%", line)
+        ]
+        return any(
+            same(value, amount * share / 100.0)
+            for amount in amounts
+            for share in shares
+            if 0 < share < 100
+        )
 
     def _symbol_for_claim(
         self,

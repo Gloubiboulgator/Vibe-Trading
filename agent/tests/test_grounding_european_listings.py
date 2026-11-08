@@ -342,3 +342,46 @@ def test_a_wrong_total_is_still_rejected(tmp_path: Path, total: str, note: str) 
     result = _portfolio_ledger(tmp_path).validate_final_answer(_portfolio(total, note))
     assert result.valid is False
     assert total in [issue.get("claim") for issue in result.issues]
+
+
+# "339 × 6.177 + 14 × 40.16 + 43 × 6.913" with the ref "DCAM.PA, PCEU.PA, PEMS.PA": a ref
+# naming several instruments resolved none of them, so the total was "no_evidence".
+
+
+def _products_portfolio(total: str, note: str) -> str:
+    return (
+        "Cours yfinance du 06/11/2026.\n\n"
+        "| ETF | Parts | Montant |\n|---|---|---|\n"
+        "| DCAM.PA | 340 | 2 100,18 € |\n| PAEEM.PA | 13 | 432,71 € |\n| PCEU.PA | 11 | 441,76 € |\n"
+        f"| **Total** | | **{total} €** |\n\n"
+        "```figures\n"
+        "6.177 | observed | close | DCAM.PA\n33.285 | observed | close | PAEEM.PA\n"
+        "40.16 | observed | close | PCEU.PA\n"
+        "340 | count | parts DCAM.PA\n13 | count | parts PAEEM.PA\n11 | count | parts PCEU.PA\n"
+        "2100.18 | derived | 340 × 6.177 | DCAM.PA\n432.71 | derived | 13 × 33.285 | PAEEM.PA\n"
+        "441.76 | derived | 11 × 40.16 | PCEU.PA\n"
+        f"{note}\n```"
+    )
+
+
+def test_a_total_written_as_products_of_named_instruments_survives(tmp_path: Path) -> None:
+    draft = _products_portfolio(
+        "2 974,65", "2974.65 | derived | 340 × 6.177 + 13 × 33.285 + 11 × 40.16 | DCAM.PA, PAEEM.PA, PCEU.PA"
+    )
+    result = _portfolio_ledger(tmp_path).validate_final_answer(draft)
+    assert result.valid is True, result.issues
+
+
+@pytest.mark.parametrize(
+    ("total", "note"),
+    [
+        ("2 994,65", "2994.65 | derived | 340 × 6.177 + 13 × 33.285 + 11 × 40.16 | DCAM.PA, PAEEM.PA, PCEU.PA"),
+        # an unobserved price in one product
+        ("3 194,65", "3194.65 | derived | 340 × 6.177 + 13 × 33.285 + 11 × 60.16 | DCAM.PA, PAEEM.PA, PCEU.PA"),
+        # an instrument this session never observed
+        ("2 974,65", "2974.65 | derived | 340 × 6.177 + 13 × 33.285 + 11 × 40.16 | DCAM.PA, XXXX.PA"),
+    ],
+)
+def test_a_wrong_products_total_is_still_rejected(tmp_path: Path, total: str, note: str) -> None:
+    result = _portfolio_ledger(tmp_path).validate_final_answer(_products_portfolio(total, note))
+    assert result.valid is False

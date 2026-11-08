@@ -102,3 +102,14 @@ def test_french_prose_switches_the_document_to_decimal_commas() -> None:
 )
 def test_other_documents_keep_their_reading(text: str) -> None:
     assert _writes_decimal_commas(text) is False
+
+
+def test_a_french_answer_that_writes_dot_decimals_keeps_them() -> None:
+    """"6.177 €" in a French answer that also writes "1283.6" and "40.16" is 6.177:
+    French prose switched the document to decimal commas and read it as 6177."""
+    text = (
+        "| ETF | Cours |\n|---|---|\n| DCAM.PA | 6.177 € |\n| PCEU.PA | 40.16 € |\n"
+        "Une action ASML coûte 1283.6 €, ce qui pèse lourd dans ton budget pour cette séance."
+    )
+    assert _writes_decimal_commas(text) is False
+    assert [t.digits for t in _numbers(text)] == ["6.177", "40.16", "1283.6"]
