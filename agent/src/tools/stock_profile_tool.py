@@ -33,6 +33,12 @@ _ALL_SECTIONS = tuple(_SECTION_MODULES)
 # listing identity: venue and quote currency, kept separate from fundamentals.
 _LISTING_MODULE = "price"
 
+# Always fetched too: the issuer's head-office address and business, which a
+# PEA eligibility check needs (2026-11-09). Yahoo's ``country`` is where the
+# head office is, not necessarily the registered office.
+_ISSUER_MODULE = "assetProfile"
+_ISSUER_FIELDS = ("country", "city", "sector", "industry")
+
 # Cap list-valued sections so a verbose payload cannot bloat the envelope.
 _MAX_ROWS = 25
 
@@ -229,6 +235,27 @@ def _listing_identity(
     return row
 
 
+def _issuer_identity(profile_module: Dict[str, Any]) -> Dict[str, Any]:
+    """Shape the issuer's head-office country and business from ``assetProfile``.
+
+    Args:
+        profile_module: The raw ``assetProfile`` quoteSummary module.
+
+    Returns:
+        The non-empty ``country``/``city``/``sector``/``industry`` fields Yahoo
+        supplies, plus ``country_basis`` saying what the country describes, or
+        ``{}`` when Yahoo supplies none of them.
+    """
+    row = {
+        field: value.strip()
+        for field in _ISSUER_FIELDS
+        if isinstance(value := profile_module.get(field), str) and value.strip()
+    }
+    if "country" in row:
+        row["country_basis"] = "head office address (not necessarily the registered office)"
+    return row
+
+
 # Section name -> (yahoo module name, shaper). One entry per supported section.
 _SHAPERS = {
     "key_stats": _key_stats,
@@ -292,7 +319,8 @@ class StockProfileTool(BaseTool):
         "ownership, and the analyst recommendation trend. Always includes "
         "the listing's own venue and quote currency, kept separate from "
         "issuer fundamentals so a secondary/international listing does not "
-        "read as the primary one. Use this for fundamentals and consensus "
+        "read as the primary one, and the issuer's head-office country, "
+        "sector and industry when Yahoo supplies them. Use this for fundamentals and consensus "
         "context, not for OHLCV price bars (use get_market_data). Example: "
         'get_stock_profile(ticker="AAPL.US", '
         'sections=["key_stats", "financials"]).'
@@ -336,10 +364,12 @@ class StockProfileTool(BaseTool):
         Returns:
             A JSON envelope string. On success:
             ``{"ok": true, "market": str, "source": "yahoo",
-            "data": {"ticker": str, "listing": {...}, "sections":
-            {<name>: <shaped>}}}``. ``listing`` carries Yahoo's own venue and
-            quote-currency identity for the instrument, independent of the
-            issuer fundamentals in ``sections``.
+            "data": {"ticker": str, "listing": {...}, "issuer": {...},
+            "sections": {<name>: <shaped>}}}``. ``listing`` carries Yahoo's own
+            venue and quote-currency identity for the instrument, independent
+            of the issuer fundamentals in ``sections``; ``issuer`` (omitted
+            when Yahoo has none) carries the head-office country, city, sector
+            and industry.
             On failure: ``{"ok": false, "error": str}``.
         """
         ticker = str(kwargs.get("ticker") or "").strip()
@@ -352,7 +382,9 @@ class StockProfileTool(BaseTool):
             return self._error(str(exc))
 
         modules = list(
-            dict.fromkeys([_LISTING_MODULE, *(_SECTION_MODULES[n] for n in sections)])
+            dict.fromkeys(
+                [_LISTING_MODULE, _ISSUER_MODULE, *(_SECTION_MODULES[n] for n in sections)]
+            )
         )
         try:
             summary = get_quote_summary(ticker, modules)
@@ -372,12 +404,19 @@ class StockProfileTool(BaseTool):
             financial_module if isinstance(financial_module, dict) else {},
         )
 
+        profile_module = summary.get(_ISSUER_MODULE) or {}
+        issuer = _issuer_identity(profile_module if isinstance(profile_module, dict) else {})
+        data: Dict[str, Any] = {"ticker": ticker, "listing": listing}
+        if issuer:
+            data["issuer"] = issuer
+        data["sections"] = shaped
+
         return json.dumps(
             {
                 "ok": True,
                 "market": _market_for(ticker),
                 "source": "yahoo",
-                "data": {"ticker": ticker, "listing": listing, "sections": shaped},
+                "data": data,
             },
             ensure_ascii=False,
         )

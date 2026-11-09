@@ -139,7 +139,8 @@ class TestStockProfileSuccess:
         assert "defaultKeyStatistics" in requested_modules
         assert "recommendationTrend" in requested_modules
         assert "price" in requested_modules
-        assert len(requested_modules) == len(sp._ALL_SECTIONS) + 1
+        assert "assetProfile" in requested_modules
+        assert len(requested_modules) == len(sp._ALL_SECTIONS) + 2
 
     def test_section_subset_only_requests_those_modules(self):
         with patch.object(
@@ -156,8 +157,8 @@ class TestStockProfileSuccess:
         assert list(payload["data"]["sections"]) == ["financials"]
 
         _, args, _ = mock_get.mock_calls[0]
-        # Listing module is always requested alongside the chosen sections.
-        assert args[1] == ["price", "financialData"]
+        # Listing and issuer modules are always requested alongside the chosen sections.
+        assert args[1] == ["price", "assetProfile", "financialData"]
 
     def test_missing_module_yields_empty_shaped_section(self):
         # Yahoo can omit a module for a symbol; shaper must not crash.
@@ -259,3 +260,35 @@ def test_listing_identity_underlying_symbol_only_when_yahoo_supplies_it() -> Non
     with patch.object(sp, "get_quote_summary", return_value=summary):
         out = sp.StockProfileTool().execute(ticker="AAPL.US")
     assert json.loads(out)["data"]["listing"]["underlying_symbol"] == "AAPL"
+
+
+def test_issuer_country_comes_from_the_asset_profile() -> None:
+    """A PEA check reads the head-office country here (2026-11-09).
+
+    Stellantis trades in Paris and Milan, but its head office is in the
+    Netherlands; only ``assetProfile`` says so.
+    """
+    summary = _sample_summary()
+    summary["assetProfile"] = {
+        "country": "Netherlands",
+        "city": "Hoofddorp",
+        "sector": "Consumer Cyclical",
+        "industry": "Auto Manufacturers",
+        "longBusinessSummary": "not passed through",
+    }
+    with patch.object(sp, "get_quote_summary", return_value=summary):
+        out = sp.StockProfileTool().execute(ticker="STLAP.PA", sections=["key_stats"])
+
+    issuer = json.loads(out)["data"]["issuer"]
+    assert issuer["country"] == "Netherlands"
+    assert issuer["sector"] == "Consumer Cyclical"
+    assert "registered office" in issuer["country_basis"]
+    assert "longBusinessSummary" not in issuer
+
+
+def test_issuer_is_omitted_when_yahoo_has_no_profile() -> None:
+    summary = _sample_summary()
+    summary["assetProfile"] = {"country": "  ", "sector": None}
+    with patch.object(sp, "get_quote_summary", return_value=summary):
+        out = sp.StockProfileTool().execute(ticker="AAPL.US", sections=["key_stats"])
+    assert "issuer" not in json.loads(out)["data"]
