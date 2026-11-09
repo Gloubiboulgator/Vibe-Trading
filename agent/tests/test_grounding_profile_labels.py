@@ -28,7 +28,10 @@ PROFILE = {
         "sections": {"key_stats": {
             "forwardPE": 12.004401, "trailingPE": 15.2, "priceToBook": 1.1551327, "revenueGrowth": -0.132,
             "operatingMargins": 0.196, "targetMeanPrice": 80.66, "beta": 0.52,
-        }},
+            "totalDebt": 12677000192, "totalCash": 1992999936,
+        }, "earnings_trend": [
+            {"period": "0y", "end_date": "2027-06-30", "eps_avg": 4.71234, "eps_trend_current": 4.71234},
+        ]},
     },
 }
 
@@ -55,6 +58,11 @@ def _issues(line: str, block: str) -> list[str]:
         ("Le chiffre d'affaires de RI.PA recule de 13,2 %.", "-13.2% | observed | croissance du CA | RI.PA"),
         ("Objectif moyen des analystes pour RI.PA : 80,66.", "80.66 | observed | objectif moyen | RI.PA"),
         ("Bêta de RI.PA : 0,52.", "0.52 | observed | bêta | RI.PA"),
+        ("BPA attendu de RI.PA pour l'exercice 2027 : 4,71.", "4.71 | observed | BPA attendu exercice juin 2027 | RI.PA"),
+        (
+            "La dette brute de RI.PA vaut 6,36 fois sa trésorerie.",
+            "6.36 | derived | 12677000192 / 1992999936 (dette totale / trésorerie) | RI.PA",
+        ),
     ],
 )
 def test_a_labelled_profile_ratio_is_grounded(line: str, block: str) -> None:

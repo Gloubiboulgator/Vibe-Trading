@@ -2229,6 +2229,30 @@ class _PolicyMixin:
                 scoped is None or (not scoped[0] and not scoped[1])
             ):
                 return "no_evidence"
+            # One instrument named alone anchors on its own observed values,
+            # exactly as each part of a several-instrument ref does above.
+            # "12677000192 / 1992999936 (dette totale / trésorerie)" with ref
+            # RI.PA found only market data and was refused although that
+            # instrument's get_stock_profile had returned both operands
+            # (2026-11-09 PEA screen).
+            single = _normalize_symbol(declaration.ref.strip())
+            if (
+                (scoped is None or (not scoped[0] and not scoped[1]))
+                and single
+                and single in observed_symbols
+                and not unattributed
+            ):
+                scoped = (
+                    [
+                        record
+                        for record in self._evidence
+                        if record.status == "observed"
+                        and record.value is not None
+                        and record.symbol
+                        and _normalize_symbol(record.symbol) == single
+                    ],
+                    [],
+                )
         if scoped is not None:
             anchors.extend(
                 float(record.value)
@@ -2998,6 +3022,14 @@ _PROFILE_FIELD_LABELS: dict[str, tuple[str, ...]] = {
     "bpa sur 12 mois": ("trailingeps",),
     "trailing eps": ("trailingeps",),
     "bpa prévisionnel": ("forwardeps",),
+    # Consensus EPS per fiscal period (earnings_trend rows). The period named
+    # in the note is not checked against the row's end date: the value must
+    # still be one the consensus rows hold.
+    "bpa attendu": ("eps_avg", "eps_trend_current"),
+    "bpa moyen attendu": ("eps_avg", "eps_trend_current"),
+    "consensus de bpa": ("eps_avg", "eps_trend_current"),
+    "expected eps": ("eps_avg", "eps_trend_current"),
+    "eps estimate": ("eps_avg", "eps_trend_current"),
     "forward eps": ("forwardeps",),
     "rendement du dividende": ("dividendyield",),
     "dividend yield": ("dividendyield",),
