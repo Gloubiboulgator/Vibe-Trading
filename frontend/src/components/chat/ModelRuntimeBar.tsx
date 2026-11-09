@@ -17,9 +17,6 @@ interface Props {
   running?: boolean;
   /** Live model ids for a provider, loaded when the picker opens on it. */
   loadModels?: (provider: string) => Promise<string[]>;
-  /** PEA mode: the agent proposes only PEA-eligible securities. Omit to hide the switch. */
-  peaMode?: boolean;
-  onPeaModeChange?: (enabled: boolean) => void;
 }
 
 /** Providers a run may switch to: saved API key, plus the saved provider itself. */
@@ -59,8 +56,6 @@ export function ModelRuntimeBar({
   onSelectionChange,
   running = false,
   loadModels,
-  peaMode = false,
-  onPeaModeChange,
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -157,25 +152,7 @@ export function ModelRuntimeBar({
             <ChevronDown className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
           </button>
         ) : summary}
-        {onPeaModeChange && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={peaMode}
-            disabled={running}
-            title={t(peaMode ? "agent.peaMode.on" : "agent.peaMode.off")}
-            onClick={() => onPeaModeChange(!peaMode)}
-            className={`ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-70 ${
-              peaMode
-                ? "border-primary/40 bg-primary/10 text-primary"
-                : "border-border/70 bg-muted/35 text-muted-foreground hover:bg-muted/60"
-            }`}
-          >
-            <span className={`inline-flex h-1.5 w-1.5 rounded-full ${peaMode ? "bg-primary" : "bg-muted-foreground/50"}`} aria-hidden="true" />
-            {t("agent.peaMode.label")}
-          </button>
-        )}
-        <span className={`${onPeaModeChange ? "" : "ml-auto "}inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground`}>
+        <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
           <Cpu className="h-3 w-3" aria-hidden="true" />
           {t("agent.reasoningStrength")}: {effortLabel}
         </span>

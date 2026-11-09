@@ -183,4 +183,23 @@ describe("Composer", () => {
     await waitFor(() => expect(api.uploadFile).toHaveBeenCalledTimes(5));
     expect(screen.queryByText("file-5.txt")).not.toBeInTheDocument();
   });
+
+  it("shows the PEA switch beside send only when it can change, and flips it", () => {
+    const onPeaModeChange = vi.fn();
+    const { rerender } = render(<Composer {...baseProps} />);
+    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+
+    rerender(<Composer {...baseProps} peaMode={false} onPeaModeChange={onPeaModeChange} />);
+    const toggle = screen.getByRole("switch", { name: /PEA mode/ });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(toggle).toHaveTextContent("PEA");
+    fireEvent.click(toggle);
+    expect(onPeaModeChange).toHaveBeenCalledWith(true);
+
+    rerender(<Composer {...baseProps} peaMode onPeaModeChange={onPeaModeChange} streaming />);
+    const on = screen.getByRole("switch", { name: /PEA mode/ });
+    expect(on).toHaveAttribute("aria-checked", "true");
+    expect(on).toHaveTextContent("PEA on");
+    expect(on).toBeDisabled();
+  });
 });

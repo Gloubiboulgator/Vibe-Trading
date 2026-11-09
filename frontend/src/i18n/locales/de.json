@@ -1321,9 +1321,10 @@
       "backtestComplete": "Backtest complete: {{runId}}"
     },
     "peaMode": {
-      "label": "PEA-Modus",
+      "label": "PEA",
       "on": "PEA-Modus an: Der Agent schlägt nur PEA-fähige Wertpapiere vor und bevorzugt Euro-Notierungen. Klicken zum Ausschalten.",
-      "off": "PEA-Modus einschalten: Der Agent schlägt nur PEA-fähige Wertpapiere vor (Unternehmen aus EU/EWR, zulässige ETFs)."
+      "off": "PEA-Modus einschalten: Der Agent schlägt nur PEA-fähige Wertpapiere vor (Unternehmen aus EU/EWR, zulässige ETFs).",
+      "labelOn": "PEA an"
     }
   },
   "runDetail": {

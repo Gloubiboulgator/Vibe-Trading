@@ -179,20 +179,4 @@ describe("ModelRuntimeBar", () => {
       expect(screen.getByRole("button", { name: /OpenRouter/ })).toBeDisabled();
     });
   });
-
-  it("shows the PEA switch only when it can change, and flips it", () => {
-    const onPeaModeChange = vi.fn();
-    const { rerender } = render(<ModelRuntimeBar settings={settings} />);
-    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
-
-    rerender(<ModelRuntimeBar settings={settings} peaMode={false} onPeaModeChange={onPeaModeChange} />);
-    const toggle = screen.getByRole("switch", { name: /PEA mode/ });
-    expect(toggle).toHaveAttribute("aria-checked", "false");
-    fireEvent.click(toggle);
-    expect(onPeaModeChange).toHaveBeenCalledWith(true);
-
-    rerender(<ModelRuntimeBar settings={settings} peaMode onPeaModeChange={onPeaModeChange} running />);
-    expect(screen.getByRole("switch", { name: /PEA mode/ })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("switch", { name: /PEA mode/ })).toBeDisabled();
-  });
 });

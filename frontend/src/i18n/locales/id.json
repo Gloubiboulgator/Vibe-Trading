@@ -1321,9 +1321,10 @@
       "backtestComplete": "Backtest complete: {{runId}}"
     },
     "peaMode": {
-      "label": "Mode PEA",
+      "label": "PEA",
       "on": "Mode PEA aktif: agen hanya mengusulkan efek yang memenuhi syarat PEA dan memilih pencatatan dalam euro. Klik untuk menonaktifkan.",
-      "off": "Aktifkan mode PEA: agen hanya akan mengusulkan efek yang memenuhi syarat PEA (perusahaan UE/EEA, ETF yang memenuhi syarat)."
+      "off": "Aktifkan mode PEA: agen hanya akan mengusulkan efek yang memenuhi syarat PEA (perusahaan UE/EEA, ETF yang memenuhi syarat).",
+      "labelOn": "PEA aktif"
     }
   },
   "runDetail": {

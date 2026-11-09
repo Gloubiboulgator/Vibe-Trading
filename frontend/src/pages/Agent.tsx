@@ -1874,8 +1874,6 @@ export function Agent() {
         onSelectionChange={setRunLlm}
         running={status === "streaming"}
         loadModels={loadProviderModels}
-        peaMode={peaMode}
-        onPeaModeChange={setPeaMode}
       />
       {historyError && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs">
@@ -2082,6 +2080,8 @@ export function Agent() {
               onCancelGoal={handleCancelGoalComposer}
               onStartSwarm={handleStartSwarm}
               onCancelSwarm={handleCancelSwarm}
+              peaMode={peaMode}
+              onPeaModeChange={setPeaMode}
             />
           </LiveRuntimePanel>
         </div>

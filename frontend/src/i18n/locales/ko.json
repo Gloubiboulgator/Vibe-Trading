@@ -1311,7 +1311,8 @@
     "peaMode": {
       "label": "PEA 모드",
       "on": "PEA 모드 켜짐: 에이전트가 PEA 적격 종목만 제안하고 유로 상장을 우선합니다. 클릭하면 꺼집니다.",
-      "off": "PEA 모드 켜기: 에이전트가 PEA 적격 종목(EU/EEA 기업, 적격 ETF)만 제안합니다."
+      "off": "PEA 모드 켜기: 에이전트가 PEA 적격 종목(EU/EEA 기업, 적격 ETF)만 제안합니다.",
+      "labelOn": "PEA 켜짐"
     }
   },
   "runDetail": {

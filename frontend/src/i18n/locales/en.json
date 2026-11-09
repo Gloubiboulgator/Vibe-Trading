@@ -1321,9 +1321,10 @@
       "backtestComplete": "Backtest complete: {{runId}}"
     },
     "peaMode": {
-      "label": "PEA mode",
+      "label": "PEA",
       "on": "PEA mode on: the agent proposes only PEA-eligible securities and prefers euro listings. Click to turn off.",
-      "off": "Turn on PEA mode: the agent will propose only PEA-eligible securities (EU/EEA companies, eligible ETFs)."
+      "off": "Turn on PEA mode: the agent will propose only PEA-eligible securities (EU/EEA companies, eligible ETFs).",
+      "labelOn": "PEA on"
     }
   },
   "runDetail": {

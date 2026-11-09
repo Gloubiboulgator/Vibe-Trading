@@ -1321,9 +1321,10 @@
       "backtestComplete": "Backtest complete: {{runId}}"
     },
     "peaMode": {
-      "label": "Modo PEA",
+      "label": "PEA",
       "on": "Modo PEA ativado: o agente só propõe ativos elegíveis ao PEA e prefere cotações em euros. Clique para desativar.",
-      "off": "Ativar o modo PEA: o agente só proporá ativos elegíveis ao PEA (empresas da UE/EEE, ETFs elegíveis)."
+      "off": "Ativar o modo PEA: o agente só proporá ativos elegíveis ao PEA (empresas da UE/EEE, ETFs elegíveis).",
+      "labelOn": "PEA ativado"
     }
   },
   "runDetail": {

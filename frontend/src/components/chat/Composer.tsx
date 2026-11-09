@@ -78,6 +78,9 @@ interface Props {
   onCancelGoal: () => void;
   onStartSwarm: () => void;
   onCancelSwarm: () => void;
+  /** PEA mode: the agent proposes only PEA-eligible securities. Omit to hide the switch. */
+  peaMode?: boolean;
+  onPeaModeChange?: (enabled: boolean) => void;
 }
 
 export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer({
@@ -96,6 +99,8 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
   onCancelGoal,
   onStartSwarm,
   onCancelSwarm,
+  peaMode = false,
+  onPeaModeChange,
 }, ref) {
   const { t } = useTranslation();
   const [input, setInput] = useState("");
@@ -468,6 +473,25 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
           ].join(" ")}
           readOnly={streaming}
         />
+        {onPeaModeChange && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={peaMode}
+            aria-label={t(peaMode ? "agent.peaMode.on" : "agent.peaMode.off")}
+            title={t(peaMode ? "agent.peaMode.on" : "agent.peaMode.off")}
+            disabled={streaming}
+            onClick={() => onPeaModeChange(!peaMode)}
+            className={[
+              "h-10 shrink-0 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+              peaMode
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:bg-muted hover:text-foreground",
+            ].join(" ")}
+          >
+            {t(peaMode ? "agent.peaMode.labelOn" : "agent.peaMode.label")}
+          </button>
+        )}
         {showExport && (
           <button
             type="button"
