@@ -226,9 +226,8 @@ def test_a_french_request_gets_a_french_marker_and_note(tmp_path: Path) -> None:
     assert released is not None
     assert "Prix d'entrée conseillé : (omis※)." in released
     assert "692,30 €" in released
-    assert "※ 1 chiffre(s) impossible(s) à rapprocher" in released
-    assert "Plage OHLC observée : CW8.PA: 682.91–692.35 EUR" in released
-    assert "aucune conversion de devise" in released
+    assert "※ 1 chiffre a été masqué : l'agent n'a pas pu le vérifier" in released
+    assert "cours observés : CW8.PA entre 682,91 et 692,35 EUR." in released
     assert "omitted" not in released
 
 

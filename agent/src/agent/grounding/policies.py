@@ -30,6 +30,7 @@ from src.agent.grounding.evidence import (
     _is_number,
     _is_price_kind,
     _keyed_metric_map_kind,
+    _leaf_name,
     _metric_kind_for_path,
     _price_field_for_path,
     _timestamp_matches_claim_date,
@@ -1783,6 +1784,43 @@ class _PolicyMixin:
             for target in magnitudes
         )
 
+    def _profile_label_match(
+        self, figure: Figure, declaration: Declaration, symbol: str
+    ) -> bool:
+        """Whether the note names a stock-profile field of ``symbol`` that holds the figure.
+
+        A screening table declares "12.0 | observed | PER prévisionnel | RI.PA":
+        the note says which ratio, the ref names the instrument, but no field
+        ref. The unscoped pool only holds market-data rows and metric-named
+        leaves, so every ratio, margin, target and beta of the 2026-11-09 PEA
+        screen was cut ("(omis※)" in 30 cells) although get_stock_profile had
+        returned each one. The note's label picks exactly one profile field,
+        and the figure must be that field's value as written (a fraction field
+        is read as a percent). No label, no match: other fields never answer.
+        """
+        fields = _profile_fields_for_note(declaration.note)
+        if not fields:
+            return False
+        for record in self._evidence:
+            if (
+                record.status != "observed"
+                or record.value is None
+                or record.tool != "get_stock_profile"
+                or record.symbol != symbol
+                or _leaf_name(record.field) not in fields
+            ):
+                continue
+            value = float(record.value)
+            if figure.percent and abs(value) <= 10:
+                value *= 100.0
+            targets = [value]
+            if figure.value > 0 > value:
+                # A fall written in words ("recule de 13,2 %").
+                targets.append(-value)
+            if any(self._within_written_precision(figure, figure.value, target) for target in targets):
+                return True
+        return False
+
     @staticmethod
     def _within_written_precision(
         figure: Figure, candidate: float, target: float, unit: float = 1.0
@@ -1953,6 +1991,10 @@ class _PolicyMixin:
                     observed_nearest=self._nearest_prints(figure, scoped_records, values),
                 )
             ]
+        if declaration is not None and symbol and self._profile_label_match(
+            figure, declaration, symbol
+        ):
+            return []
         candidates = self._price_candidates(
             symbol, records, column=figure.column, date=figure.date
         )
@@ -2898,3 +2940,89 @@ def _records_at(
 _NO_DECLARATION = Declaration(
     index=0, value_text="", value=0.0, percent=False, role="observed", note="", ref=""
 )
+
+
+# Labels a figures-block note uses for a stock-profile field (Yahoo key
+# statistics), casefolded and matched as whole phrases. A label maps to the
+# fields it can mean; the longest label found in a note wins, so "per
+# prévisionnel" is forwardPE and not the trailingPE a bare "per" means.
+_PROFILE_FIELD_LABELS: dict[str, tuple[str, ...]] = {
+    "per prévisionnel": ("forwardpe",),
+    "per attendu": ("forwardpe",),
+    "per forward": ("forwardpe",),
+    "forward p/e": ("forwardpe",),
+    "forward pe": ("forwardpe",),
+    "p/e forward": ("forwardpe",),
+    "per sur 12 mois": ("trailingpe",),
+    "per courant": ("trailingpe",),
+    "trailing p/e": ("trailingpe",),
+    "trailing pe": ("trailingpe",),
+    "per": ("trailingpe", "forwardpe"),
+    "p/e": ("trailingpe", "forwardpe"),
+    "prix/valeur comptable": ("pricetobook",),
+    "prix / valeur comptable": ("pricetobook",),
+    "cours/valeur comptable": ("pricetobook",),
+    "valeur comptable": ("pricetobook",),
+    "price to book": ("pricetobook",),
+    "price/book": ("pricetobook",),
+    "p/b": ("pricetobook",),
+    "pbr": ("pricetobook",),
+    "croissance du ca": ("revenuegrowth",),
+    "croissance du chiffre d'affaires": ("revenuegrowth",),
+    "revenue growth": ("revenuegrowth",),
+    "croissance des bénéfices": ("earningsgrowth",),
+    "earnings growth": ("earningsgrowth",),
+    "marge opérationnelle": ("operatingmargins",),
+    "operating margin": ("operatingmargins",),
+    "marge nette": ("profitmargins",),
+    "net margin": ("profitmargins",),
+    "profit margin": ("profitmargins",),
+    "marge brute": ("grossmargins",),
+    "gross margin": ("grossmargins",),
+    "marge d'ebitda": ("ebitdamargins",),
+    "ebitda margin": ("ebitdamargins",),
+    "objectif moyen": ("targetmeanprice",),
+    "cours cible moyen": ("targetmeanprice",),
+    "target mean": ("targetmeanprice",),
+    "objectif médian": ("targetmedianprice",),
+    "objectif haut": ("targethighprice",),
+    "target high": ("targethighprice",),
+    "objectif bas": ("targetlowprice",),
+    "target low": ("targetlowprice",),
+    "bêta": ("beta",),
+    "beta": ("beta",),
+    "ev/ebitda": ("enterprisetoebitda",),
+    "valeur d'entreprise/ebitda": ("enterprisetoebitda",),
+    "ev/ca": ("enterprisetorevenue",),
+    "ev/revenue": ("enterprisetorevenue",),
+    "bpa sur 12 mois": ("trailingeps",),
+    "trailing eps": ("trailingeps",),
+    "bpa prévisionnel": ("forwardeps",),
+    "forward eps": ("forwardeps",),
+    "rendement du dividende": ("dividendyield",),
+    "dividend yield": ("dividendyield",),
+    "roe": ("returnonequity",),
+    "rentabilité des capitaux propres": ("returnonequity",),
+    "return on equity": ("returnonequity",),
+    "roa": ("returnonassets",),
+    "return on assets": ("returnonassets",),
+    "dette/capitaux propres": ("debttoequity",),
+    "debt to equity": ("debttoequity",),
+    "peg": ("pegratio",),
+    "nombre d'analystes": ("numberofanalystopinions",),
+}
+_PROFILE_LABEL_RE = re.compile(
+    "|".join(
+        rf"(?<![\w/]){re.escape(label)}(?![\w/])"
+        for label in sorted(_PROFILE_FIELD_LABELS, key=len, reverse=True)
+    )
+)
+
+
+def _profile_fields_for_note(note: str) -> tuple[str, ...]:
+    """The profile fields a declaration note names, from its longest label."""
+    labels = [match.group(0) for match in _PROFILE_LABEL_RE.finditer(note.casefold())]
+    if not labels:
+        return ()
+    return _PROFILE_FIELD_LABELS[max(labels, key=len)]
+

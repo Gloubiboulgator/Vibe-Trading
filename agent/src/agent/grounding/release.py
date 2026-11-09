@@ -378,7 +378,7 @@ class _ReleaseMixin:
             if is_fr:
                 return (
                     "J'ai rejeté la version précédente car ses prix contredisaient les "
-                    f"données des outils. Plage OHLC observée et vérifiée : {joined}. "
+                    f"données récupérées. Cours observés : {joined}. "
                     "Je n'inventerai pas de prix d'entrée sans calcul visible ou données "
                     "à jour."
                 )
@@ -494,11 +494,24 @@ class _ReleaseMixin:
             sources = sorted({record.source for record in records if record.source})
             source_label = "/".join(sources) if sources else "unknown"
             unit = f" {currency}" if currency else ""
-            provenance = (
-                f"(source : {source_label} ; aucune conversion de devise)"
-                if is_fr
-                else f"(source: {source_label}; currency conversion: none)"
-            )
+            if is_fr:
+                # Read by the user, not by the gate: French decimals, two
+                # digits, a plain source name (2026-11-09: "56.47942582–
+                # 104.9901561 EUR (source : yahoo/yfinance ; aucune conversion
+                # de devise)" was unreadable).
+                low, high = (f"{v:,.2f}".replace(",", "\u202f").replace(".", ",") for v in (min(values), max(values)))
+                names = sorted({
+                    {"yfinance": "Yahoo"}.get(name, name.capitalize())
+                    for label in sources
+                    for name in label.split("/")
+                    if name and name != "auto"
+                })
+                facts.append(
+                    f"{self._answer_symbol_spelling(symbol, content)} entre {low} et {high}{unit}"
+                    + (f" (source : {' / '.join(names)})" if names else "")
+                )
+                continue
+            provenance = f"(source: {source_label}; currency conversion: none)"
             facts.append(
                 f"{self._answer_symbol_spelling(symbol, content)}: "
                 f"{_format_price(min(values))}–{_format_price(max(values))}{unit} "
@@ -842,16 +855,14 @@ class _ReleaseMixin:
         joined = self._observed_range_summary(is_zh, content, is_fr=is_fr)
         if is_fr:
             omitted = (
-                f"※ {removed} chiffre(s) impossible(s) à rapprocher des données des outils "
-                "de cette session ont été omis."
+                f"※ {removed} chiffre{'s' if removed > 1 else ''} "
+                f"{'ont été masqués' if removed > 1 else 'a été masqué'} : l'agent n'a pas pu "
+                f"{'les' if removed > 1 else 'le'} vérifier dans les données récupérées pendant "
+                "cette analyse."
             )
             if joined is None:
                 return omitted
-            return (
-                f"{omitted} Plage OHLC observée : {joined}. "
-                "Pour un prix d'entrée, demandez-moi de le calculer avec une formule "
-                "visible à partir d'un cours de clôture ou d'une moyenne mobile observés."
-            )
+            return f"{omitted} Pour repère, cours observés : {joined}."
         if joined is None:
             if is_zh:
                 return f"※ 略去 {removed} 处无法与本会话工具数据对上的数值。"

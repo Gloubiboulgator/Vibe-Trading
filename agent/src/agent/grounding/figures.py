@@ -226,6 +226,16 @@ class FiguresBlock:
                     abs(value) * 1e-9, 1e-9
                 ):
                     return declaration
+        # A fall written in words: "le chiffre d'affaires recule de 13,2 %"
+        # quotes the "-13.2%" the table declared. A percent may borrow the
+        # declaration of its exact negative; the check still runs on the
+        # declared, signed value (2026-11-09 PEA screen).
+        if percent and value > 0:
+            for declaration in candidates:
+                if declaration.value < 0 and abs(declaration.value + value) <= max(
+                    abs(value) * 1e-9, 1e-9
+                ):
+                    return declaration
         # A chosen percent declared bare with its unit in the note
         # ("20 | count | illustrative drop (%)") is the same parameter as the
         # "20 %" in the prose. Only a count may borrow so: it asserts nothing
