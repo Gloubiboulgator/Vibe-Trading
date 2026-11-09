@@ -30,6 +30,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from backtest.loaders import eastmoney_client, yahoo_client
+from backtest.loaders.base import EURO_AREA_SUFFIXES
 
 from src.agent.tools import BaseTool
 
@@ -261,6 +262,37 @@ def _fetch_yahoo_news(query: str, limit: int) -> list[dict[str, Any]]:
     ][:limit]
 
 
+def _fetch_euro_news(code: str, limit: int) -> list[dict[str, Any]]:
+    """Fetch headlines for a euro-area listing (SOI.PA) via its company name.
+
+    Yahoo's news search finds nothing for "SOI.PA" and the bare "SOI" is
+    another company (Stolt-Nielsen), but "Soitec" returns Soitec's news, each
+    tagged with SOI.PA (checked 2026-11-09). So the name comes from Yahoo's
+    instrument search, and only articles Yahoo ties to this exact listing are
+    kept, never another company's headlines.
+
+    Raises:
+        requests.RequestException: Network/HTTP failure, propagated to caller.
+    """
+    symbol = code.upper()
+    quote = next(
+        (item for item in yahoo_client.search(symbol) if str(item.get("symbol", "")).upper() == symbol),
+        None,
+    )
+    if quote is None:
+        return []
+    name = str(quote.get("longname") or quote.get("shortname") or "").strip()
+    if not name:
+        return []
+    articles = yahoo_client.search_news(name, max(limit * 2, limit))
+    return [
+        _yahoo_article(article)
+        for article in articles
+        if isinstance(article, dict)
+        and symbol in {str(t).upper() for t in article.get("relatedTickers") or ()}
+    ][:limit]
+
+
 class StockNewsTool(BaseTool):
     """Read-only per-stock and global financial news headlines."""
 
@@ -269,8 +301,8 @@ class StockNewsTool(BaseTool):
         "Fetch recent financial news headlines, read-only and no auth. Markets: "
         "China A-share (SH/SZ/BJ) returns Eastmoney news ARTICLES "
         "(title/url/source/published/snippet) under 'articles'. US (.US), Hong "
-        "Kong (.HK) and Brazil (B3 .SA) return Yahoo Finance news articles with "
-        "the same fields. Use "
+        "Kong (.HK), Brazil (B3 .SA) and euro-area listings (.PA, .AS, .DE, .MI, ...) "
+        "return Yahoo Finance news articles with the same fields. Use "
         "scope 'stock' with a 'code', or scope 'global' (no code) for broad "
         "China-market finance articles. "
         'Example: {"code": "600519.SH", "scope": "stock", "limit": 10}.'
@@ -372,6 +404,8 @@ class StockNewsTool(BaseTool):
 
         if suffix in _EM_SUFFIXES:
             return self._stock_via_eastmoney(code, query, limit)
+        if suffix in EURO_AREA_SUFFIXES:
+            return self._stock_via_euro(code, limit)
         if suffix in _YAHOO_SUFFIXES:
             # A bare B3 code (PETR4) is ambiguous on Yahoo search; its own
             # spelling (PETR4.SA) is the listing.
@@ -380,7 +414,7 @@ class StockNewsTool(BaseTool):
             return self._stock_via_yahoo(code, query, limit)
         return self._error(
             f"unsupported market for code {code!r}; expected suffix in "
-            f"{_EM_SUFFIXES + _YAHOO_SUFFIXES}"
+            f"{_EM_SUFFIXES + _YAHOO_SUFFIXES + EURO_AREA_SUFFIXES}"
         )
 
     def _stock_via_eastmoney(self, code: str, query: str, limit: int) -> str:
@@ -393,6 +427,19 @@ class StockNewsTool(BaseTool):
         return self._ok(
             "a_share",
             "eastmoney",
+            {"scope": "stock", "code": code, "articles": articles},
+        )
+
+    def _stock_via_euro(self, code: str, limit: int) -> str:
+        """Fetch euro-area listing headlines from Yahoo by company name."""
+        try:
+            articles = _fetch_euro_news(code, limit)
+        except Exception as exc:  # noqa: BLE001 - surface any fetch failure as envelope
+            logger.warning("yahoo news fetch failed for %s: %s", code, exc)
+            return self._error(f"yahoo news fetch failed: {exc}")
+        return self._ok(
+            "eu",
+            "yahoo",
             {"scope": "stock", "code": code, "articles": articles},
         )
 
