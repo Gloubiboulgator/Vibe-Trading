@@ -27,6 +27,9 @@ from src.agent.grounding.identity import _CANONICAL_SYMBOL_RE
 #: Coarse rounding such as 0.82467 -> 0.82 exceeds the existing 0.5% policy;
 #: the answer must retain more digits instead of widening its evidence band.
 ROUNDED_BAND = 0.005
+# A declaration note that names its unit as a percent ("(%)", "percent",
+# "pourcentage", "百分比").
+_NOTE_PERCENT_RE = re.compile(r"%|\bper ?cent|\bpourcent|百分", re.IGNORECASE)
 
 #: A declared value written as a fraction of two integers ("1/3").
 _FRACTION_RE = re.compile(r"([1-9]\d{0,2})\s*/\s*([1-9]\d{0,2})")
@@ -221,6 +224,21 @@ class FiguresBlock:
             for declaration in self.declarations:
                 if not declaration.percent and abs(declaration.value - value) <= max(
                     abs(value) * 1e-9, 1e-9
+                ):
+                    return declaration
+        # A chosen percent declared bare with its unit in the note
+        # ("20 | count | illustrative drop (%)") is the same parameter as the
+        # "20 %" in the prose. Only a count may borrow so: it asserts nothing
+        # about data, and an exact value is still required. In the 2026-11-09
+        # PEA run the gate cut "environ 20 %, environ 35 %" from a question to
+        # the user for that missing sign alone.
+        if percent:
+            for declaration in self.declarations:
+                if (
+                    not declaration.percent
+                    and declaration.role == "count"
+                    and _NOTE_PERCENT_RE.search(declaration.note)
+                    and abs(declaration.value - value) <= max(abs(value) * 1e-9, 1e-9)
                 ):
                     return declaration
         return None
