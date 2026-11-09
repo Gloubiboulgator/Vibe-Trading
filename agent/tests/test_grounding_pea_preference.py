@@ -98,12 +98,12 @@ def test_without_pea_the_choice_is_unchanged(tmp_path) -> None:
     assert _status(ledger, "Danone")[0] == "ambiguous"
 
 
-def test_the_preference_needs_an_exact_euro_area_match(tmp_path) -> None:
-    """No exact euro-area name: Schneider stays ambiguous, Nvidia keeps its US line."""
+def test_the_preference_needs_a_matching_euro_area_name(tmp_path) -> None:
+    """Schneider matches up to its legal form (SU.PA, since 2026-11-09); Nvidia keeps its US line."""
     ledger = _ledger(tmp_path, PEA_START)
     _ingest(ledger, "Schneider Electric", SCHNEIDER)
     _ingest(ledger, "Nvidia", NVIDIA)
-    assert _status(ledger, "Schneider Electric")[0] == "ambiguous"
+    assert _status(ledger, "Schneider Electric") == ("locked", "SU.PA")
     assert _status(ledger, "Nvidia") == ("locked", "NVDA.US")
 
 
@@ -119,3 +119,44 @@ def test_the_preference_is_audited_as_not_explicit(tmp_path) -> None:
     record = ledger.identity_summary()["records"][0]
     assert record["resolution_constraints"][0]["value"] == "eu"
     assert record["resolution_constraints"][0]["explicit"] is False
+
+
+KERING = [
+    {"symbol": "KER.PA", "name": "KERING", "market": "eu", "type": "equity", "exchange": "PAR", "source": "yahoo"},
+    {"symbol": "PPRUY.US", "name": "Kering SA", "market": "us", "type": "equity", "exchange": "PNK", "source": "yahoo"},
+    {"symbol": "1KER.MI", "name": "KERING", "market": "eu", "type": "equity", "exchange": "MIL", "source": "yahoo"},
+    {"symbol": "KER.VI", "name": "KERING SA", "market": "eu", "type": "equity", "exchange": "VIE", "source": "yahoo"},
+]
+STELLANTIS = [
+    {"symbol": "STLA.US", "name": "Stellantis集团", "market": "us", "type": "美股", "source": "eastmoney"},
+    {"symbol": "STLAM.MI", "name": "STELLANTIS", "market": "eu", "type": "equity", "exchange": "MIL", "source": "yahoo"},
+    {"symbol": "STLAP.PA", "name": "STELLANTIS NV", "market": "eu", "type": "equity", "exchange": "PAR", "source": "yahoo"},
+    {"symbol": "8TI.HM", "name": "Stellantis N.V.               A", "market": "eu", "type": "equity", "exchange": "HAM", "source": "yahoo"},
+]
+SARTORIUS = [
+    {"symbol": "DIM.PA", "name": "SARTORIUS STED BIO", "market": "eu", "type": "equity", "exchange": "PAR", "source": "yahoo"},
+    {"symbol": "DIMP.XD", "name": "Sartorius Stedim Biotech", "market": "global", "type": "equity", "exchange": "DXE", "source": "yahoo"},
+    {"symbol": "4DIM.TI", "name": "SARTORIUS STEDIM BIOTECH", "market": "global", "type": "equity", "exchange": "TLO", "source": "yahoo"},
+]
+TWO_HOMES = [
+    {"symbol": "XYZ.PA", "name": "XYZ", "market": "eu", "source": "yahoo"},
+    {"symbol": "XYZB.PA", "name": "XYZ", "market": "eu", "source": "yahoo"},
+]
+
+
+@pytest.mark.parametrize(
+    ("query", "candidates", "expected"),
+    [
+        ("Kering", KERING, "KER.PA"),
+        ("Stellantis", STELLANTIS, "STLAP.PA"),
+        ("Sartorius Stedim Biotech", SARTORIUS, "DIM.PA"),
+        ("XYZ", TWO_HOMES, None),
+    ],
+)
+def test_a_name_on_several_euro_venues_locks_its_home_listing(tmp_path: Path, query, candidates, expected) -> None:
+    """2026-11-09: Kering, Sartorius and Forvia stayed ambiguous; Stellantis locked Milan."""
+    ledger = _ledger(tmp_path, PEA_START)
+    _ingest(ledger, query, candidates)
+    status, symbol = _status(ledger, query)
+    assert (symbol if status == "locked" else None) == expected
+

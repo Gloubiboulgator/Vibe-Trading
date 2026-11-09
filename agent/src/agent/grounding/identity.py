@@ -842,9 +842,11 @@ class _IdentityMixin:
         }
         chosen = None
         if preferred_markets and not market_values:
-            chosen = self._exact_candidate(
-                query,
-                [c for c in candidates if candidate_market(c) in preferred_markets],
+            preferred = [c for c in candidates if candidate_market(c) in preferred_markets]
+            chosen = (
+                self._home_euro_listing(query, preferred)
+                if preferred_markets == {"eu"}
+                else self._exact_candidate(query, preferred)
             )
         if chosen is None:
             chosen = self._choose_candidate(query, candidates)
@@ -992,6 +994,42 @@ class _IdentityMixin:
         return exact[0] if len(exact) == 1 else None
 
     @staticmethod
+    def _home_euro_listing(
+        query: str,
+        candidates: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        """Pick the main euro-area line of a name listed on several euro venues.
+
+        Kering answers KER.PA, 1KER.MI and KER.VI, all named "KERING"; Stellantis
+        answers STLAM.MI "STELLANTIS" and STLAP.PA "STELLANTIS NV"; Sartorius
+        Stedim Biotech answers DIM.PA "SARTORIUS STED BIO". Requiring one exact
+        name left the first and third ambiguous and locked Milan for the second
+        (2026-11-09). A name matches when it is the query up to legal-form words
+        and abbreviated words; among matches the primary venues rank first
+        (Paris for a French investor, then the other home exchanges) and lines
+        that only relay a foreign listing (a digit-led Milan code, the German
+        regional floors) last. A tie on the best venue stays ambiguous.
+        """
+        exact = _IdentityMixin._exact_candidate(query, candidates)
+        query_words = _name_words(query)
+        if not query_words:
+            return exact
+        ranked: dict[str, tuple[int, dict[str, Any]]] = {}
+        for candidate in candidates:
+            symbol = _normalize_symbol(candidate.get("symbol"))
+            if not symbol or symbol in ranked:
+                continue
+            words = _name_words(str(candidate.get("name") or ""))
+            if candidate is not exact and not _same_name(query_words, words):
+                continue
+            ranked[symbol] = (_euro_venue_rank(symbol), candidate)
+        if not ranked:
+            return exact
+        best = min(rank for rank, _ in ranked.values())
+        top = [candidate for rank, candidate in ranked.values() if rank == best]
+        return top[0] if len(top) == 1 else None
+
+    @staticmethod
     def _choose_candidate(
         query: str,
         candidates: list[dict[str, Any]],
@@ -1131,3 +1169,41 @@ class _IdentityMixin:
             for symbol in self._extract_symbol_arguments(arguments)
             if "." not in symbol
         )
+
+
+# Legal-form and share-class words a listing name may carry beside the company
+# name ("KERING SA", "STELLANTIS NV", "Sanofi S.A.  A").
+_LEGAL_WORDS = frozenset(
+    "a ab ag asa bv eo inh kgaa nv oyj plc s sa sca se spa the ord".split()
+)
+# Primary euro-area venues, Paris first for a PEA investor. Other euro
+# suffixes (German regional floors, Vienna's global market) rank after.
+_EURO_VENUE_ORDER = ("PA", "AS", "BR", "LS", "IR", "MI", "MC", "DE", "HE", "AT")
+
+
+def _name_words(name: str) -> list[str]:
+    """A company name as comparable words, without legal forms or codes."""
+    words = re.findall(r"[a-z\u3400-\u9fff]+", name.casefold().replace("&", " "))
+    return [word for word in words if word not in _LEGAL_WORDS]
+
+
+def _same_name(query: list[str], name: list[str]) -> bool:
+    """Whether two names agree word for word, one word abbreviating the other."""
+    if len(query) != len(name):
+        return False
+    return all(
+        a.startswith(b) or b.startswith(a)
+        for a, b in zip(query, name)
+        if min(len(a), len(b)) >= 3 or a == b
+    ) and all(min(len(a), len(b)) >= 3 or a == b for a, b in zip(query, name))
+
+
+def _euro_venue_rank(symbol: str) -> int:
+    """Rank a euro-area line: primary venues first, relay lines last."""
+    base, _, suffix = symbol.rpartition(".")
+    if base[:1].isdigit():
+        return len(_EURO_VENUE_ORDER) + 1
+    try:
+        return _EURO_VENUE_ORDER.index(suffix)
+    except ValueError:
+        return len(_EURO_VENUE_ORDER)
