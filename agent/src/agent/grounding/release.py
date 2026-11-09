@@ -17,6 +17,7 @@ from src.agent.grounding.figures import (
     BLOCK_LANGUAGE,
     Figure,
     _lines_with_offsets,
+    drop_malformed_declarations,
     parse_figures_block,
     scan_figures,
     strip_figures_block,
@@ -602,9 +603,10 @@ class _ReleaseMixin:
         Each rejected figure becomes a marker at its own span, missing provenance
         is appended, unchecked restatements of a cut figure (bare, or inside a
         code fence, compared by normalized digits) are swept, and the result and
-        its footnote are re-validated by the same gate. A block with an
-        unreadable declaration line is dropped first, so every measured figure is
-        checked as observed; if that alone passes, nothing is footnoted.
+        its footnote are re-validated by the same gate. Unreadable
+        declaration lines are dropped first, keeping the readable ones (the whole
+        block goes only if it stays unreadable); if that alone passes, nothing is
+        footnoted.
         Fail-closed: None when a market answer observed no price, an issue cannot
         be cut (an identity finding), a flagged figure cannot be located, or the
         text still fails. A general answer with no tool evidence is released cut,
@@ -635,8 +637,18 @@ class _ReleaseMixin:
             issue.get("code") == "figures_block_malformed" for issue in check.issues
         )
         if dropped_block:
-            text = strip_figures_block(text, parse_figures_block(text))
-            check = self._validate(text, record=False)
+            # Only the unreadable lines go; the readable declarations still
+            # cover their figures. The whole block goes only if that fails.
+            block = parse_figures_block(text)
+            kept = drop_malformed_declarations(text, block)
+            kept_check = self._validate(kept, record=False)
+            if not any(
+                issue.get("code") == "figures_block_malformed" for issue in kept_check.issues
+            ):
+                text, check = kept, kept_check
+            else:
+                text = strip_figures_block(text, block)
+                check = self._validate(text, record=False)
         removed = 0
         keys: set[str] = set()
         for _ in range(_MAX_REDACTION_PASSES):

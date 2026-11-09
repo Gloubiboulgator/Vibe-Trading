@@ -897,22 +897,29 @@ def _parse_value(
 _PERCENT_RANGE_RE = re.compile(
     r"^(?P<low>[+-]?[\d.,]+)\s*[%％]\s*[-–—~～]\s*(?P<high>[+-]?[\d.,]+)\s*[%％]$"
 )
+# "2-3" (a horizon in years, a count of analysts): the endpoints carry no
+# unit. The high side takes no sign, so "2-3" never reads as 2 and -3.
+_BARE_RANGE_RE = re.compile(r"^(?P<low>[+-]?\d[\d.,]*)\s*[-–—~～]\s*(?P<high>\d[\d.,]*)$")
 
 
 def _parse_range(
     field: str, decimal_commas: bool | None = None
 ) -> list[tuple[float, bool, str]]:
-    """Both endpoints of a declared percent range, each as ``_parse_value`` reads it.
+    """Both endpoints of a declared range, each as ``_parse_value`` reads it.
 
     Returns:
         Two ``(value, percent, canonical)`` triples, or nothing when the field
-        is not exactly ``N% - N%``.
+        is not exactly ``N% - N%`` or ``N - N``.
     """
-    match = _PERCENT_RANGE_RE.fullmatch(_normalize(field).text.strip())
+    text = _normalize(field).text.strip()
+    unit = "%"
+    match = _PERCENT_RANGE_RE.fullmatch(text)
+    if match is None:
+        match, unit = _BARE_RANGE_RE.fullmatch(text), ""
     if match is None:
         return []
     endpoints = []
-    for side in (match.group("low") + "%", match.group("high") + "%"):
+    for side in (match.group("low") + unit, match.group("high") + unit):
         parsed = _parse_value(side, decimal_commas)
         if parsed is None:
             return []
@@ -926,6 +933,23 @@ def _is_header_or_rule(parts: Sequence[str]) -> bool:
         return True
     cells = [part.replace(" ", "") for part in parts if part]
     return bool(cells) and all(set(cell) <= {"-", ":"} and "-" in cell for cell in cells)
+
+
+# A value cell whose dot can only be a decimal point: a zero integer part, or a
+# fraction that is not a three-digit thousands group.
+_POINT_DECIMAL_RE = re.compile(r"^[+-]?(?:0\.\d|\d+\.(?:\d{1,2}|\d{4,})(?!\d))")
+
+
+def _block_writes_decimal_points(raw: str) -> bool:
+    """Whether a block's value cells use decimal points and never a comma."""
+    cells = [
+        _normalize(line.replace("｜", "|").strip().lstrip("|").split("|", 1)[0]).text.strip()
+        for line in raw.splitlines()
+        if "|" in line or "｜" in line
+    ]
+    if any("," in cell for cell in cells):
+        return False
+    return any(_POINT_DECIMAL_RE.match(cell) for cell in cells)
 
 
 def parse_figures_block(content: str) -> FiguresBlock:
@@ -952,6 +976,10 @@ def parse_figures_block(content: str) -> FiguresBlock:
     # The prose decides whether "2,639" is a decimal; a declaration cell must agree
     # with it. ``None`` (no document evidence) lets the cell speak for itself.
     document_reading = _writes_decimal_commas(_normalize(content).text) or None
+    # A French answer whose block is written "71.14 | 0.2055 | 5.051": the
+    # block's own unambiguous points say "5.051" is five, not five thousand.
+    # Only dotted cells switch; "3 000" keeps the document's grouping.
+    block_points = bool(document_reading) and _block_writes_decimal_points(raw)
     for number, line in enumerate(raw.splitlines(), start=1):
         stripped = line.strip().replace("｜", "|")
         if not stripped:
@@ -964,11 +992,12 @@ def parse_figures_block(content: str) -> FiguresBlock:
         parts = [part.strip() for part in stripped.split("|", 3)]
         if _is_header_or_rule(parts):
             continue
-        parsed = _parse_value(parts[0], document_reading) if parts else None
+        reading = False if block_points and "." in parts[0] else document_reading
+        parsed = _parse_value(parts[0], reading) if parts else None
         role = parts[1].casefold() if len(parts) > 1 else ""
         if parsed is None:
             # "20%-30%" declares both endpoints: one range, two declarations.
-            endpoints = _parse_range(parts[0], document_reading) if parts else []
+            endpoints = _parse_range(parts[0], reading) if parts else []
             if not endpoints or role not in ROLES:
                 malformed.append((number, line.strip()[:120]))
                 continue
@@ -1018,6 +1047,24 @@ def strip_figures_block(content: str, block: FiguresBlock) -> str:
         head, tail = text[:start].rstrip(), text[end:].lstrip()
         text = head + ("\n\n" if head and tail else "") + tail
     return text.strip() if spans else content
+
+
+def drop_malformed_declarations(content: str, block: FiguresBlock) -> str:
+    """Return the draft with only its unreadable declaration lines removed.
+
+    One unreadable line must not take the readable declarations down with it:
+    without them every derived or cited figure is re-checked as observed.
+    """
+    unreadable = {raw for _, raw in block.malformed}
+    spans = block.spans or ((block.span,) if block.span else ())
+    if not unreadable or not spans:
+        return content
+    text = content
+    for start, end in sorted(spans, reverse=True):
+        lines = text[start:end].splitlines(keepends=True)
+        kept = [line for line in lines if line.strip()[:120] not in unreadable]
+        text = text[:start] + "".join(kept) + text[end:]
+    return text
 
 
 def _table_cells(line: str, offset: int) -> list[tuple[str, int, int]]:
