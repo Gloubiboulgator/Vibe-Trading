@@ -844,7 +844,7 @@ class _IdentityMixin:
         if preferred_markets and not market_values:
             preferred = [c for c in candidates if candidate_market(c) in preferred_markets]
             chosen = (
-                self._home_euro_listing(query, preferred)
+                self._home_euro_listing(query, preferred, candidates)
                 if preferred_markets == {"eu"}
                 else self._exact_candidate(query, preferred)
             )
@@ -997,6 +997,7 @@ class _IdentityMixin:
     def _home_euro_listing(
         query: str,
         candidates: list[dict[str, Any]],
+        all_candidates: list[dict[str, Any]] = (),
     ) -> dict[str, Any] | None:
         """Pick the main euro-area line of a name listed on several euro venues.
 
@@ -1023,6 +1024,30 @@ class _IdentityMixin:
             if candidate is not exact and not _same_name(query_words, words):
                 continue
             ranked[symbol] = (_euro_venue_rank(symbol), candidate)
+        us_primary = any(
+            c.get("cik") and str(c.get("exchange") or "").upper() not in _OTC_EXCHANGES
+            for c in all_candidates
+        )
+        if not ranked and exact is None and not us_primary:
+            # "Infineon" names "Infineon Technologies": the query may stop
+            # short of the full name, but only when nothing matched it as
+            # written, no candidate is a US exchange listing (Nvidia's NVD.DE
+            # "NVIDIA Corp." only relays NVDA; Infineon's US lines are OTC
+            # ADRs) and every such candidate is the same company ("Siemens"
+            # also starts "Siemens Energy").
+            longer = {
+                _normalize_symbol(candidate.get("symbol")): (
+                    _euro_venue_rank(_normalize_symbol(candidate.get("symbol"))),
+                    candidate,
+                    tuple(words),
+                )
+                for candidate in candidates
+                if _normalize_symbol(candidate.get("symbol"))
+                and len(words := _name_words(str(candidate.get("name") or ""))) > len(query_words)
+                and _same_name(query_words, words[: len(query_words)])
+            }
+            if len({full for _, _, full in longer.values()}) == 1:
+                ranked.update({symbol: (rank, candidate) for symbol, (rank, candidate, _) in longer.items()})
         if not ranked:
             return exact
         best = min(rank for rank, _ in ranked.values())
@@ -1176,15 +1201,30 @@ class _IdentityMixin:
 _LEGAL_WORDS = frozenset(
     "a ab ag asa bv eo inh kgaa nv oyj plc s sa sca se spa the ord".split()
 )
+# US over-the-counter venues: an ADR quoted there is not a primary listing.
+_OTC_EXCHANGES = frozenset({"PNK", "OQX", "OQB", "OTC", "OEM", "OBB"})
 # Primary euro-area venues, Paris first for a PEA investor. Other euro
 # suffixes (German regional floors, Vienna's global market) rank after.
 _EURO_VENUE_ORDER = ("PA", "AS", "BR", "LS", "IR", "MI", "MC", "DE", "HE", "AT")
 
 
 def _name_words(name: str) -> list[str]:
-    """A company name as comparable words, without legal forms or codes."""
-    words = re.findall(r"[a-z\u3400-\u9fff]+", name.casefold().replace("&", " "))
+    """A company name as comparable words, without legal forms or codes.
+
+    Dotted legal forms read as one word ("N.V." is "nv", "S.p.A." is "spa"),
+    and the share-class letter Yahoo pads onto German listing names ("SAP SE
+    ... I", "Siemens Energy AG ... N") is dropped (2026-11-09).
+    """
+    text = _SHARE_CLASS_TAIL_RE.sub("", name).casefold().replace("&", " ")
+    text = _DOTTED_FORM_RE.sub(lambda match: match.group(0).replace(".", ""), text)
+    words = re.findall(r"[a-z\u3400-\u9fff]+", text)
     return [word for word in words if word not in _LEGAL_WORDS]
+
+
+# "N.V.", "S.p.A.", "S.A": letters of one or three, each followed by a dot.
+_DOTTED_FORM_RE = re.compile(r"(?<![a-z])(?:[a-z]{1,3}\.){1,3}[a-z]?(?![a-z])")
+# A single class letter after a run of padding spaces at the end of the name.
+_SHARE_CLASS_TAIL_RE = re.compile(r"\s{2,}[A-Za-z]\s*$")
 
 
 def _same_name(query: list[str], name: list[str]) -> bool:
