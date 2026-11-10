@@ -32,6 +32,29 @@ from src.agent.grounding.release import (
 GROUNDING_ARTIFACT = "grounding_evidence.json"
 
 
+def load_prior_identities(run_dirs: Sequence[Path]) -> list[dict[str, Any]]:
+    """Read the identity records earlier runs persisted, oldest first.
+
+    Args:
+        run_dirs: Run directories of the session's earlier turns, oldest first.
+
+    Returns:
+        Records in order, so a later turn's lock for a query wins. A missing
+        or unreadable artifact contributes nothing.
+    """
+    records: list[dict[str, Any]] = []
+    for run_dir in run_dirs:
+        try:
+            payload = json.loads((Path(run_dir) / "artifacts" / GROUNDING_ARTIFACT).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        identity = payload.get("identity") if isinstance(payload, dict) else None
+        for record in (identity or {}).get("records") or ():
+            if isinstance(record, dict):
+                records.append(record)
+    return records
+
+
 # Tools whose successful completion can ground backtest/analysis metric claims
 # (#1336). Success alone is not authority: only results that actually carried
 # metric output (parsed from the result or its run-dir artifacts) raise
@@ -101,6 +124,7 @@ class GroundingLedger(
         history: Sequence[Mapping[str, Any]] | None = None,
         contextual_identity_constraints: bool = True,
         standing_markets: Sequence[tuple[str, str]] = (),
+        prior_identities: Sequence[Mapping[str, Any]] = (),
     ) -> None:
         """Create a ledger and seed only authoritative prior identities.
 
@@ -115,6 +139,9 @@ class GroundingLedger(
                 the original conversation may narrow resolver candidates.
             standing_markets: ``(market, source_id)`` preferences set by the
                 session rather than its text (PEA mode).
+            prior_identities: Identity records earlier runs of the same
+                session persisted (:func:`load_prior_identities`). Their locks
+                carry over unless the current message contradicts them.
         """
         self.run_dir = Path(run_dir)
         self.user_message = user_message
@@ -162,6 +189,7 @@ class GroundingLedger(
         self._session_symbol_roots: set[str] = set()
 
         self._seed_symbols(user_message, source="user_message")
+        self._carry_prior_identities(prior_identities)
         self.persist()
 
     @property

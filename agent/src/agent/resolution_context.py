@@ -35,7 +35,9 @@ _MARKET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         "us",
         re.compile(
             r"美股|纳斯达克|纽交所|美国(?:市场|上市)|"
-            r"\bU\.?S\.?[- ]?(?:listed|stocks?|shares?|market)\b|\bNASDAQ\b|\bNYSE\b",
+            r"\bU\.?S\.?[- ]?(?:listed|stocks?|shares?|market)\b|\bNASDAQ\b|\bNYSE\b|"
+            r"\bcotations?\s+(?:am[ée]ricaines?|aux\s+[ée]tats[- ]unis|[àa]\s+new\s+york)\b|"
+            r"\bcot[ée]e?s?\s+(?:aux\s+[ée]tats[- ]unis|[àa]\s+new\s+york|[àa]\s+wall\s+street)\b",
             re.IGNORECASE,
         ),
     ),

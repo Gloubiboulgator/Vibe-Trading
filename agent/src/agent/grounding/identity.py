@@ -14,7 +14,7 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Iterable, Mapping
 
-from src.agent.resolution_context import candidate_market
+from src.agent.resolution_context import _HISTORY_RESET_RE, candidate_market
 from src.market_data import canonical_fx_pair
 
 _RESOLVER_TOOL = "search_symbol"
@@ -690,6 +690,50 @@ class _IdentityMixin:
             self._identity_required = True
             self._buffer_output = True
 
+    def _carry_prior_identities(self, records: Iterable[Mapping[str, Any]]) -> None:
+        """Keep the instruments earlier turns of this session locked (2026-11-10).
+
+        Every message used to start from an empty identity state, so a
+        follow-up on "ASML" made the model call ``get_market_data("ASML.AS")``
+        straight from the conversation, get ``identity_required`` twice and
+        resolve the name again. A lock a resolver produced earlier in the
+        session is carried over unless the new message speaks against it: a
+        market the current message (or the session's standing PEA preference)
+        ties to that query and the symbol is not on, or a request to drop
+        earlier market choices. A carried lock does not by itself make the run
+        identity-required.
+        """
+        if _HISTORY_RESET_RE.search(self.user_message or ""):
+            return
+        # Newest first: the latest turn's lock for a query is the one kept.
+        for raw in reversed(list(records)):
+            if not isinstance(raw, Mapping) or raw.get("status") != "locked":
+                continue
+            symbol = _normalize_symbol(str(raw.get("symbol") or ""))
+            query = str(raw.get("query") or "")
+            if not symbol or not query:
+                continue
+            key = _query_key(query)
+            if key in self._identities:
+                continue
+            market = candidate_market({"symbol": symbol})
+            if any(
+                constraint.dimension == "market" and constraint.value != market
+                for constraint in self.resolution_context.constraints_for(query)
+            ):
+                continue
+            self._identities[key] = IdentityRecord(
+                query=query,
+                status="locked",
+                symbol=symbol,
+                venue=raw.get("venue"),
+                instrument_type=raw.get("instrument_type"),
+                currency=raw.get("currency"),
+                source_tool_call_id=raw.get("source_tool_call_id"),
+                source=["prior_turn", *[str(item) for item in raw.get("source") or ()]],
+                candidates=list(raw.get("candidates") or ()),
+            )
+
     def _hold_locked(self, existing: IdentityRecord | None) -> bool:
         """Whether a settled record must survive a non-conclusive resolver step.
 
@@ -893,7 +937,11 @@ class _IdentityMixin:
             )
             return
 
-        if existing and existing.status == "locked" and existing.symbol != symbol:
+        # A lock carried from an earlier turn is replaced, not contradicted: a
+        # fresh resolution of the same name is newer evidence, and resolvers
+        # change (SAP locked SAP.US before European home listings were preferred).
+        carried = existing is not None and "prior_turn" in existing.source
+        if existing and existing.status == "locked" and existing.symbol != symbol and not carried:
             conflicting = list(candidates)
             conflicting.insert(0, {"symbol": existing.symbol, "source": existing.source})
             self._identities[key] = IdentityRecord(
