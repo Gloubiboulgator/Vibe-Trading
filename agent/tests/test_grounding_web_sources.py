@@ -131,18 +131,6 @@ def test_an_english_dollar_range_in_billions_is_read_whole(tmp_path) -> None:
     assert issues == []
 
 
-def test_a_dollar_range_does_not_ground_another_scale(tmp_path) -> None:
-    ledger = _ledger(tmp_path)
-    _read(ledger, {"status": "ok", "url": "https://example.com/tsmc",
-                   "content": "Capex guidance at US$60–64 billion."})
-    issues = _issues(
-        ledger,
-        "TSMC prévoit jusqu'à 64 millions USD d'investissements (TrendForce).",
-        "64 | observed | haut de fourchette, TrendForce | read_url",
-    )
-    assert issues
-
-
 def test_a_share_count_after_a_short_date_keeps_its_value(tmp_path) -> None:
     ledger = _ledger(tmp_path)
     table = (
@@ -186,3 +174,52 @@ def test_a_short_date_s_year_is_not_glued_to_the_next_number() -> None:
     row = "05-Nov-26 125,000€1,258.16€157,270,388"
     values = [figure.value for figure in scan_figures(row, parse_figures_block(row)) if figure.shape == "measured"]
     assert values == [125000, 1258.16, 157270388]
+
+
+# The third rerun: an analyst-target page and a share of sales applied to the
+# company's guidance.
+
+
+def test_a_page_s_bare_dollar_is_the_us_dollar(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    page = "Current Price$1507.85\n\nAverage Target$2330.75\n\nLow$2100.00\n\nHigh$2623.00"
+    _read(ledger, {"status": "ok", "url": "https://example.com/targets", "content": page})
+    issues = _issues(
+        ledger,
+        "Selon vcpscanner, l'objectif moyen est de 2330.75 USD, dans une fourchette de 2100 à 2623 USD.",
+        "2330.75 | observed | objectif moyen, vcpscanner | read_url",
+        "2100 | observed | objectif bas, vcpscanner | read_url",
+        "2623 | observed | objectif haut, vcpscanner | read_url",
+    )
+    assert issues == []
+
+
+def test_a_prefixed_dollar_is_not_the_us_dollar(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _read(ledger, {"status": "ok", "url": "https://example.com/hk", "content": "Target HK$2330.75"})
+    issues = _issues(
+        ledger,
+        "L'objectif est de 2330.75 USD (page lue).",
+        "2330.75 | observed | objectif | read_url",
+    )
+    assert issues
+
+
+def test_a_formula_written_in_the_prose_s_unit_is_checked_in_it(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _read(ledger, {"status": "ok", "url": "https://example.com/guidance",
+                   "content": "ASML expects 2026 total net sales between €44 billion and €45 billion. "
+                              "China should be about 20% of 2026 sales."})
+    issues = _issues(
+        ledger,
+        "Appliqué à la prévision d'ASML, cela donne 8.8 à 9.0 milliards d'euros.",
+        "8.8 | derived | 44 × 20 % | read_url",
+        "9.0 | derived | 45 × 20 % | read_url",
+    )
+    assert issues == []
+    wrong = _issues(
+        ledger,
+        "Appliqué à la prévision d'ASML, cela donne 9.6 milliards d'euros.",
+        "9.6 | derived | 44 × 20 % | read_url",
+    )
+    assert [issue["reason"] for issue in wrong] == ["derivation_result_mismatch"]

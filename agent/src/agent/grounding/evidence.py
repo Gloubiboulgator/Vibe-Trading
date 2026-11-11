@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import re
+import string
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping
@@ -862,6 +863,25 @@ def _document_figure(text: str, figure: Figure, opening: Figure | None) -> Figur
         scale=scale,
         currency_code=figure.currency_code or (opening.currency_code if closes_range else None),
     )
+
+
+def _dollar_is_usd(text: str, figure: Figure) -> Figure:
+    """A web page's bare "$" is the US dollar ("Current Price$1507.85").
+
+    The answer writes "1507.85 USD", and a figure with no currency could not
+    ground it. Only for documents: inside an answer, "$" stays unresolved, and
+    a prefixed dollar ("HK$", "A$", "NT$") is never read as USD.
+    """
+    if figure.currency_code is not None or not figure.currency:
+        return figure
+    head = text[max(0, figure.start - 12) : figure.start].rstrip(" \t\u00a0*")
+    if not head.endswith("$"):
+        return figure
+    letters = len(head) - 1 - len(head[:-1].rstrip(string.ascii_letters))
+    prefix = head[len(head) - 1 - letters : -1]
+    if prefix and len(prefix) <= 2 and prefix.isupper():
+        return figure
+    return replace(figure, currency_code="USD")
 
 
 def _document_field(figure: Figure) -> str:
@@ -1732,25 +1752,32 @@ class _EvidenceMixin:
             figure, previous = _document_figure(text, figure, previous if opens_range else None), figure
             if figure is None:
                 continue
-            value = float(figure.value) * float(figure.scale or 1.0)
-            if not math.isfinite(value):
-                continue
-            key = (round(value, 6), bool(figure.percent), figure.currency_code)
-            if key in seen:
-                continue
-            seen.add(key)
-            self._evidence.append(
-                EvidenceRecord(
-                    call_id=call_id,
-                    tool=tool_name,
-                    symbol=None,
-                    source="document",
-                    timestamp=None,
-                    field=_document_field(figure),
-                    value=value,
-                    status="observed",
-                    currency=figure.currency_code,
-                    artifact=artifact,
+            figure = _dollar_is_usd(text, figure)
+            values = [float(figure.value) * float(figure.scale or 1.0)]
+            if figure.scale != previous.scale:
+                # An English scale word read here: the figure as printed stays
+                # evidence too, for a formula noted in the page's own unit
+                # ("44 × 20 %" for "€44 billion").
+                values.append(float(figure.value))
+            for value in values:
+                if room <= 0 or not math.isfinite(value):
+                    continue
+                key = (round(value, 6), bool(figure.percent), figure.currency_code)
+                if key in seen:
+                    continue
+                seen.add(key)
+                self._evidence.append(
+                    EvidenceRecord(
+                        call_id=call_id,
+                        tool=tool_name,
+                        symbol=None,
+                        source="document",
+                        timestamp=None,
+                        field=_document_field(figure),
+                        value=value,
+                        status="observed",
+                        currency=figure.currency_code,
+                        artifact=artifact,
+                    )
                 )
-            )
-            room -= 1
+                room -= 1

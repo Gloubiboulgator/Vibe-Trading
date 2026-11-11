@@ -2560,16 +2560,18 @@ class _PolicyMixin:
         ``(low − high) / high`` or as the drop, unless the prose wrote a sign.
         """
         # The normalized reading, so "0,666" is three decimals and "−5,13%" is signed.
-        scale = float(figure.scale or 1.0)
-        half_unit = _written_half_unit(figure.digits or figure.text) * scale
         if figure.percent:
             targets = {result} if points else {result * 100.0}
         else:
             targets = {result, result * 100.0}
         sign = _explicit_sign(figure.sign or figure.text)
-        value = abs(figure.value) * scale
+        # "8.8 à 9.0 milliards" noted "44 × 20 %": the formula is written in
+        # the prose's own unit, and was compared with 8.8e9 (2026-11-11).
+        scales = {float(figure.scale or 1.0), 1.0}
         return any(
-            abs(value - abs(target)) <= max(abs(target) * _TOLERANCE, half_unit, 1e-9)
+            abs(abs(figure.value) * scale - abs(target))
+            <= max(abs(target) * _TOLERANCE, _written_half_unit(figure.digits or figure.text) * scale, 1e-9)
+            for scale in scales
             for target in targets
             if not sign or target * sign >= 0
         )
