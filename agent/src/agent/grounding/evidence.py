@@ -199,6 +199,9 @@ _AMOUNT_FIELDS = frozenset(
         "notional",
         "value_start",
         "value_end",
+        # A backtest table's own price column, kept under its own name so it
+        # never enters the market price pools (see _ingest_engine_table).
+        "fill_price",
     }
 )
 
@@ -1238,8 +1241,15 @@ class _EvidenceMixin:
                 # and a symbol here would start attributing the answer's
                 # portfolio figures to one instrument.
                 column_symbol = _cell_symbol(header[index])
+                field = column_symbol or folded[index]
                 if column_symbol is None and _price_field_for_path(folded[index]) is not None:
-                    continue
+                    # A fill price is evidence about this backtest, quoted by
+                    # its ref ("entrée le 06/11 à 1250.625 EUR", 2026-11-11),
+                    # not a market print: only a trades table's "price"
+                    # column is kept, renamed out of the price pools.
+                    if folded[index] != "price" or "side" not in folded:
+                        continue
+                    field = "fill_price"
                 if room <= 0:
                     return
                 self._evidence.append(
@@ -1249,7 +1259,7 @@ class _EvidenceMixin:
                         symbol=None,
                         source="backtest",
                         timestamp=timestamp,
-                        field=column_symbol or folded[index],
+                        field=field,
                         value=value,
                         status="observed",
                         artifact=artifact,

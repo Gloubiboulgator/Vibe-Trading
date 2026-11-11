@@ -957,20 +957,40 @@ class AgentLoop(ToolCallLifecycle):
                         # must not kill a run that has already done its work:
                         # nudge once and retry, failing only on a second
                         # consecutive empty response.
-                        if consecutive_empty_responses >= MAX_CONSECUTIVE_EMPTY_RESPONSE_SKIPS:
+                        if consecutive_empty_responses < MAX_CONSECUTIVE_EMPTY_RESPONSE_SKIPS:
+                            consecutive_empty_responses += 1
+                            messages.append(
+                                {
+                                    "role": "user",
+                                    "content": (
+                                        "<system>Your previous response was empty (no text). "
+                                        "Respond again with the revised final answer as plain "
+                                        "text, without tool calls.</system>"
+                                        if correction_text_only
+                                        else "<system>Your previous response was empty (no text, "
+                                        "no tool calls). Respond again with either your next tool "
+                                        "call or your final plain-text answer.</system>"
+                                    ),
+                                }
+                            )
+                            continue
+                        if not pending_grounding_draft:
                             break
-                        consecutive_empty_responses += 1
-                        messages.append(
+                        # Empty again during a grounding correction: the
+                        # rejected draft is still an answer. Release it through
+                        # the gate, its unverified figures cut, instead of
+                        # ending on "no text" after a paid run (2026-11-11:
+                        # seven minutes of research, backtests included, ended
+                        # that way on two empty correction turns).
+                        trace.write(
                             {
-                                "role": "user",
-                                "content": (
-                                    "<system>Your previous response was empty (no text, no tool "
-                                    "calls). Respond again with either your next tool call or "
-                                    "your final plain-text answer.</system>"
-                                ),
+                                "type": "grounding_release_after_empty_response",
+                                "iter": current_iter,
                             }
                         )
-                        continue
+                        final_content = pending_grounding_draft
+                        forced_grounding_release = True
+                        empty_model_response_iter = None
                     # A real response resets the consecutive-empty counter.
                     consecutive_empty_responses = 0
                     # A model can answer the forced-text final iteration with its

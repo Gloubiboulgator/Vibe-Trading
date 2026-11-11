@@ -1870,6 +1870,7 @@ class _PolicyMixin:
         scaled: Sequence[float],
         *,
         legacy_direct: bool = False,
+        referenced: bool = False,
     ) -> bool:
         """Whether a figure equals evidence, at its own scale or a metric's.
 
@@ -1878,6 +1879,8 @@ class _PolicyMixin:
         Both are held to the digits the figure was written with
         (:meth:`_within_written_precision`); ``legacy_direct`` keeps the flat evidence
         band for ``direct`` when it is an undeclared price checked against prints.
+        ``referenced`` marks values the declaration's own ref narrowed to, where
+        a correct rounding is accepted (:meth:`_within_written_precision`).
         """
         if legacy_direct:
             if _close_any(figure.value, direct):
@@ -1885,20 +1888,20 @@ class _PolicyMixin:
             if figure.scale != 1.0 and _close_any(figure.value * figure.scale, direct):
                 return True
         elif any(
-            self._within_written_precision(figure, figure.value, target)
+            self._within_written_precision(figure, figure.value, target, referenced=referenced)
             for target in direct
         ):
             return True
         elif figure.scale != 1.0 and any(
             self._within_written_precision(
-                figure, figure.value * figure.scale, target, figure.scale
+                figure, figure.value * figure.scale, target, figure.scale, referenced=referenced
             )
             for target in direct
         ):
             return True
         magnitudes = [abs(target) for target in scaled]
         return any(
-            self._within_written_precision(figure, candidate, target, unit)
+            self._within_written_precision(figure, candidate, target, unit, referenced=referenced)
             for candidate, unit in (
                 (abs(figure.value), 1.0),
                 (abs(figure.value) / 100.0, 0.01),
@@ -1945,7 +1948,8 @@ class _PolicyMixin:
 
     @staticmethod
     def _within_written_precision(
-        figure: Figure, candidate: float, target: float, unit: float = 1.0
+        figure: Figure, candidate: float, target: float, unit: float = 1.0,
+        *, referenced: bool = False,
     ) -> bool:
         """Whether a figure is ``target`` correctly rounded to the digits it was written with.
 
@@ -1967,7 +1971,15 @@ class _PolicyMixin:
         written = figure.digits or figure.text
         band = abs(target) * (ROUNDED_BAND if "." in written else _TOLERANCE)
         if "." in written:
-            band = min(band, _written_half_unit(written) * unit * (1 + 1e-9))
+            half_unit = _written_half_unit(written) * unit * (1 + 1e-9)
+            # Against the few values a declaration's ref names, a correct
+            # rounding to two significant digits or more is the value: a
+            # Sharpe of 0.6752 written 0.68 is 0.7% off, over the cap, and
+            # three backtests' Sharpes were refused for it (2026-11-11). The
+            # cap still holds against whole pools, where a wide band would
+            # meet some value by chance.
+            significant = len(re.sub(r"\D", "", written).lstrip("0"))
+            band = half_unit if referenced and significant >= 2 else min(band, half_unit)
         return abs(candidate - target) <= max(band, 1e-9)
 
     @grounding_check(name="figure-observed", code="numeric_claim_conflict",
@@ -2029,10 +2041,19 @@ class _PolicyMixin:
                         )
                     ]
             if figure.currency_code is not None:
+                # A backtest's fills carry no currency: they are in the tested
+                # instrument's own. "1250.625 EUR" quoted from trades.csv was
+                # refused for that alone (2026-11-11). Another instrument's
+                # rows are dropped with the symbol, as before.
                 scoped_records = [
                     record
                     for record in scoped_records
                     if record.currency == figure.currency_code
+                    or (
+                        record.currency is None
+                        and record.scope is not None
+                        and record.field == "fill_price"
+                    )
                 ]
             values = [float(record.value) for record in scoped_records] + metric_values
             money = figure.currency and not figure.percent
@@ -2055,7 +2076,9 @@ class _PolicyMixin:
                     value for identity, value in scoped_sources if identity in tail_risk
                 }
                 values = [value for value in values if value not in blocked]
-            if self._matches_evidence(figure, values, [] if money else values):
+            if self._matches_evidence(
+                figure, values, [] if money else values, referenced=True
+            ):
                 return []
             if tail_risk:
                 return [

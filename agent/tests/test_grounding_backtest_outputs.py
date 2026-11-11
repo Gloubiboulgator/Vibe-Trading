@@ -713,6 +713,44 @@ def test_a_trade_price_read_back_is_not_a_market_print(two_runs: GroundingLedger
     assert not two_runs._price_records()
 
 
+def test_a_fill_price_quoted_from_its_trades_table_is_grounded(two_runs: GroundingLedger) -> None:
+    """"La règle est entrée à 1250.625 EUR", ref trades.csv, was refused (2026-11-11):
+    the price column was dropped, so the fill could not be quoted at all. It is
+    kept as ``fill_price``, which still never enters the market price pools."""
+    _read(two_runs, two_runs.run_dir / "rp" / "artifacts" / "trades.csv", "read-trades")
+
+    quoted = two_runs.validate_final_answer(
+        _declared("贵州茅台卖出价 1602.5 元。", "1602.5 | observed | 成交价 | rp/artifacts/trades.csv")
+    )
+    other_run = two_runs.validate_final_answer(
+        _declared("贵州茅台卖出价 1602.5 元。", "1602.5 | observed | 成交价 | ew::sharpe")
+    )
+
+    assert not [issue for issue in quoted.issues if issue.get("value") is not None], quoted.issues
+    assert "not_in_referenced_call" in _figure_reasons(other_run)
+    assert not two_runs._price_records()
+
+
+def test_a_ratio_rounded_to_two_digits_meets_its_ref(two_runs: GroundingLedger) -> None:
+    """A Sharpe of 0.6752 written 0.68 is 0.7% off, over the 0.5% cap, and was
+    refused from its own run (2026-11-11). Against the ref it is a rounding;
+    one significant digit, or a value off by more than half a unit, still fails."""
+    assert abs(0.69 - RP["sharpe"]) / RP["sharpe"] > 0.005  # over the cap
+    ok = two_runs.validate_final_answer(
+        _declared("风险平价 Sharpe 0.69。", "0.69 | observed | Sharpe | rp::sharpe")
+    )
+    wrong = two_runs.validate_final_answer(
+        _declared("风险平价 Sharpe 0.70。", "0.70 | observed | Sharpe | rp::sharpe")
+    )
+    one_digit = two_runs.validate_final_answer(
+        _declared("风险平价 Sharpe 0.7。", "0.7 | observed | Sharpe | rp::sharpe")
+    )
+
+    assert ok.valid, ok.issues
+    assert not wrong.valid
+    assert not one_digit.valid
+
+
 # ---------------------------------------------------------------------------
 # How comparison reports write their arithmetic (same replayed runs)
 # ---------------------------------------------------------------------------

@@ -726,6 +726,30 @@ def test_loop_releases_the_redacted_draft_instead_of_the_canned_refusal(tmp_path
     assert_system_messages_only_lead(llm.messages_history)
 
 
+def test_empty_correction_turns_release_the_rejected_draft(tmp_path: Path) -> None:
+    """Two empty correction turns ended a seven-minute run on "no text"
+    (2026-11-11) although the rejected draft was there to release, cut."""
+    rejected = (
+        "562500.SS（Yahoo，CNY）在 2026-06-23 的已观测收盘价为 1.137，均线空头排列。"
+        "建议买入价为 0.881。"
+    )
+    llm = _ScriptedLLM(_SCRIPT_HEAD + [_Response(content=rejected), _Response(content="")])
+
+    result, _events, _agent = _run(tmp_path, llm, max_iterations=8)
+
+    assert result["status"] == "success"
+    content = result["content"]
+    assert "1.137" in content and "均线空头排列" in content
+    assert "0.881" not in content and _REDACTION_MARKER_ZH in content
+    assert llm.calls == len(_SCRIPT_HEAD) + 3
+    # The nudge in a correction turn asks for text, not for a tool call.
+    nudge = llm.messages_history[-1][-1]["content"]
+    assert "without tool calls" in nudge
+    trace = TraceWriter.read(tmp_path / "run")
+    assert [e for e in trace if e.get("type") == "grounding_release_after_empty_response"]
+    assert [e for e in trace if e.get("type") == "answer_released_redacted"]
+
+
 def test_grounding_revision_turn_is_text_only(tmp_path: Path) -> None:
     """A rejected numeric draft is revised without opening another research loop."""
     rejected = (
