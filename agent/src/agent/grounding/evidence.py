@@ -1663,8 +1663,11 @@ class _EvidenceMixin:
                 else:
                     return
         artifact = path.name if path is not None else None
-        if artifact is None and isinstance(payload.get("file"), str):
-            artifact = payload["file"]
+        if artifact is None:
+            artifact = next(
+                (payload[key] for key in ("file", "url") if isinstance(payload.get(key), str)),
+                None,
+            )
         room = min(
             _MAX_DOCUMENT_FIGURES,
             _MAX_GENERIC_EVIDENCE - len(self._evidence),

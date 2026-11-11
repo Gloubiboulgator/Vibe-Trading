@@ -385,6 +385,18 @@ class GroundingLedger(
             # reached its numbers: every figure quoted from an uploaded PDF came
             # back as unsourced (#2050).
             self._ingest_document_text(arguments, payload, call_id)
+        elif tool_name == "read_url" and payload is not None and payload.get("status") == "ok":
+            # A web page is prose too: an answer citing a figure from an
+            # article it read was refused as "not in the referenced call".
+            self._ingest_document_text(arguments, payload, call_id, tool_name=tool_name)
+        elif tool_name == "web_search" and payload is not None and isinstance(payload.get("results"), list):
+            # Search snippets are prose as well; each result is read on its own.
+            snippets = "\n\n".join(
+                f"{item.get('title') or ''}\n{item.get('snippet') or ''}"
+                for item in payload["results"]
+                if isinstance(item, dict)
+            )
+            self._ingest_document_text(arguments, {"content": snippets}, call_id, tool_name=tool_name)
         elif payload is not None:
             self._ingest_generic_numeric(tool_name, arguments, payload, call_id)
         self.persist()
