@@ -1201,13 +1201,12 @@
     "gildataTokenDesc": "Optional Gildata data: adjusted A-share daily bars, raw HK/index bars, OTC fund NAVs, and China macro, announcement and research tools.",
     "outputPrinciples": {
       "title": "Output principles: operator amendments",
-      "desc": "Rules added to the agent's output principles for this installation, for example to get a clear verdict when you ask for one. The shipped principles stay unchanged; where an amendment conflicts with them, the amendment wins. Applies from the next message.",
-      "placeholder": "e.g. When asked whether to buy, sell or wait, give a clear verdict (favorable, unfavorable or neutral), the horizon it holds for and what would change it. No disclaimer sentence.",
+      "desc": "Rules that take precedence over the agent's principles, from the next message on. Leave empty to use the original principles.",
+      "placeholder": "e.g. Give a clear verdict when asked.",
       "save": "Save amendments",
       "saved": "Amendments saved; they apply from the next message.",
       "saveFailed": "Could not save the amendments: {{message}}",
-      "count": "{{count}} / {{max}} characters",
-      "hint": "Leave empty to use the shipped principles only."
+      "count": "{{count}} / {{max}} characters"
     }
   },
   "agent": {

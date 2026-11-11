@@ -144,6 +144,7 @@ vibe-trading --version</code></pre>
                 <li>当前目录下的 <code>.env</code></li>
               </ol>
               <p>在 shell 里 export 的变量永远优先于文件。Web 界面的设置页可以直接修改模型和数据源配置。</p>
+              <p>设置页还可以为智能体的输出原则添加补充规则，例如“被问到时给出明确结论”。补充规则保存在 <code>~/.vibe-trading/output_principles.md</code>，优先于内置原则（内置原则本身不变），从下一条消息起生效。留空则只使用内置原则。</p>
             `
           },
           {
@@ -213,6 +214,7 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com/v1</code></pre>
             title: "在本机以外访问",
             body: `
               <p>没有设置 <code>API_AUTH_KEY</code> 时，敏感接口只响应来自本机的请求。要从其他设备使用 Web 界面，请设置一个足够强的 <code>API_AUTH_KEY</code>，客户端请求带上 <code>Authorization: Bearer &lt;key&gt;</code>，并在 Web 界面的设置页填入同一个 key。<code>VIBE_TRADING_EXTRA_CORS_ORIGINS</code> 用于追加允许的浏览器来源。</p>
+              <p>在你信任的家庭网络里，设置 <code>VIBE_TRADING_TRUSTED_NETWORKS=192.168.1.0/24</code> 后，该网络内的设备无需 key 即按本机对待：用 <code>--host 0.0.0.0</code> 启动服务，并在 <code>API_ALLOWED_HOSTS</code> 里列出这些设备访问时使用的地址或主机名。该网络内的任何人都拥有完整权限，包括设置页。</p>
               <p>Shell 类工具只在本机交互终端里开启。API 和 MCP 服务默认关闭它们，除非设置 <code>VIBE_TRADING_ENABLE_SHELL_TOOLS=1</code>。</p>
             `
           },

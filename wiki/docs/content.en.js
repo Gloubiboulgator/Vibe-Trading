@@ -145,6 +145,7 @@ vibe-trading --version</code></pre>
                 <li><code>.env</code> in the current directory</li>
               </ol>
               <p>A variable exported in your shell always wins over the file. The Settings page of the web UI edits the model and data-source values for you.</p>
+              <p>Settings also holds amendments to the agent's output principles, for example "give a clear verdict when asked". They are saved in <code>~/.vibe-trading/output_principles.md</code>, take precedence over the original principles, which stay unchanged, and apply from the next message. Leave them empty to use the original principles only.</p>
             `
           },
           {
@@ -214,6 +215,7 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com/v1</code></pre>
             title: "Serving beyond your own machine",
             body: `
               <p>Without <code>API_AUTH_KEY</code>, the API answers sensitive requests only from the same machine. To use the web UI from another device, set a strong <code>API_AUTH_KEY</code>, send <code>Authorization: Bearer &lt;key&gt;</code> from clients, and enter the same key once in the web UI's Settings. <code>VIBE_TRADING_EXTRA_CORS_ORIGINS</code> adds allowed browser origins.</p>
+              <p>On a home network you trust, <code>VIBE_TRADING_TRUSTED_NETWORKS=192.168.1.0/24</code> treats its devices like the local machine, without a key: serve with <code>--host 0.0.0.0</code> and list the address or name they use in <code>API_ALLOWED_HOSTS</code>. Anyone on that network gets full access, Settings included.</p>
               <p>Shell tools are enabled only in the local interactive terminal. The API and the MCP server keep them off unless you set <code>VIBE_TRADING_ENABLE_SHELL_TOOLS=1</code>.</p>
             `
           },

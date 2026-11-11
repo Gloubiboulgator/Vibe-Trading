@@ -1161,13 +1161,12 @@
     "reasoningEffortReset": "Seçilen model {{level}} düzeyini desteklemiyor; sağlayıcı varsayılanına sıfırlandı.",
     "outputPrinciples": {
       "title": "Yanıt ilkeleri: değişiklikler",
-      "desc": "Bu kurulum için ajanın yanıt ilkelerine eklenen kurallar; örneğin istediğinizde net bir görüş almak için. Varsayılan ilkeler değişmez; çelişki olursa değişiklik geçerlidir. Bir sonraki mesajdan itibaren uygulanır.",
-      "placeholder": "Örn.: almak, satmak veya beklemek sorulduğunda net bir görüş ver (olumlu, olumsuz veya nötr), geçerli olduğu vadeyi ve onu neyin değiştireceğini belirt. Sorumluluk reddi cümlesi yok.",
+      "desc": "Ajanın ilkelerine göre öncelikli kurallar, bir sonraki mesajdan itibaren. Varsayılan ilkeler için boş bırakın.",
+      "placeholder": "Örn.: İstendiğinde net bir görüş ver.",
       "save": "Değişiklikleri kaydet",
       "saved": "Değişiklikler kaydedildi; bir sonraki mesajdan itibaren geçerli.",
       "saveFailed": "Değişiklikler kaydedilemedi: {{message}}",
-      "count": "{{count}} / {{max}} karakter",
-      "hint": "Yalnızca varsayılan ilkeleri kullanmak için boş bırakın."
+      "count": "{{count}} / {{max}} karakter"
     }
   },
   "agent": {

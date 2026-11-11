@@ -96,7 +96,6 @@ export function OutputPrinciplesSettings() {
           {t("settings.outputPrinciples.save")}
         </button>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">{t("settings.outputPrinciples.hint")}</p>
     </form>
   );
 }

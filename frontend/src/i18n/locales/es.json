@@ -1201,13 +1201,12 @@
     "gildataTokenDesc": "Datos opcionales de Gildata: precios diarios ajustados de acciones A, precios sin ajustar de Hong Kong e índices, valores liquidativos de fondos no cotizados y herramientas de macroeconomía, anuncios y análisis de China.",
     "outputPrinciples": {
       "title": "Principios de respuesta: enmiendas",
-      "desc": "Reglas añadidas a los principios de respuesta del agente en esta instalación, por ejemplo para obtener una opinión clara cuando la pide. Los principios originales no cambian; si hay conflicto, prevalece la enmienda. Se aplica desde el próximo mensaje.",
-      "placeholder": "Ej.: cuando se pregunte si comprar, vender o esperar, dar una opinión clara (favorable, desfavorable o neutral), el horizonte para el que vale y qué la cambiaría. Sin frase de descargo.",
+      "desc": "Reglas que prevalecen sobre los principios del agente, desde el próximo mensaje. Déjelo vacío para usar los principios originales.",
+      "placeholder": "Ej.: dar una opinión clara cuando se pida.",
       "save": "Guardar enmiendas",
       "saved": "Enmiendas guardadas; se aplican desde el próximo mensaje.",
       "saveFailed": "No se pudieron guardar las enmiendas: {{message}}",
-      "count": "{{count}} / {{max}} caracteres",
-      "hint": "Déjelo vacío para usar solo los principios originales."
+      "count": "{{count}} / {{max}} caracteres"
     }
   },
   "agent": {
