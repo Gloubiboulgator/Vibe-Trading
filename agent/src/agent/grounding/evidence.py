@@ -1781,10 +1781,10 @@ class _EvidenceMixin:
                 continue
             figure = _dollar_is_usd(text, figure)
             values = [float(figure.value) * float(figure.scale or 1.0)]
-            if figure.scale != previous.scale:
-                # An English scale word read here: the figure as printed stays
-                # evidence too, for a formula noted in the page's own unit
-                # ("44 × 20 %" for "€44 billion").
+            if float(figure.scale or 1.0) != 1.0 and tool_name != "read_document":
+                # The figure as printed stays evidence too, for a formula noted
+                # in the page's own unit: "44 × 20 %" for "€44 billion",
+                # "(4960 − 2918) / 2918" for "€4,960 million" (2026-11-11).
                 values.append(float(figure.value))
             for value in values:
                 if room <= 0 or not math.isfinite(value):

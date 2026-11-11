@@ -279,3 +279,20 @@ def test_a_page_in_another_currency_still_contradicts(tmp_path) -> None:
         "1370 | observed | résistance, Investtech | web_search",
     )
     assert issues
+
+
+def test_a_formula_in_millions_finds_a_page_in_millions(tmp_path) -> None:
+    # The fifth rerun: unite.ai wrote "net income of €4,960 million" and
+    # "€2,918 million"; the answer's growth formula used those numbers.
+    ledger = _ledger(tmp_path)
+    _read(ledger, {"status": "ok", "url": "https://example.com/q3", "content": (
+        "Net income of €4,960 million in Q3, after €2,918 million in Q2. "
+        "The quarter's net income also included €500 million from a revaluation."
+    )})
+    issues = _issues(
+        ledger,
+        "Le résultat net progresse de 70.0 % sur le T2, et de 52.8 % hors réévaluation (Unite.ai).",
+        "70.0 % | derived | (4960 − 2918) / 2918 | read_url",
+        "52.8 % | derived | (4960 − 500 − 2918) / 2918 | read_url",
+    )
+    assert issues == []
