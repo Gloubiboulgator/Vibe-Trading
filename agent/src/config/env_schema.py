@@ -385,6 +385,13 @@ class APIConfig(_EnvBase):
     vibe_trading_trust_docker_loopback: EnvBool = Field(
         alias="VIBE_TRADING_TRUST_DOCKER_LOOPBACK", default=False,
     )
+    # Comma-separated private networks (CIDR) whose clients are trusted like
+    # loopback ones, e.g. "192.168.1.0/24" to use the web UI from a phone on
+    # the home Wi-Fi without an API key. Public ranges are ignored. Their Host
+    # names still have to be listed in API_ALLOWED_HOSTS.
+    vibe_trading_trusted_networks: str = Field(
+        alias="VIBE_TRADING_TRUSTED_NETWORKS", default="",
+    )
     # Ship the Content-Security-Policy as Report-Only instead of enforcing it.
     # The policy is enforced by default; this is a rollback switch for a
     # deployment that serves extra assets the stock policy does not cover

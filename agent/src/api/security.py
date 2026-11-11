@@ -22,6 +22,8 @@ from src.session.models import AuthMethod, Principal
 from src.api._compat import host_attr as _host_attr
 from src.config.accessor import get_env_config
 
+logger = logging.getLogger(__name__)
+
 
 # ============================================================================
 # Constants
@@ -515,7 +517,36 @@ def _is_local_client(request: Request) -> bool:
         return False
     if ip.is_loopback:
         return True
-    return _trusted_docker_loopback_ip(ip)
+    return _trusted_docker_loopback_ip(ip) or _in_trusted_network(ip)
+
+
+def _parse_trusted_networks(raw: Optional[str]) -> list[ipaddress._BaseNetwork]:
+    """Private networks from ``VIBE_TRADING_TRUSTED_NETWORKS``; others are dropped.
+
+    A public range would hand keyless access to the internet, so only private
+    and link-local networks are kept; an unreadable entry is skipped.
+    """
+    networks: list[ipaddress._BaseNetwork] = []
+    for item in (raw or "").split(","):
+        item = item.strip()
+        if not item:
+            continue
+        try:
+            network = ipaddress.ip_network(item, strict=False)
+        except ValueError:
+            logger.warning("Ignoring unreadable trusted network %r", item)
+            continue
+        if not (network.is_private or network.is_link_local) or network.prefixlen == 0:
+            logger.warning("Ignoring non-private trusted network %s", network)
+            continue
+        networks.append(network)
+    return networks
+
+
+def _in_trusted_network(ip: ipaddress._BaseAddress) -> bool:
+    """Whether a client IP sits in a network the operator chose to trust."""
+    raw = get_env_config().api.vibe_trading_trusted_networks
+    return any(ip in network for network in _parse_trusted_networks(raw))
 
 
 # ============================================================================
