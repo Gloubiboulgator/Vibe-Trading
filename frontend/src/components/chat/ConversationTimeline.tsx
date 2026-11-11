@@ -56,7 +56,7 @@ export const ConversationTimeline = memo(function ConversationTimeline({ message
   if (userIndices.length < 2) return null;
 
   return (
-    <div className="fixed right-3 top-1/2 -translate-y-1/2 h-2/3 flex flex-col justify-between items-center z-20 py-4">
+    <div className="fixed right-3 top-1/2 -translate-y-1/2 h-2/3 flex flex-col justify-between items-center z-20 py-4 max-sm:hidden">
       {userIndices.map((idx) => {
         const prompt = messages[idx].content.slice(0, 40);
         const active = idx === activeIdx;

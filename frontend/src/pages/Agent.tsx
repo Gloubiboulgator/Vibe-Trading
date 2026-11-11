@@ -1888,7 +1888,7 @@ export function Agent() {
       <div
         ref={listRef}
         data-streaming={status === "streaming" ? "true" : undefined}
-        className="chat-scroll-container flex-1 overflow-auto p-6 relative"
+        className="chat-scroll-container flex-1 overflow-auto p-6 max-sm:px-3 max-sm:py-4 relative"
       >
         <div
           className={[
@@ -2043,7 +2043,7 @@ export function Agent() {
 
       <div
         data-agent-composer
-        className="border-t p-4 bg-background/80 backdrop-blur-sm"
+        className="border-t p-4 max-sm:p-2 bg-background/80 backdrop-blur-sm"
       >
         <div className="max-w-3xl mx-auto">
           <LiveRuntimePanel

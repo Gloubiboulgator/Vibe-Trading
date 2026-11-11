@@ -125,7 +125,7 @@ export function ModelRuntimeBar({
         <span className="absolute inline-flex h-full w-full rounded-full bg-success/30" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
       </span>
-      <span className="shrink-0 font-medium text-foreground">{providerLabel}</span>
+      <span className="min-w-0 truncate font-medium text-foreground max-sm:max-w-[40%]" title={providerLabel}>{providerLabel}</span>
       <span className="text-muted-foreground/60">·</span>
       <span className="truncate font-mono text-[11px] text-muted-foreground" title={model}>{model}</span>
       {pickerEnabled && selection && (
@@ -137,7 +137,7 @@ export function ModelRuntimeBar({
   );
 
   return (
-    <div className="shrink-0 border-b border-border/70 bg-background/95 px-6 py-2 backdrop-blur-sm">
+    <div className="shrink-0 border-b border-border/70 bg-background/95 px-6 max-sm:px-3 py-2 backdrop-blur-sm">
       <div className="mx-auto flex max-w-3xl items-center gap-2 overflow-hidden text-xs">
         {pickerEnabled ? (
           <button
@@ -153,9 +153,9 @@ export function ModelRuntimeBar({
             <ChevronDown className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
           </button>
         ) : summary}
-        <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
+        <span className="ml-auto inline-flex shrink-0 max-sm:hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
           <Cpu className="h-3 w-3" aria-hidden="true" />
-          {t("agent.reasoningStrength")}: {effortLabel}
+          <span className="truncate">{t("agent.reasoningStrength")}: {effortLabel}</span>
         </span>
       </div>
       {pickerEnabled && open && !running && (

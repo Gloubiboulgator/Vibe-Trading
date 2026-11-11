@@ -327,7 +327,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
         </div>
       )}
       <LiveRuntimeControl />
-      <div className="flex items-end gap-2 rounded-2xl border border-border/60 bg-background p-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-12px_rgba(0,0,0,0.12)] transition-shadow focus-within:ring-2 focus-within:ring-primary/25 dark:bg-card">
+      <div className="flex items-end gap-2 max-sm:flex-wrap rounded-2xl border border-border/60 bg-background p-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.03),0_8px_24px_-12px_rgba(0,0,0,0.12)] transition-shadow focus-within:ring-2 focus-within:ring-primary/25 dark:bg-card">
         <div className="relative" ref={uploadMenuRef}>
           <button
             ref={uploadMenuTriggerRef}
@@ -468,7 +468,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
           aria-label={t("agent.messageInputLabel")}
           aria-readonly={streaming}
           className={[
-            "min-h-[52px] flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-sm outline-none max-h-32",
+            "min-h-[52px] flex-1 resize-none overflow-y-auto bg-transparent px-3 py-3 text-sm outline-none max-h-32 max-sm:order-first max-sm:basis-full max-sm:min-h-[64px] max-sm:py-2 max-sm:text-base",
             streaming ? "cursor-not-allowed text-muted-foreground/70" : "",
           ].join(" ")}
           readOnly={streaming}
@@ -507,7 +507,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
           <button
             type="button"
             onClick={onCancel}
-            className="h-10 px-4 rounded-xl bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            className="h-10 px-4 max-sm:ms-auto rounded-xl bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 transition-opacity"
             title={t("agent.stopGeneration")}
           >
             <Square className="h-4 w-4" />
@@ -516,7 +516,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
           <button
             type="submit"
             disabled={uploading || (goalComposerActive ? !input.trim() : (!input.trim() && attachments.length === 0))}
-            className="h-10 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+            className="h-10 px-4 max-sm:ms-auto rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
             title={t("agent.send")}
             aria-label={t("agent.send")}
           >
@@ -524,7 +524,7 @@ export const Composer = memo(forwardRef<ComposerHandle, Props>(function Composer
           </button>
         )}
       </div>
-      <p className="px-1 text-[11px] text-muted-foreground">{t("agent.inputHint")}</p>
+      <p className="px-1 text-[11px] text-muted-foreground max-sm:hidden">{t("agent.inputHint")}</p>
     </form>
   );
 }));

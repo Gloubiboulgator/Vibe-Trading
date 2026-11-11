@@ -208,7 +208,7 @@ export const MessageBubble = memo(function MessageBubble({ msg, onRetry }: Props
       ?? (meta?.attachment ? [meta.attachment] : []);
     return (
       <div className="flex justify-end group">
-        <div dir="auto" className="max-w-[72%] max-h-[40vh] overflow-y-auto break-words rounded-[18px] bg-muted px-4 py-3 text-[15px] text-foreground leading-relaxed whitespace-pre-wrap">
+        <div dir="auto" className="max-w-[72%] max-sm:max-w-[88%] max-h-[40vh] overflow-y-auto break-words rounded-[18px] bg-muted px-4 py-3 text-[15px] text-foreground leading-relaxed whitespace-pre-wrap">
           {meta && (attachments.length > 0 || meta.swarmMode || meta.goalMode) && (
             <div className="mb-1.5 flex flex-wrap justify-end gap-1.5 text-[10px] leading-none text-muted-foreground">
               {attachments.map((attachment, index) => (
