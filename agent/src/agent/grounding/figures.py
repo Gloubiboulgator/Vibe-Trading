@@ -508,8 +508,10 @@ _DOTTED_GROUPING_RE = re.compile(
 # A decimal comma, or a dot with one or two digits ("2 852.64 €": space
 # thousands with a dot decimal, which a mixed French answer writes and which
 # was split into "2" and an unmatched "852.64", 2026-11-08).
+# A hyphen inside a word is not a sign: "05-Nov-26 125,000€" read as 26 125,000
+# (2026-11-11), the date's year glued to a share count.
 _SPACED_GROUPING_RE = re.compile(
-    r"(?<![A-Za-z0-9_.,])[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+|\.\d{1,2})?(?!\d|[.,]\d)"
+    r"(?<![A-Za-z0-9_.,])(?<![A-Za-z0-9]-)[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+|\.\d{1,2})?(?!\d|[.,]\d)"
 )
 
 
@@ -1252,6 +1254,8 @@ def _currency_code_for_figure(text: str, start: int, end: int) -> str | None:
         return {"CNH": "CNY", "RMB": "CNY"}.get(code, code)
 
     # Only unambiguous symbols and words can establish currency identity.
+    if head.endswith("US$"):
+        return "USD"
     if head.endswith("€") or tail.startswith("€"):
         return "EUR"
     if head.endswith("£") or tail.startswith("£"):

@@ -19,6 +19,7 @@ from typing import Any, Mapping
 from src.agent.grounding.figures import (
     Figure,
     _CURRENCY_CODES,
+    _RANGE_TAIL_RE,
     parse_figures_block,
     scan_figures,
 )
@@ -814,6 +815,53 @@ def _document_percent_cells(text: str) -> str:
             columns = ()
         layout = shape
     return "".join(lines)
+
+
+# An English page writes "US$90 billion"; the answer's own scale words are
+# French ("Md", "milliard"), where "billion" means 10^12, so only a document
+# read in English reads it. "US$60–64 billion" left both bounds unscaled and
+# the second one unmarked (2026-11-11).
+_ENGLISH_SCALE_RE = re.compile(r"[ \t\u00a0]*(billion|bn|trillion|tn)(?![^\W\d_])", re.IGNORECASE)
+_RANGE_JOIN_RE = re.compile(r"[ \t\u00a0]*(?:-|–|—|to)[ \t\u00a0]*(?:US\$|\$|€|£)?[ \t\u00a0]*")
+
+
+def _english_scale(text: str, end: int) -> float:
+    """The English scale word after a figure, or after the range it opens."""
+    word = _ENGLISH_SCALE_RE.match(text, end)
+    if word is None:
+        tail = _RANGE_TAIL_RE.match(text, end)
+        word = _ENGLISH_SCALE_RE.match(text, tail.end()) if tail else None
+    if word is None:
+        return 1.0
+    return 1e12 if word.group(1).lower() in ("trillion", "tn") else 1e9
+
+
+def _document_figure(text: str, figure: Figure, opening: Figure | None) -> Figure | None:
+    """A document figure that counts as evidence, with its English scale, or None.
+
+    ``opening`` is the measured figure just before this one: when a dash or
+    "to" joins them, this one closes their range and shares its marks.
+    """
+    closes_range = (
+        figure.shape == "bare"
+        and opening is not None
+        and not figure.percent
+        and _RANGE_JOIN_RE.fullmatch(text, opening.end, figure.start) is not None
+    )
+    if figure.shape != "measured" and not closes_range:
+        return None
+    if figure.percent or (figure.scale or 1.0) != 1.0:
+        return figure
+    scale = _english_scale(text, figure.end)
+    if closes_range and scale == 1.0:
+        scale = float(opening.scale or 1.0)
+    if scale == 1.0 and not closes_range:
+        return figure
+    return replace(
+        figure,
+        scale=scale,
+        currency_code=figure.currency_code or (opening.currency_code if closes_range else None),
+    )
 
 
 def _document_field(figure: Figure) -> str:
@@ -1676,10 +1724,13 @@ class _EvidenceMixin:
             return
         seen: set[tuple[float, bool, str | None]] = set()
         text = _document_percent_cells(text)
+        previous: Figure | None = None
         for figure in scan_figures(text, parse_figures_block(text)):
             if room <= 0:
                 return
-            if figure.shape != "measured":
+            opens_range = previous is not None and previous.shape == "measured"
+            figure, previous = _document_figure(text, figure, previous if opens_range else None), figure
+            if figure is None:
                 continue
             value = float(figure.value) * float(figure.scale or 1.0)
             if not math.isfinite(value):

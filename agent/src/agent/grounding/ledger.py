@@ -108,6 +108,21 @@ _ACTIONABLE_MARKET_RE = re.compile(
 )
 
 
+def _headlines(payload: Mapping[str, Any]) -> str:
+    """The titles and snippets of a search or news result, one item per paragraph."""
+    items = payload.get("results")
+    if not isinstance(items, list):
+        data = payload.get("data")
+        items = data.get("articles") if isinstance(data, Mapping) else None
+    if not isinstance(items, list):
+        return ""
+    return "\n\n".join(
+        f"{item.get('title') or ''}\n{item.get('snippet') or item.get('summary') or ''}".strip()
+        for item in items
+        if isinstance(item, Mapping)
+    ).strip()
+
+
 class GroundingLedger(
     _IdentityMixin,
     _EvidenceMixin,
@@ -389,14 +404,12 @@ class GroundingLedger(
             # A web page is prose too: an answer citing a figure from an
             # article it read was refused as "not in the referenced call".
             self._ingest_document_text(arguments, payload, call_id, tool_name=tool_name)
-        elif tool_name == "web_search" and payload is not None and isinstance(payload.get("results"), list):
-            # Search snippets are prose as well; each result is read on its own.
-            snippets = "\n\n".join(
-                f"{item.get('title') or ''}\n{item.get('snippet') or ''}"
-                for item in payload["results"]
-                if isinstance(item, dict)
+        elif tool_name in ("web_search", "get_stock_news") and payload is not None and _headlines(payload):
+            # Search snippets and news headlines are prose as well ("Priced For
+            # Perfection After 125% Run"); each item is read on its own.
+            self._ingest_document_text(
+                arguments, {"content": _headlines(payload)}, call_id, tool_name=tool_name
             )
-            self._ingest_document_text(arguments, {"content": snippets}, call_id, tool_name=tool_name)
         elif payload is not None:
             self._ingest_generic_numeric(tool_name, arguments, payload, call_id)
         self.persist()

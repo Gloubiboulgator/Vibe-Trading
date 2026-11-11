@@ -108,3 +108,81 @@ def test_a_search_snippet_grounds_its_figure(tmp_path) -> None:
         "8 % | observed | baisse après l'élection | web_search",
     )
     assert issues == []
+
+
+# The rerun after the fix, same day: TrendForce, ASML's buyback table and a
+# Yahoo headline.
+
+
+def test_an_english_dollar_range_in_billions_is_read_whole(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    page = (
+        "While maintaining its 2026 capex guidance at US$60–64 billion, TSMC signaled plans. "
+        "UBS expects spending to surge roughly 45% YoY to US$90 billion in 2027."
+    )
+    _read(ledger, {"status": "ok", "url": "https://example.com/tsmc", "content": page})
+    issues = _issues(
+        ledger,
+        "TSMC maintient 60 à 64 Md USD d'investissements pour 2026 ; UBS attend 90 Md USD en 2027 (TrendForce).",
+        "60 | observed | bas de fourchette, TrendForce | read_url",
+        "64 | observed | haut de fourchette, TrendForce | read_url",
+        "90 | observed | UBS 2027, TrendForce | read_url",
+    )
+    assert issues == []
+
+
+def test_a_dollar_range_does_not_ground_another_scale(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _read(ledger, {"status": "ok", "url": "https://example.com/tsmc",
+                   "content": "Capex guidance at US$60–64 billion."})
+    issues = _issues(
+        ledger,
+        "TSMC prévoit jusqu'à 64 millions USD d'investissements (TrendForce).",
+        "64 | observed | haut de fourchette, TrendForce | read_url",
+    )
+    assert issues
+
+
+def test_a_share_count_after_a_short_date_keeps_its_value(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    table = (
+        "Date Shares Price Total\n"
+        "04-Nov-26 73,500€1,356.80€99,724,484\n"
+        "05-Nov-26 125,000€1,258.16€157,270,388\n"
+    )
+    ledger._session_symbols.add("ASML.AS")
+    _read(ledger, {"status": "ok", "url": "https://example.com/buyback", "content": table})
+    issues = _issues(
+        ledger,
+        "Le 05/11/2026, ASML.AS a racheté 125000 titres à 1258.16 EUR en moyenne (communiqué).",
+        "125000 | observed | titres rachetés le 05/11/2026 | read_url",
+        "1258.16 | observed | prix moyen le 05/11/2026 | read_url",
+    )
+    assert issues == []
+
+
+def test_a_news_headline_grounds_its_figure(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _read(
+        ledger,
+        {"ok": True, "status": "ok", "data": {"code": "ASML.US", "articles": [
+            {"title": "ASML Stock May Be Priced For Perfection After 125% Run",
+             "url": "https://example.com/n", "snippet": ""},
+        ]}},
+        tool="get_stock_news",
+        arguments={"code": "ASML.US"},
+    )
+    issues = _issues(
+        ledger,
+        "Simply Wall St titre qu'ASML pourrait être valorisé pour la perfection après une hausse de 125 %.",
+        "125 % | observed | titre Simply Wall St | get_stock_news",
+    )
+    assert issues == []
+
+
+def test_a_short_date_s_year_is_not_glued_to_the_next_number() -> None:
+    from src.agent.grounding.figures import parse_figures_block, scan_figures
+
+    row = "05-Nov-26 125,000€1,258.16€157,270,388"
+    values = [figure.value for figure in scan_figures(row, parse_figures_block(row)) if figure.shape == "measured"]
+    assert values == [125000, 1258.16, 157270388]
