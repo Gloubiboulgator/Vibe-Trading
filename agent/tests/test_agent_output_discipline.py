@@ -119,8 +119,12 @@ class TestOutputPrinciplesCannotBeOverriddenBySession:
             assert source in prompt
 
     def test_the_block_is_static_template_text_with_no_substitution(self) -> None:
-        """No format field lands inside the block, so no input can reach it."""
+        """No session input can reach the block. Its one format field holds the
+        operator's amendments, read from the runtime root's file only (see
+        test_operator_principles.py), never from a message, tool or memory."""
         block = _SYSTEM_PROMPT.split("## Output Principles", 1)[1].split("## Tools", 1)[0]
+        assert block.count("{operator_principles}") == 1
+        block = block.replace("{operator_principles}", "")
 
         assert "{" not in block
         assert "}" not in block

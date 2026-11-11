@@ -1198,7 +1198,17 @@
     "authentication": "Autentikasi",
     "apiKey": "API key",
     "tushareTokenDesc": "Digunakan untuk data A-share China, futures, fund, dan makro. Jika tidak diatur, proyek akan menggunakan AKShare sebagai fallback jika tersedia.",
-    "gildataTokenDesc": "Data Gildata opsional: harga harian saham A yang disesuaikan, harga mentah saham Hong Kong/indeks, NAB reksa dana di luar bursa, serta alat makroekonomi, pengumuman, dan riset Tiongkok."
+    "gildataTokenDesc": "Data Gildata opsional: harga harian saham A yang disesuaikan, harga mentah saham Hong Kong/indeks, NAB reksa dana di luar bursa, serta alat makroekonomi, pengumuman, dan riset Tiongkok.",
+    "outputPrinciples": {
+      "title": "Prinsip jawaban: amandemen",
+      "desc": "Aturan yang ditambahkan ke prinsip jawaban agen untuk instalasi ini, misalnya agar mendapat pendapat yang jelas saat Anda memintanya. Prinsip bawaan tidak berubah; jika bertentangan, amandemen yang berlaku. Berlaku mulai pesan berikutnya.",
+      "placeholder": "Mis.: saat ditanya apakah harus membeli, menjual, atau menunggu, berikan pendapat yang jelas (positif, negatif, atau netral), jangka waktunya, dan apa yang akan mengubahnya. Tanpa kalimat penafian.",
+      "save": "Simpan amandemen",
+      "saved": "Amandemen disimpan; berlaku mulai pesan berikutnya.",
+      "saveFailed": "Gagal menyimpan amandemen: {{message}}",
+      "count": "{{count}} / {{max}} karakter",
+      "hint": "Biarkan kosong untuk hanya memakai prinsip bawaan."
+    }
   },
   "agent": {
     "reasoningStrength": "Tingkat Reasoning",

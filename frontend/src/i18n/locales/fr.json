@@ -1198,7 +1198,17 @@
     "authentication": "Authentification",
     "apiKey": "Clé API",
     "tushareTokenDesc": "Utilisé pour les données d'actions A chinoises, de contrats à terme, de fonds et macroéconomiques. S'il n'est pas défini, le projet se rabat sur AKShare lorsque c'est possible.",
-    "gildataTokenDesc": "Données Gildata facultatives : barres journalières ajustées des actions A, barres brutes de Hong Kong et des indices, VL des fonds OTC, et outils macro, annonces et recherche pour la Chine."
+    "gildataTokenDesc": "Données Gildata facultatives : barres journalières ajustées des actions A, barres brutes de Hong Kong et des indices, VL des fonds OTC, et outils macro, annonces et recherche pour la Chine.",
+    "outputPrinciples": {
+      "title": "Principes de réponse : amendements",
+      "desc": "Règles ajoutées aux principes de réponse de l'agent pour cette installation, par exemple pour obtenir un avis net quand vous le demandez. Les principes d'origine ne sont pas modifiés ; en cas de conflit, l'amendement l'emporte. S'applique dès le prochain message.",
+      "placeholder": "Ex. : quand on demande s'il faut acheter, vendre ou attendre, donner un avis net (favorable, défavorable ou neutre), l'horizon pour lequel il vaut et ce qui le ferait changer. Pas de phrase de non-conseil.",
+      "save": "Enregistrer les amendements",
+      "saved": "Amendements enregistrés ; ils s'appliquent dès le prochain message.",
+      "saveFailed": "Impossible d'enregistrer les amendements : {{message}}",
+      "count": "{{count}} / {{max}} caractères",
+      "hint": "Laissez vide pour n'utiliser que les principes d'origine."
+    }
   },
   "agent": {
     "reasoningStrength": "Effort de raisonnement",

@@ -1198,7 +1198,17 @@
     "authentication": "Authentifizierung",
     "apiKey": "API-Schlüssel",
     "tushareTokenDesc": "Verwendet für China-A-Aktien, Futures, Fonds und Makrodaten. Falls nicht gesetzt, greift das Projekt auf AKShare zurück, sofern verfügbar.",
-    "gildataTokenDesc": "Optionale Gildata-Daten: bereinigte Tageskurse chinesischer A-Aktien, unbereinigte Hongkong- und Indexkurse, Nettoinventarwerte nicht börsengehandelter Fonds sowie chinesische Makro-, Mitteilungs- und Research-Tools."
+    "gildataTokenDesc": "Optionale Gildata-Daten: bereinigte Tageskurse chinesischer A-Aktien, unbereinigte Hongkong- und Indexkurse, Nettoinventarwerte nicht börsengehandelter Fonds sowie chinesische Makro-, Mitteilungs- und Research-Tools.",
+    "outputPrinciples": {
+      "title": "Antwortprinzipien: Ergänzungen",
+      "desc": "Regeln, die den Antwortprinzipien des Agenten für diese Installation hinzugefügt werden, etwa um auf Nachfrage ein klares Urteil zu erhalten. Die ausgelieferten Prinzipien bleiben unverändert; bei Widerspruch gilt die Ergänzung. Gilt ab der nächsten Nachricht.",
+      "placeholder": "z. B.: Auf die Frage nach Kaufen, Verkaufen oder Abwarten ein klares Urteil geben (positiv, negativ oder neutral), den Zeithorizont und was es ändern würde. Kein Haftungshinweis.",
+      "save": "Ergänzungen speichern",
+      "saved": "Ergänzungen gespeichert; sie gelten ab der nächsten Nachricht.",
+      "saveFailed": "Ergänzungen konnten nicht gespeichert werden: {{message}}",
+      "count": "{{count}} / {{max}} Zeichen",
+      "hint": "Leer lassen, um nur die ausgelieferten Prinzipien zu verwenden."
+    }
   },
   "agent": {
     "reasoningStrength": "Reasoning-Aufwand",

@@ -1198,7 +1198,17 @@
     "authentication": "Autenticação",
     "apiKey": "Chave de API",
     "tushareTokenDesc": "Usado para ações A da China, futuros, fundos e dados macro. Se não for definido, o projeto volta para o AKShare, quando disponível.",
-    "gildataTokenDesc": "Dados opcionais da Gildata: preços diários ajustados de ações A, preços brutos de Hong Kong e índices, valores patrimoniais de fundos não negociados em bolsa e ferramentas de macroeconomia, comunicados e pesquisa da China."
+    "gildataTokenDesc": "Dados opcionais da Gildata: preços diários ajustados de ações A, preços brutos de Hong Kong e índices, valores patrimoniais de fundos não negociados em bolsa e ferramentas de macroeconomia, comunicados e pesquisa da China.",
+    "outputPrinciples": {
+      "title": "Princípios de resposta: emendas",
+      "desc": "Regras adicionadas aos princípios de resposta do agente nesta instalação, por exemplo para obter uma opinião clara quando você pedir. Os princípios originais não mudam; em caso de conflito, a emenda prevalece. Vale a partir da próxima mensagem.",
+      "placeholder": "Ex.: quando perguntarem se é para comprar, vender ou esperar, dar uma opinião clara (favorável, desfavorável ou neutra), o horizonte em que vale e o que a mudaria. Sem frase de isenção.",
+      "save": "Salvar emendas",
+      "saved": "Emendas salvas; valem a partir da próxima mensagem.",
+      "saveFailed": "Não foi possível salvar as emendas: {{message}}",
+      "count": "{{count}} / {{max}} caracteres",
+      "hint": "Deixe vazio para usar apenas os princípios originais."
+    }
   },
   "agent": {
     "reasoningStrength": "Esforço de raciocínio",

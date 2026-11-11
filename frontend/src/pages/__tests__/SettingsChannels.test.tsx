@@ -4,6 +4,8 @@ import { Settings } from "../Settings";
 const apiMock = vi.hoisted(() => ({
   getLLMSettings: vi.fn(),
   getDataSourceSettings: vi.fn(),
+  getOutputPrinciples: vi.fn(async () => ({ text: "", max_chars: 8000 })),
+  updateOutputPrinciples: vi.fn(),
   getChannelStatus: vi.fn(),
   getChannelsConfig: vi.fn(),
   listLLMModels: vi.fn(),

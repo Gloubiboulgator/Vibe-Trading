@@ -800,6 +800,12 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(settings),
     }),
+  getOutputPrinciples: () => request<OutputPrinciplesSettings>("/settings/output-principles"),
+  updateOutputPrinciples: (text: string) =>
+    request<OutputPrinciplesSettings>("/settings/output-principles", {
+      method: "PUT",
+      body: JSON.stringify({ text }),
+    }),
   getChannelStatus: () => request<ChannelRuntimeStatus>("/channels/status"),
   startChannels: () => request<ChannelRuntimeActionResponse>("/channels/start", { method: "POST" }),
   stopChannels: () => request<ChannelRuntimeActionResponse>("/channels/stop", { method: "POST" }),
@@ -1177,6 +1183,12 @@ export const gildataFeatures = [
   "broker_reports",
 ] as const;
 export type GildataFeature = typeof gildataFeatures[number];
+
+/** The operator's amendments to the agent's Output Principles. */
+export interface OutputPrinciplesSettings {
+  text: string;
+  max_chars: number;
+}
 
 export interface DataSourceSettings {
   gildata_features?: GildataFeature[];

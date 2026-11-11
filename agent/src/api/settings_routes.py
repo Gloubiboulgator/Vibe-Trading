@@ -159,6 +159,19 @@ class DataSourceSettingsResponse(BaseModel):
     source_orders: List[SourceOrderEntry] = Field(default_factory=list)
 
 
+class OutputPrinciplesSettings(BaseModel):
+    """The operator's amendments to the Output Principles."""
+
+    text: str = ""
+    max_chars: int = 0
+
+
+class UpdateOutputPrinciplesRequest(BaseModel):
+    """Replace the operator's amendments; blank text removes them."""
+
+    text: str = Field(default="", max_length=20000)
+
+
 class UpdateDataSourceSettingsRequest(BaseModel):
     """Update project-local data source credentials."""
 
@@ -1083,3 +1096,37 @@ def register_settings_routes(
         return _build_data_source_settings_response(
             saved_values if updates else _read_settings_env_values()
         )
+
+    @app.get(
+        "/settings/output-principles",
+        response_model=OutputPrinciplesSettings,
+        dependencies=[Depends(require_local_or_auth)],
+    )
+    async def get_output_principles():
+        """Return the operator's amendments to the Output Principles."""
+        from src.agent.operator_principles import (
+            MAX_OPERATOR_PRINCIPLES_CHARS,
+            read_operator_principles,
+        )
+
+        return OutputPrinciplesSettings(
+            text=read_operator_principles(), max_chars=MAX_OPERATOR_PRINCIPLES_CHARS
+        )
+
+    @app.put(
+        "/settings/output-principles",
+        response_model=OutputPrinciplesSettings,
+        dependencies=[Depends(require_settings_write_auth)],
+    )
+    async def update_output_principles(payload: UpdateOutputPrinciplesRequest):
+        """Save the amendments; the next run's system prompt carries them."""
+        from src.agent.operator_principles import (
+            MAX_OPERATOR_PRINCIPLES_CHARS,
+            write_operator_principles,
+        )
+
+        try:
+            saved = write_operator_principles(payload.text)
+        except ValueError as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        return OutputPrinciplesSettings(text=saved, max_chars=MAX_OPERATOR_PRINCIPLES_CHARS)

@@ -1198,7 +1198,17 @@
     "authentication": "Authentication",
     "apiKey": "API key",
     "tushareTokenDesc": "Used for China A-share, futures, fund, and macro data. If unset, the project falls back to AKShare where available.",
-    "gildataTokenDesc": "Optional Gildata data: adjusted A-share daily bars, raw HK/index bars, OTC fund NAVs, and China macro, announcement and research tools."
+    "gildataTokenDesc": "Optional Gildata data: adjusted A-share daily bars, raw HK/index bars, OTC fund NAVs, and China macro, announcement and research tools.",
+    "outputPrinciples": {
+      "title": "Output principles: operator amendments",
+      "desc": "Rules added to the agent's output principles for this installation, for example to get a clear verdict when you ask for one. The shipped principles stay unchanged; where an amendment conflicts with them, the amendment wins. Applies from the next message.",
+      "placeholder": "e.g. When asked whether to buy, sell or wait, give a clear verdict (favorable, unfavorable or neutral), the horizon it holds for and what would change it. No disclaimer sentence.",
+      "save": "Save amendments",
+      "saved": "Amendments saved; they apply from the next message.",
+      "saveFailed": "Could not save the amendments: {{message}}",
+      "count": "{{count}} / {{max}} characters",
+      "hint": "Leave empty to use the shipped principles only."
+    }
   },
   "agent": {
     "reasoningStrength": "Reasoning Effort",

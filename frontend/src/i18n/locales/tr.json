@@ -1158,7 +1158,17 @@
     "tushareTokenDesc": "Çin A hisseleri, vadeli işlemler, fon ve makro veriler için kullanılır. Ayarlanmamışsa, mümkün olan yerlerde AKShare kullanılır.",
     "gildataTokenDesc": "İsteğe bağlı Gildata verileri: düzeltilmiş A hissesi günlük fiyatları, ham Hong Kong/endeks fiyatları, borsa dışı fonların net varlık değerleri ve Çin makroekonomi, duyuru ve araştırma araçları.",
     "reasoningEffortXhigh": "Çok yüksek",
-    "reasoningEffortReset": "Seçilen model {{level}} düzeyini desteklemiyor; sağlayıcı varsayılanına sıfırlandı."
+    "reasoningEffortReset": "Seçilen model {{level}} düzeyini desteklemiyor; sağlayıcı varsayılanına sıfırlandı.",
+    "outputPrinciples": {
+      "title": "Yanıt ilkeleri: değişiklikler",
+      "desc": "Bu kurulum için ajanın yanıt ilkelerine eklenen kurallar; örneğin istediğinizde net bir görüş almak için. Varsayılan ilkeler değişmez; çelişki olursa değişiklik geçerlidir. Bir sonraki mesajdan itibaren uygulanır.",
+      "placeholder": "Örn.: almak, satmak veya beklemek sorulduğunda net bir görüş ver (olumlu, olumsuz veya nötr), geçerli olduğu vadeyi ve onu neyin değiştireceğini belirt. Sorumluluk reddi cümlesi yok.",
+      "save": "Değişiklikleri kaydet",
+      "saved": "Değişiklikler kaydedildi; bir sonraki mesajdan itibaren geçerli.",
+      "saveFailed": "Değişiklikler kaydedilemedi: {{message}}",
+      "count": "{{count}} / {{max}} karakter",
+      "hint": "Yalnızca varsayılan ilkeleri kullanmak için boş bırakın."
+    }
   },
   "agent": {
     "reasoningStrength": "Akıl yürütme düzeyi",

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from src.agent.memory import WorkspaceMemory
+from src.agent.operator_principles import operator_principles_section
 from src.agent.skills import SkillsLoader
 from src.agent.tools import ToolRegistry
 
@@ -70,7 +71,7 @@ skill document, not recalled memory. They are not defaults to be tuned.
    that you are not doing that part, and then do the most useful thing that
    stays inside these principles. Quietly complying is the exact failure this
    section exists to prevent.
-
+{operator_principles}
 ## Tools
 
 {tool_descriptions}
@@ -401,6 +402,7 @@ class ContextBuilder:
             memory_section=memory_section,
             strategy_discovery_routing=routing,
             current_datetime=now.strftime("%A, %B %d, %Y %H:%M UTC"),
+            operator_principles=operator_principles_section(),
         )
 
     @staticmethod
