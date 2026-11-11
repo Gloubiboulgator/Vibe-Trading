@@ -1072,6 +1072,28 @@ def _is_anthropic_temperature_unsupported_error(exc: BaseException) -> bool:
     return "deprecated" in message or "not supported" in message or "unsupported" in message or "not allowed" in message
 
 
+#: Output limit for a Claude model langchain-anthropic has no profile for. Its
+#: own fallback is 4096 tokens, which a thinking model can spend entirely on
+#: reasoning: claude-fable-5-2 returned no text and no tool call twice and the
+#: run failed with empty_model_response (2026-11-11). Every current Claude
+#: model accepts 32000; responses are streamed, so the read timeout holds.
+_ANTHROPIC_UNPROFILED_OUTPUT_LIMIT = 32000
+
+
+def _anthropic_output_limit(model: str) -> int | None:
+    """``ANTHROPIC_MAX_TOKENS`` if set, else the library's profile, else a safe floor."""
+    configured = get_env_config().llm.anthropic_max_tokens
+    if configured:
+        return configured
+    try:
+        from langchain_anthropic.chat_models import _get_default_model_profile
+    except ImportError:
+        return None
+    if _get_default_model_profile(model).get("max_output_tokens"):
+        return None  # the library sets the model's own limit
+    return _ANTHROPIC_UNPROFILED_OUTPUT_LIMIT if model.startswith("claude-") else None
+
+
 def _make_temperature_safe_anthropic(base_cls: type) -> type:
     """Build (and cache) a ChatAnthropic subclass that self-heals temperature.
 
@@ -1280,7 +1302,7 @@ def _build_anthropic(
     # this thinking-conditional variant.
     return safe_anthropic(
         model=model,
-        max_tokens=get_env_config().llm.anthropic_max_tokens,
+        max_tokens=_anthropic_output_limit(model),
         temperature=None if use_effort or model in _ANTHROPIC_TEMPERATURE_UNSUPPORTED else temperature,
         timeout=get_env_config().llm.timeout_seconds,
         max_retries=get_env_config().llm.max_retries,
