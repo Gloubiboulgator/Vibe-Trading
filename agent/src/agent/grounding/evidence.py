@@ -702,6 +702,17 @@ _PROFILE_MONEY_FIELDS = frozenset(
         "totalrevenue",
         "totalcash",
         "totaldebt",
+        # earnings_trend rows: consensus EPS and revenue, and the EPS a week,
+        # a month and a quarter ago. "41,41393 €" of 2026 EPS was omitted from
+        # an ASML answer on 2026-11-11 because these were read as ratios.
+        "eps_avg",
+        "eps_low",
+        "eps_high",
+        "eps_trend_current",
+        "eps_trend_7d_ago",
+        "eps_trend_30d_ago",
+        "eps_trend_90d_ago",
+        "revenue_avg",
     }
 )  # casefolded, as _leaf_name returns them
 

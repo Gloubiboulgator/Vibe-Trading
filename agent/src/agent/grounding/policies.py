@@ -1425,6 +1425,44 @@ class _PolicyMixin:
         cap = _MAX_CONTAINER_REF_CANDIDATES if containers else _MAX_INDEXED_REF_CANDIDATES
         return ranked[:cap]
 
+    def _described_field_ref_candidates(
+        self, ref: str, symbol: str | None, figure: Figure
+    ) -> list[str]:
+        """Exact refs for a ``tool::described field`` ref, from the values that match.
+
+        ``get_stock_profile::earnings_trend 0y eps_avg`` names a tool and then
+        describes a field in words, so it selects nothing. Every rounded figure
+        of an ASML answer was refused that way with no hint on 2026-11-11, and
+        the next draft quoted raw values instead ("0,38551998 (ratio)"). The
+        records of that call or tool, for the figure's symbol and kind, whose
+        value matches are offered, but only a field whose leaf name the ref
+        spells: a value match alone pointed a "2,0" Md€ debt at an analyst count.
+        A hint only: the declared ref stays rejected.
+        """
+        key = (ref or "").strip()
+        if "::" not in key:
+            return []
+        scope, described = (part.strip() for part in key.split("::", 1))
+        # A path without spaces is an exact ref; its own helpers answer it,
+        # and an explicit index or leaf must never be hinted a sibling.
+        if not scope or not described or not re.search(r"\s", described):
+            return []
+        words = {word.casefold() for word in re.findall(r"[A-Za-z0-9_]+", described)}
+        found: dict[str, None] = {}
+        for record in self._evidence:
+            if (
+                record.status != "observed"
+                or record.value is None
+                or _leaf_name(record.field) not in words
+                or scope not in (record.call_id, record.tool)
+                or (symbol and record.symbol and record.symbol != symbol)
+                or not self._kind_fits(record, figure)
+                or not self._matches_evidence(figure, [float(record.value)], [float(record.value)])
+            ):
+                continue
+            found[f"{record.call_id}::{record.field}"] = None
+        return list(found)[:_MAX_CALL_REF_CANDIDATES]
+
     def _other_call_field_ref_candidates(
         self, ref: str, symbol: str | None, figure: Figure
     ) -> list[str]:
@@ -1985,6 +2023,7 @@ class _PolicyMixin:
                             [
                                 *self._indexed_field_ref_candidates(declaration.ref, figure, symbol),
                                 *self._other_call_field_ref_candidates(declaration.ref, symbol, figure),
+                                *self._described_field_ref_candidates(declaration.ref, symbol, figure),
                             ]
                         )
                     ),
