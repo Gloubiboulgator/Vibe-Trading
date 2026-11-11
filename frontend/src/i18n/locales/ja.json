@@ -497,6 +497,8 @@
     "dataSources": "データソース",
     "llmBackend": "LLM バックエンド",
     "save": "保存",
+    "saveLocalApiKey": "キーを保存",
+    "saveLlmSettings": "モデル設定を保存",
     "saving": "保存中…",
     "saved": "設定を保存しました",
     "saveFailed": "保存に失敗しました",

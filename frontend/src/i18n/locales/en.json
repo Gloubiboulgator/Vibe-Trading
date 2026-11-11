@@ -509,6 +509,8 @@
     "dataSources": "Data Sources",
     "llmBackend": "LLM Backend",
     "save": "Save",
+    "saveLocalApiKey": "Save key",
+    "saveLlmSettings": "Save model settings",
     "saving": "Saving…",
     "saved": "Settings saved",
     "saveFailed": "Failed to save",

@@ -509,6 +509,8 @@
     "dataSources": "منابع داده",
     "llmBackend": "بک‌اند LLM",
     "save": "ذخیره",
+    "saveLocalApiKey": "ذخیره کلید",
+    "saveLlmSettings": "ذخیره تنظیمات مدل",
     "saving": "در حال ذخیره…",
     "saved": "تنظیمات ذخیره شد",
     "saveFailed": "ذخیره ناموفق بود",

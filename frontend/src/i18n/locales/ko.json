@@ -497,6 +497,8 @@
     "dataSources": "데이터 소스",
     "llmBackend": "LLM 백엔드",
     "save": "저장",
+    "saveLocalApiKey": "키 저장",
+    "saveLlmSettings": "모델 설정 저장",
     "saving": "저장 중…",
     "saved": "설정이 저장되었습니다",
     "saveFailed": "저장 실패",

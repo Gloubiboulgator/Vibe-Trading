@@ -509,6 +509,8 @@
     "dataSources": "Sumber Data",
     "llmBackend": "Backend LLM",
     "save": "Simpan",
+    "saveLocalApiKey": "Simpan kunci",
+    "saveLlmSettings": "Simpan pengaturan model",
     "saving": "Menyimpan…",
     "saved": "Pengaturan tersimpan",
     "saveFailed": "Gagal menyimpan",

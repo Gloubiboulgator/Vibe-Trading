@@ -497,6 +497,8 @@
     "dataSources": "مصادر البيانات",
     "llmBackend": "واجهة LLM الخلفية",
     "save": "حفظ",
+    "saveLocalApiKey": "حفظ المفتاح",
+    "saveLlmSettings": "حفظ إعدادات النموذج",
     "saving": "جارٍ الحفظ…",
     "saved": "تم حفظ الإعدادات",
     "saveFailed": "فشل الحفظ",

@@ -509,6 +509,8 @@
     "dataSources": "Datenquellen",
     "llmBackend": "LLM-Backend",
     "save": "Speichern",
+    "saveLocalApiKey": "Schlüssel speichern",
+    "saveLlmSettings": "Modelleinstellungen speichern",
     "saving": "Wird gespeichert…",
     "saved": "Einstellungen gespeichert",
     "saveFailed": "Speichern fehlgeschlagen",

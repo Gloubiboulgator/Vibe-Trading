@@ -12,6 +12,7 @@ from fastapi import HTTPException, Request, status
 from fastapi.responses import FileResponse
 
 from src.api._compat import host_attr as _host_attr
+from src.api.spa import HTML_CACHE_CONTROL
 from src.config.paths import get_runs_dir, get_sessions_dir, get_uploads_dir
 
 
@@ -61,7 +62,7 @@ async def _spa_html_deep_link_fallback(request: Request, call_next):
         if "text/html" in accept and _is_spa_html_route(request.url.path):
             index = _FRONTEND_DIST / "index.html"
             if index.exists():
-                return FileResponse(str(index))
+                return FileResponse(str(index), headers={"Cache-Control": HTML_CACHE_CONTROL})
     return await call_next(request)
 
 

@@ -3,6 +3,7 @@ import { ChevronDown, Cpu, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { LLMProviderOption, LLMSettings, RunLLMSelection } from "@/lib/api";
 import { effortLabelKey } from "@/lib/reasoningEffort";
+import { ModelPicker } from "@/components/settings/ModelPicker";
 
 interface Props {
   settings: LLMSettings | null;
@@ -181,16 +182,16 @@ export function ModelRuntimeBar({
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-muted-foreground">{t("agent.runPicker.model")}</span>
-              <input
-                className="rounded-md border border-border bg-background px-2 py-1.5 font-mono"
-                list={`${panelId}-models`}
+              {/* A datalist only offers entries that start with what the field
+                  already holds, so with the current model filled in it showed
+                  no choice at all. The settings page's picker lists them all. */}
+              <ModelPicker
                 value={current.model}
-                spellCheck={false}
-                onChange={(event) => update({ ...current, model: event.target.value })}
+                options={modelSuggestions}
+                onChange={(model) => update({ ...current, model })}
+                ariaLabel={t("agent.runPicker.model")}
+                optionsAriaLabel={t("settings.modelOptions")}
               />
-              <datalist id={`${panelId}-models`}>
-                {modelSuggestions.map((item) => <option key={item} value={item} />)}
-              </datalist>
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-muted-foreground">{t("agent.runPicker.effort")}</span>

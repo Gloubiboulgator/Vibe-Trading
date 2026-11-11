@@ -469,6 +469,8 @@
     "dataSources": "Veri kaynakları",
     "llmBackend": "LLM arka ucu",
     "save": "Kaydet",
+    "saveLocalApiKey": "Anahtarı kaydet",
+    "saveLlmSettings": "Model ayarlarını kaydet",
     "saving": "Kaydediliyor…",
     "saved": "Ayarlar kaydedildi",
     "saveFailed": "Kaydetme başarısız",

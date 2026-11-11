@@ -162,16 +162,18 @@ describe("ModelRuntimeBar", () => {
 
     it("offers the provider's live models once the picker opens", async () => {
       const loadModels = vi.fn().mockResolvedValue(["deepseek/deepseek-v4-pro", "deepseek/deepseek-v4-flash"]);
-      const { container } = render(
+      render(
         <ModelRuntimeBar settings={multi} selection={null} onSelectionChange={vi.fn()} loadModels={loadModels} />,
       );
       expect(loadModels).not.toHaveBeenCalled();
       fireEvent.click(screen.getByRole("button", { name: /OpenRouter/ }));
       expect(loadModels).toHaveBeenCalledWith("openrouter");
-      await waitFor(() => {
-        const options = [...container.querySelectorAll("datalist option")].map((o) => o.getAttribute("value"));
-        expect(options).toContain("deepseek/deepseek-v4-flash");
-      });
+      await waitFor(() => expect(loadModels).toHaveBeenCalledTimes(1));
+      // The field already holds the saved model; every model is still offered
+      // (a datalist filtered on that text and showed none, 2026-11-11).
+      fireEvent.click(screen.getByRole("combobox", { name: "Model" }));
+      expect(await screen.findByRole("option", { name: /deepseek-v4-flash/ })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: /deepseek-v4-pro/ })).toBeInTheDocument();
     });
 
     it("locks the picker while a run is streaming", () => {

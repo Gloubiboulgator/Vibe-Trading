@@ -509,6 +509,8 @@
     "dataSources": "Sources de données",
     "llmBackend": "Backend LLM",
     "save": "Enregistrer",
+    "saveLocalApiKey": "Enregistrer la clé",
+    "saveLlmSettings": "Enregistrer le modèle",
     "saving": "Enregistrement…",
     "saved": "Paramètres enregistrés",
     "saveFailed": "Échec de l'enregistrement",

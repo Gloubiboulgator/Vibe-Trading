@@ -497,6 +497,8 @@
     "dataSources": "数据源",
     "llmBackend": "LLM 后端",
     "save": "保存",
+    "saveLocalApiKey": "保存密钥",
+    "saveLlmSettings": "保存模型设置",
     "saving": "保存中…",
     "saved": "设置已保存",
     "saveFailed": "保存失败",

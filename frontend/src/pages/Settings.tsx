@@ -199,8 +199,11 @@ export function Settings() {
 
   // The CLI reports which models the login can run and the levels each accepts,
   // so fetch that as soon as the provider is shown rather than on a button press.
+  // A provider whose API key is saved can list its models too; without it the
+  // picker offered only the saved and default models until "Load models".
   const hasAutomaticModelList = selectedProvider?.auth_type === "claude_cli"
-    || selectedProvider?.name === "openai-codex";
+    || selectedProvider?.name === "openai-codex"
+    || Boolean(selectedProvider?.api_key_required && selectedProvider?.api_key_configured);
   useEffect(() => {
     if (hasAutomaticModelList) void refreshModels({ refresh: false });
     // refreshModels reads the form at call time; re-run only when the provider changes.
@@ -334,7 +337,7 @@ export function Settings() {
           className="inline-flex items-center justify-center gap-2 self-end rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
         >
           <Save className="h-4 w-4" />
-          {t("settings.save")}
+          {t("settings.saveLocalApiKey")}
         </button>
       </div>
       <p className="mt-2 text-xs text-muted-foreground">{t("settings.storedInBrowser")}</p>
@@ -628,7 +631,7 @@ export function Settings() {
               className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {saving ? t("settings.saving") : t("settings.save")}
+              {saving ? t("settings.saving") : t("settings.saveLlmSettings")}
             </button>
           </div>
         </section>
