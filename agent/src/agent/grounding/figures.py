@@ -120,6 +120,14 @@ _POINT_MARKS = (
 # currency marks. They scale the comparison with evidence and never decide shape.
 _MAGNITUDES = {"K": 1e3, "M": 1e6, "B": 1e9, "千": 1e3, "万": 1e4, "亿": 1e8}
 
+# French and German scale words ("12,7 Md€", "1,96 milliard d'euros"). Without
+# them "12.7 Md EUR" was compared with 12.7 and a 12 735 099 904 EUR cash
+# position could not ground it (2026-11-11). "billion" is left out: in French
+# it is 10^12, in English 10^9.
+_MAGNITUDE_WORDS = re.compile(
+    r"(?:Mds?|Mrds?|milliards?|Mio|millions?)(?![^\W\d_])", re.IGNORECASE
+)
+
 # A CJK currency word is at most three characters (人民币); bounding the run
 # keeps 元宵/元件, inside longer CJK runs, from reading as money.
 _MAX_CURRENCY_WORD = 3
@@ -236,6 +244,15 @@ class FiguresBlock:
                     abs(value) * 1e-9, 1e-9
                 ):
                     return declaration
+        # The reverse: "le MACD est négatif (−45.0)" or "soit −15.4 %" quoting
+        # a figures line that holds the size ("45.0 | observed | macd_line
+        # (−44.979)"). The sign belongs to the prose; the observed and derived
+        # checks still compare it with the evidence or the formula. Refused as
+        # undeclared, the ASML answer of 2026-11-11 went through four drafts.
+        if value < 0:
+            borrowed = self.match(-value, percent, digits, point_marked)
+            if borrowed is not None and borrowed.value > 0:
+                return borrowed
         # A chosen percent declared bare with its unit in the note
         # ("20 | count | illustrative drop (%)") is the same parameter as the
         # "20 %" in the prose. Only a count may borrow so: it asserts nothing
@@ -1266,6 +1283,12 @@ def magnitude_suffix(text: str, end: int) -> tuple[float, int]:
     start = end
     while start < len(text) and text[start] in " \t\u00a0\u202f\u3000":
         start += 1
+    word = _MAGNITUDE_WORDS.match(text, start)
+    if word:
+        lowered = word.group(0).lower()
+        if lowered.startswith("milliard") or lowered.startswith(("md", "mrd")):
+            return 1e9, word.end()
+        return 1e6, word.end()
     mark = text[start : start + 1]
     if not mark or mark not in _MAGNITUDES:
         return 1.0, end

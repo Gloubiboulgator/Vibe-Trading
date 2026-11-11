@@ -469,6 +469,15 @@ _ANNOTATION_RE = re.compile(r"[（(\[][^（）()\[\]]*?(?:[\u3400-\u9fff]|[A-Za-
 _LABEL_RE = re.compile(r"[\u3400-\u9fff]+|[A-Za-z]{2,}")
 
 
+#: A calendar date inside a note: ISO, or day/month/year with a four-digit year.
+_NOTE_DATE_RE = re.compile(r"(?<![\d.])(?:\d{4}-\d{2}-\d{2}|\d{1,2}/\d{1,2}/\d{4})(?![\d.])")
+
+#: A dotted or snake_case field name inside a note.
+_NOTE_FIELD_NAME_RE = re.compile(
+    r"(?<![\w.])[A-Za-z][A-Za-z0-9]*(?:[._][A-Za-z0-9]+)+(?![\w.])"
+)
+
+
 def _without_labels(text: str) -> str:
     """A note with its words removed, so the arithmetic between them can be read.
 
@@ -480,6 +489,12 @@ def _without_labels(text: str) -> str:
     # A ticker names what the formula is about ("… pour CW8.PA"); left in, its
     # digits and dot ("8.") broke the arithmetic once its letters were removed.
     text = _CANONICAL_SYMBOL_RE.sub(" ", _ANNOTATION_RE.sub(" ", text))
+    # A date says which bar an operand is ("volume 2026-11-05 1602606"); read
+    # as arithmetic it made the note unevaluable.
+    text = _NOTE_DATE_RE.sub(" ", text)
+    # A field name ("volume.sma_20", "eps_trend_90d_ago") goes whole: its
+    # digits are part of the name, not an operand.
+    text = _NOTE_FIELD_NAME_RE.sub(" ", text)
     return _LABEL_RE.sub(" ", _expand_formula_units(text))
 
 
@@ -1020,19 +1035,25 @@ class _PolicyMixin:
                     # calls it means. Read as a symbol-scoped tool ref; before,
                     # it fell to the price path and a forward P/E of 18.6 was
                     # compared to a 182 $ close (2026-11-08).
-                    tool_name, _, ref_symbol = key.partition(" ")
-                    ref_symbol = ref_symbol.strip().upper()
-                    if ref_symbol and " " not in ref_symbol:
-                        records = [
-                            record
-                            for record in self._evidence
-                            if record.tool == tool_name
-                            and record.symbol == ref_symbol
-                            and record.status == "observed"
-                            and record.value is not None
-                        ]
-                        if records and symbol is None:
-                            symbol = ref_symbol
+                    # "ASML.AS get_market_data" says the same the other way
+                    # round; unread, it left a derivation without anchors
+                    # (2026-11-11).
+                    first, _, second = key.partition(" ")
+                    second = second.strip()
+                    if second and " " not in second:
+                        for tool_name, ref_symbol in ((first, second.upper()), (second, first.upper())):
+                            records = [
+                                record
+                                for record in self._evidence
+                                if record.tool == tool_name
+                                and record.symbol == ref_symbol
+                                and record.status == "observed"
+                                and record.value is not None
+                            ]
+                            if records:
+                                if symbol is None:
+                                    symbol = ref_symbol
+                                break
                 if not records and not metrics:
                     # Preserve the legacy loose-ref contract: a ref such as a
                     # symbol that names no field/call/tool falls back to the
