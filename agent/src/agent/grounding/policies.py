@@ -478,6 +478,24 @@ _NOTE_FIELD_NAME_RE = re.compile(
 )
 
 
+#: Two numbers joined by an operator, once a bracket's words are gone.
+_BRACKET_ARITHMETIC_RE = re.compile(r"\d\s*[×xX*/÷+\-−]\s*[\d(]")
+
+
+def _aside_or_operand(match: re.Match[str]) -> str:
+    """Drop a bracketed aside, but keep a bracket that is part of the formula.
+
+    "(1403.80 × sharesOutstanding 385417742)" is the denominator of a market
+    cap, labelled; dropped as an aside, its note had no formula left
+    (2026-11-11). "(约−1.17pp)" holds one number and still goes.
+    """
+    bracket = match.group(0)
+    inner = _LABEL_RE.sub(" ", _NOTE_FIELD_NAME_RE.sub(" ", bracket[1:-1]))
+    if _BRACKET_ARITHMETIC_RE.search(inner):
+        return f"({inner})"
+    return " "
+
+
 def _without_labels(text: str) -> str:
     """A note with its words removed, so the arithmetic between them can be read.
 
@@ -488,7 +506,7 @@ def _without_labels(text: str) -> str:
     """
     # A ticker names what the formula is about ("… pour CW8.PA"); left in, its
     # digits and dot ("8.") broke the arithmetic once its letters were removed.
-    text = _CANONICAL_SYMBOL_RE.sub(" ", _ANNOTATION_RE.sub(" ", text))
+    text = _CANONICAL_SYMBOL_RE.sub(" ", _ANNOTATION_RE.sub(_aside_or_operand, text))
     # A date says which bar an operand is ("volume 2026-11-05 1602606"); read
     # as arithmetic it made the note unevaluable.
     text = _NOTE_DATE_RE.sub(" ", text)
@@ -631,6 +649,7 @@ class _PolicyMixin:
         # has no observed operand of its own, and was always cut (2026-11-08).
         verified_derived: list[tuple[Figure, float]] = []
         pending_totals: list[tuple[Figure, Declaration, list[dict[str, Any]]]] = []
+        pending_chained: list[tuple[Any, ...]] = []
         for figure in figures:
             if figure.shape not in ("measured", "bare"):
                 continue
@@ -727,6 +746,10 @@ class _PolicyMixin:
                     )
                 elif _additive_formula(declaration.note) is not None:
                     pending_totals.append((figure, declaration, found))
+                elif all(issue.get("reason") == "operand_not_observed" for issue in found):
+                    pending_chained.append(
+                        (figure, declaration, symbol, records, tuple(scalar_parameters), found)
+                    )
                 else:
                     issues.extend(found)
                 continue
@@ -736,10 +759,50 @@ class _PolicyMixin:
                 )
                 continue
             issues.extend(GROUNDING_CHECKS.run("figure-observed", self, figure, declaration, symbol, records))
+        issues.extend(self._resolve_chained(verified_derived, pending_chained))
         issues.extend(self._resolve_totals(verified_derived, pending_totals))
         market_records = self._price_records()
         if checked_price and market_records:
             issues.extend(self._validate_price_provenance(content, market_records))
+        return issues
+
+    def _resolve_chained(
+        self,
+        verified: list[tuple[Figure, float]],
+        pending: list[tuple[Any, ...]],
+    ) -> list[dict[str, Any]]:
+        """Accept a derivation whose unobserved operand is a verified derived figure.
+
+        "−40 % | derived | 847.12 / 1403.80 − 1" where 847.12 is itself declared
+        derived and passed its own check: the operand is anchored, one step
+        removed. It was refused as unobserved, with advice to fetch data that
+        did not exist (2026-11-11). An operand matches a verified figure as the
+        answer wrote it or as its formula evaluates; the formula still needs an
+        observed operand of its own and must reach the stated result. Chains
+        resolve in any order; what never resolves keeps its original issue.
+        """
+        issues: list[dict[str, Any]] = []
+        progress = True
+        while pending and progress:
+            progress = False
+            chained = tuple(
+                value
+                for figure, result in verified
+                for value in (figure.value * float(figure.scale or 1.0), result)
+            )
+            for item in list(pending):
+                figure, declaration, symbol, records, parameters, _ = item
+                found = GROUNDING_CHECKS.run(
+                    "figure-derived", self, figure, declaration, symbol, records,
+                    parameters + chained,
+                )
+                if not found:
+                    evaluated = _formula_in_note(declaration.note)
+                    verified.append((figure, evaluated[0] if evaluated is not None else figure.value))
+                    pending.remove(item)
+                    progress = True
+        for *_, found in pending:
+            issues.extend(found)
         return issues
 
     def _resolve_totals(

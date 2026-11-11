@@ -140,3 +140,83 @@ def test_dates_and_field_names_leave_the_formula_readable(tmp_path) -> None:
         f"2.2 | derived | {note} | get_market_data, technical_indicators",
     )
     assert issues == []
+
+
+# The follow-up "j'ai besoin d'un avis" in the same session, 2026-11-11.
+
+
+def _follow_up_ledger(tmp_path: Path) -> GroundingLedger:
+    ledger = _ledger(tmp_path)
+    ledger._evidence += [
+        _record("get_financial_statements", "data.ASML.AS.periods[1].netIncome", 7571600000),
+        _record("get_financial_statements", "data.ASML.AS.periods[2].netIncome", 7839000000),
+        _record("get_financial_statements", "data.ASML.AS.periods[0].freeCashflow", 10374124544),
+        _record("get_financial_statements", "data.ASML.AS.sharesOutstanding", 385417742),
+        _record("get_market_data", "high", 1736.58, "2026-06-15"),
+        _record("get_market_data", "low", 362.22, "2022-10-03"),
+        _record("get_market_data", "high", 742.54, "2021-11-17"),
+    ]
+    return ledger
+
+
+def _follow_up(tmp_path: Path, sentence: str, *lines: str) -> list[dict]:
+    answer = (
+        f"ASML.AS (Yahoo) cote 1403.80 EUR.\n\n{sentence}\n\n```figures\n"
+        "1403.80 | observed | close | get_market_data\n" + "\n".join(lines) + "\n```\n"
+    )
+    return list(_follow_up_ledger(tmp_path).validate_final_answer(answer).issues)
+
+
+def test_a_statement_amount_with_its_currency_is_grounded(tmp_path) -> None:
+    issues = _follow_up(
+        tmp_path,
+        "Le résultat net a reculé de 7839000000 EUR en 2023 à 7571600000 EUR en 2024.",
+        "7839000000 | observed | netIncome 2023 | get_financial_statements",
+        "7571600000 | observed | netIncome 2024 | get_financial_statements",
+    )
+    assert issues == []
+
+
+def test_a_range_shares_its_scale_word(tmp_path) -> None:
+    issues = _follow_up(
+        tmp_path,
+        "Le résultat net a reculé de 7.84 à 7.57 Md EUR entre 2023 et 2024.",
+        "7.84 | observed | netIncome 2023 | get_financial_statements",
+        "7.57 | observed | netIncome 2024 | get_financial_statements",
+    )
+    assert issues == []
+
+
+def test_a_month_and_year_is_a_date(tmp_path) -> None:
+    issues = _follow_up(
+        tmp_path,
+        "| Cycle | Plus haut |\n|---|---|\n| 2026 | 1736.58 (06/2026) |",
+        "1736.58 | observed | high | get_market_data",
+    )
+    assert issues == []
+
+
+def test_a_labelled_bracket_stays_in_the_formula() -> None:
+    note = "freeCashflow 10374124544 / (1403.80 × sharesOutstanding 385417742)"
+    result, operands, _ = _formula_in_note(note)
+    assert operands == [10374124544, 1403.80, 385417742]
+    assert result == pytest.approx(0.01917, rel=1e-3)
+
+
+def test_a_verified_derived_figure_anchors_the_next_derivation(tmp_path) -> None:
+    issues = _follow_up(
+        tmp_path,
+        "Une baisse du même ordre mènerait vers 847.12 EUR, soit environ −40 % sous le cours.",
+        "847.12 | derived | 1736.58 × 362.22 / 742.54 | ASML.AS",
+        "−40 % | derived | 847.12 / 1403.80 − 1 | ASML.AS",
+    )
+    assert issues == []
+
+
+def test_an_unverified_operand_still_fails_the_chain(tmp_path) -> None:
+    issues = _follow_up(
+        tmp_path,
+        "Une cible vers 900.00 EUR, soit environ −36 % sous le cours.",
+        "−36 % | derived | 900.00 / 1403.80 − 1 | ASML.AS",
+    )
+    assert "operand_not_observed" in [issue["reason"] for issue in issues if issue.get("claim") == "−36 %"]

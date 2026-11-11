@@ -713,8 +713,30 @@ _PROFILE_MONEY_FIELDS = frozenset(
         "eps_trend_30d_ago",
         "eps_trend_90d_ago",
         "revenue_avg",
+        # Statement and profile amounts. "7839000000 EUR" of 2023 net income,
+        # quoted from get_financial_statements, was omitted on 2026-11-11:
+        # neither the tool nor these leaves were read as money.
+        "netincome",
+        "netincometocommon",
+        "grossprofit",
+        "grossprofits",
+        "costofrevenue",
+        "totaloperatingexpenses",
+        "incometaxexpense",
+        "ebit",
+        "ebitda",
+        "operatingcashflow",
+        "freecashflow",
+        "bookvalue",
+        "revenuepershare",
+        "totalcashpershare",
+        "targetmedianprice",
+        "lastdividendvalue",
     }
 )  # casefolded, as _leaf_name returns them
+
+#: Tools whose _PROFILE_MONEY_FIELDS leaves carry the listing's currency.
+_PROFILE_MONEY_TOOLS = frozenset({"get_stock_profile", "get_financial_statements"})
 
 
 def _is_price_kind(record: EvidenceRecord) -> bool:
@@ -740,7 +762,7 @@ def _is_price_kind(record: EvidenceRecord) -> bool:
         or _is_registered_price_indicator(record.tool, record.field)
         or _leaf_name(record.field) in _AMOUNT_FIELDS
         or (
-            record.tool == "get_stock_profile"
+            record.tool in _PROFILE_MONEY_TOOLS
             and _leaf_name(record.field) in _PROFILE_MONEY_FIELDS
         )
     )

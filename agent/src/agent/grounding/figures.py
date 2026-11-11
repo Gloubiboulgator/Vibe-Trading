@@ -59,7 +59,10 @@ _DATE_RE = re.compile(
     # A day-first date with a four-digit year ("13/10/2026", "06.11.2026"), the
     # European order. Without it a day above 12 read as two measured integers.
     r"|(?<![\d.,])(?:0?[1-9]|[12]\d|3[01])(?P<dsep>[/.\-])(?:0?[1-9]|1[0-2])(?P=dsep)"
-    r"(?:19|20)\d{2}(?!\d|[.,]\d))"
+    r"(?:19|20)\d{2}(?!\d|[.,]\d)"
+    # A month and year ("175.61 (07/2018)"): its month read as a measured "07"
+    # in a table of past drawdowns (2026-11-11).
+    r"|(?<![\d.,/])(?:0?[1-9]|1[0-2])/(?:19|20)\d{2}(?![\d/]|[.,]\d))"
     # A year-less MM-DD / MM/DD; see _short_date_is_structural.
     r"|(?P<short>(?<![\d.])(?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01])(?!\d|\.\d))"
     r"|(?<![\d.:])(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?![\d:]|\.\d)"
@@ -1298,6 +1301,24 @@ def magnitude_suffix(text: str, end: int) -> tuple[float, int]:
     return _MAGNITUDES[mark], start + 1
 
 
+#: The second bound of a range a figure opens: "7.84 à 7.57", "7.84 et 7.57".
+_RANGE_TAIL_RE = re.compile(r"[ \t\u00a0\u202f]*(?:à|to|et|and|-|–|—)[ \t\u00a0\u202f]*[+−-]?\d[\d.,]*")
+
+
+def _scale_or_range_scale(text: str, end: int) -> float:
+    """A figure's magnitude mark, or the one its range shares.
+
+    "de 7.84 à 7.57 Md EUR" writes the scale once, after the second bound; the
+    first was compared with 7.84 and its 7 839 000 000 EUR net income refused
+    (2026-11-11).
+    """
+    scale, _ = magnitude_suffix(text, end)
+    if scale != 1.0:
+        return scale
+    tail = _RANGE_TAIL_RE.match(text, end)
+    return magnitude_suffix(text, tail.end())[0] if tail else 1.0
+
+
 def _currency_prefix_start(text: str, start: int) -> int:
     """Where a currency mark attached to the left of a figure begins ("HK$1.10", "USD 100")."""
     head = text[:start].rstrip(" \t")
@@ -1551,7 +1572,7 @@ def scan_figures(content: str, block: FiguresBlock) -> list[Figure]:
                 column=column,
                 date=date_value,
                 symbol=symbol_value,
-                scale=1.0 if percent else magnitude_suffix(text, token.end)[0],
+                scale=1.0 if percent else _scale_or_range_scale(text, token.end),
                 currency=currency,
                 currency_code=currency_code,
                 digits=token.digits,
