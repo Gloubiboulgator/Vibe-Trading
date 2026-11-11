@@ -549,6 +549,9 @@ def _formula_in_note(note: str) -> tuple[float, list[float], ast.Expression] | N
     return None
 
 
+#: Tools whose prose answers become document evidence (see GroundingLedger.ingest_tool_result).
+_WEB_TEXT_TOOLS = frozenset({"read_url", "web_search", "get_stock_news"})
+
 class _PolicyMixin:
     """Policy behaviour of :class:`GroundingLedger`."""
 
@@ -2054,6 +2057,11 @@ class _PolicyMixin:
                         and record.scope is not None
                         and record.field == "fill_price"
                     )
+                    # A web page that names its currency in a header ("Laatste
+                    # koers (eur) 1.403,800 … Verschil +42,800") gives the
+                    # figure none; it cannot contradict the answer's (2026-11-11).
+                    # An uploaded document's bare amount still cannot take one.
+                    or (record.currency is None and record.tool in _WEB_TEXT_TOOLS)
                 ]
             values = [float(record.value) for record in scoped_records] + metric_values
             money = figure.currency and not figure.percent

@@ -826,6 +826,16 @@ _ENGLISH_SCALE_RE = re.compile(r"[ \t\u00a0]*(billion|bn|trillion|tn)(?![^\W\d_]
 _RANGE_JOIN_RE = re.compile(r"[ \t\u00a0]*(?:-|–|—|to)[ \t\u00a0]*(?:US\$|\$|€|£)?[ \t\u00a0]*")
 
 
+# A unit written as a word on a European page: "bijna 60 procent", "de
+# weerstand bij 1370 euro" (2026-11-11). The answer's own scanner keeps such
+# a figure unmarked; a page that states it is reporting it.
+_WORD_UNIT_RE = re.compile(
+    r"[ \t\u00a0]*(?:(?P<percent>percent|per cent|procent|prozent|pour cent|por ciento|per cento)"
+    r"|(?P<eur>euros?)|(?P<usd>(?:US )?dollars?))(?![^\W\d_])",
+    re.IGNORECASE,
+)
+
+
 def _english_scale(text: str, end: int) -> float:
     """The English scale word after a figure, or after the range it opens."""
     word = _ENGLISH_SCALE_RE.match(text, end)
@@ -849,6 +859,15 @@ def _document_figure(text: str, figure: Figure, opening: Figure | None) -> Figur
         and not figure.percent
         and _RANGE_JOIN_RE.fullmatch(text, opening.end, figure.start) is not None
     )
+    if figure.shape == "bare" and not closes_range:
+        unit = _WORD_UNIT_RE.match(text, figure.end)
+        if unit is None:
+            return None
+        if unit.group("percent"):
+            return replace(figure, shape="measured", percent=True)
+        figure = replace(
+            figure, shape="measured", currency=True, currency_code="EUR" if unit.group("eur") else "USD"
+        )
     if figure.shape != "measured" and not closes_range:
         return None
     if figure.percent or (figure.scale or 1.0) != 1.0:
@@ -863,6 +882,12 @@ def _document_figure(text: str, figure: Figure, opening: Figure | None) -> Figur
         scale=scale,
         currency_code=figure.currency_code or (opening.currency_code if closes_range else None),
     )
+
+
+_PREFIXED_DOLLARS = {
+    "US": "USD", "HK": "HKD", "A": "AUD", "AU": "AUD", "C": "CAD", "CA": "CAD",
+    "NT": "TWD", "S": "SGD", "NZ": "NZD", "R": "BRL",
+}
 
 
 def _dollar_is_usd(text: str, figure: Figure) -> Figure:
@@ -880,7 +905,9 @@ def _dollar_is_usd(text: str, figure: Figure) -> Figure:
     letters = len(head) - 1 - len(head[:-1].rstrip(string.ascii_letters))
     prefix = head[len(head) - 1 - letters : -1]
     if prefix and len(prefix) <= 2 and prefix.isupper():
-        return figure
+        # "HK$", "A$", "NT$": that dollar, or a code no answer writes, so the
+        # page can contradict a USD claim instead of leaving it unopposed.
+        return replace(figure, currency_code=_PREFIXED_DOLLARS.get(prefix, f"{prefix}$"))
     return replace(figure, currency_code="USD")
 
 

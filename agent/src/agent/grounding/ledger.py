@@ -108,19 +108,20 @@ _ACTIONABLE_MARKET_RE = re.compile(
 )
 
 
-def _headlines(payload: Mapping[str, Any]) -> str:
-    """The titles and snippets of a search or news result, one item per paragraph."""
+def _headlines(payload: Mapping[str, Any]) -> list[str]:
+    """The title and snippet of each item of a search or news result."""
     items = payload.get("results")
     if not isinstance(items, list):
         data = payload.get("data")
         items = data.get("articles") if isinstance(data, Mapping) else None
     if not isinstance(items, list):
-        return ""
-    return "\n\n".join(
+        return []
+    texts = (
         f"{item.get('title') or ''}\n{item.get('snippet') or item.get('summary') or ''}".strip()
         for item in items
         if isinstance(item, Mapping)
-    ).strip()
+    )
+    return [text for text in texts if text]
 
 
 class GroundingLedger(
@@ -407,9 +408,12 @@ class GroundingLedger(
         elif tool_name in ("web_search", "get_stock_news") and payload is not None and _headlines(payload):
             # Search snippets and news headlines are prose as well ("Priced For
             # Perfection After 125% Run"); each item is read on its own.
-            self._ingest_document_text(
-                arguments, {"content": _headlines(payload)}, call_id, tool_name=tool_name
-            )
+            # One item at a time: a Dutch snippet ("+42,800", decimal comma)
+            # beside English ones was read with their thousands commas.
+            for headline in _headlines(payload):
+                self._ingest_document_text(
+                    arguments, {"content": headline}, call_id, tool_name=tool_name
+                )
         elif payload is not None:
             self._ingest_generic_numeric(tool_name, arguments, payload, call_id)
         self.persist()

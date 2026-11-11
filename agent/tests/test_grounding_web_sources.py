@@ -223,3 +223,59 @@ def test_a_formula_written_in_the_prose_s_unit_is_checked_in_it(tmp_path) -> Non
         "9.6 | derived | 44 × 20 % | read_url",
     )
     assert [issue["reason"] for issue in wrong] == ["derivation_result_mismatch"]
+
+
+# The fourth rerun: Dutch snippets and a Belgian page.
+
+
+def _search(ledger: GroundingLedger, *items: tuple[str, str]) -> None:
+    _read(
+        ledger,
+        {"status": "ok", "query": "ASML", "results": [
+            {"title": title, "url": "https://example.com", "snippet": snippet} for title, snippet in items
+        ]},
+        tool="web_search",
+        arguments={"query": "ASML"},
+    )
+
+
+def test_each_snippet_keeps_its_own_number_notation(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _search(
+        ledger,
+        ("Aandeel ASML Holding", "Laatste koers (eur) 1.403,800 11 nov 2026 Verschil +42,800 +3,14%"),
+        ("ASML sales", "ASML shipped 1,234 systems for $28,262 million."),
+    )
+    issues = _issues(
+        ledger,
+        "Le titre a gagné 42.80 EUR sur la séance (belegger.nl).",
+        "42.80 | observed | variation du 11/11, belegger.nl | web_search",
+    )
+    assert issues == []
+
+
+def test_a_unit_written_as_a_word_marks_a_page_figure(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _search(
+        ledger,
+        ("ASML Technische Analyse", "Het aandeel test de weerstand bij 1370 euro."),
+        ("TSMC ziet omzet in oktober met bijna 60 procent stijgen", ""),
+    )
+    issues = _issues(
+        ledger,
+        "Investtech situe une résistance à 1370 EUR ; le chiffre d'affaires d'octobre de TSMC a progressé de près de 60 %.",
+        "1370 | observed | résistance, Investtech | web_search",
+        "60 % | observed | hausse d'octobre de TSMC, Business AM | web_search",
+    )
+    assert issues == []
+
+
+def test_a_page_in_another_currency_still_contradicts(tmp_path) -> None:
+    ledger = _ledger(tmp_path)
+    _search(ledger, ("ASML", "Het aandeel test de weerstand bij 1370 dollar."))
+    issues = _issues(
+        ledger,
+        "Investtech situe une résistance à 1370 EUR.",
+        "1370 | observed | résistance, Investtech | web_search",
+    )
+    assert issues
