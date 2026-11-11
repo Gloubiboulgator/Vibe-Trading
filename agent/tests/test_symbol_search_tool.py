@@ -1307,3 +1307,50 @@ def test_eastmoney_market_zero_splits_beijing_from_shenzhen(quote_id: str, expec
     candidate = ss._eastmoney_candidate(row)
     assert candidate is not None
     assert candidate["symbol"] == expected
+
+
+def _listing_search(monkeypatch, seen: list[str]) -> None:
+    """Providers that know ``ASML`` (US) and ``ASML.AS``, never a ``.US`` spelling."""
+    listings = {
+        "ASML": [
+            {"symbol": "ASML.US", "name": "ASML Holding", "market": "us", "type": "equity", "source": "yahoo"},
+            {"symbol": "ASMH.US", "name": "ASML ADRhedged", "market": "us", "type": "equity", "source": "yahoo"},
+        ],
+        "ASML.AS": [
+            {"symbol": "ASML.AS", "name": "ASML Holding", "market": "eu", "type": "equity", "exchange": "AMS", "source": "yahoo"},
+        ],
+    }
+
+    def _yahoo(query):
+        seen.append(query)
+        return listings.get(query, []), "ok"
+
+    monkeypatch.setattr(ss, "_search_eastmoney", lambda query: ([], "ok"))
+    monkeypatch.setattr(ss, "_search_yahoo", _yahoo)
+    monkeypatch.setattr("src.tools.gildata_identity.search_candidates", lambda query, limit: ([], None))
+    monkeypatch.setattr(ss, "_enrich_us_cik", lambda merged: (merged, "ok"))
+
+
+def test_a_dot_us_query_finds_that_listing(monkeypatch) -> None:
+    # The identity gate tells the model to search "ASML.US" before using a
+    # second venue; no provider knows that spelling, so the search came back
+    # empty and the venue stayed out of reach (2026-11-11).
+    seen: list[str] = []
+    _listing_search(monkeypatch, seen)
+    data = json.loads(ss.SymbolSearchTool().execute(query="asml.us"))["data"]
+    assert seen == ["ASML"]
+    assert [candidate["symbol"] for candidate in data["candidates"]] == ["ASML.US"]
+
+
+def test_the_second_venue_hint_leads_to_a_usable_listing(monkeypatch, tmp_path) -> None:
+    _listing_search(monkeypatch, [])
+    ledger = GroundingLedger(run_dir=tmp_path, user_message="Actualité ASML.AS")
+    for call_id, query in (("home", "ASML.AS"), ("us", "ASML.US")):
+        ledger.ingest_tool_result(
+            tool_name="search_symbol",
+            arguments={"query": query},
+            result=ss.SymbolSearchTool().execute(query=query),
+            call_id=call_id,
+            success=True,
+        )
+    assert {"ASML.AS", "ASML.US"} <= ledger.authorized_symbols

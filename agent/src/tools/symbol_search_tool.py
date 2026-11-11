@@ -195,6 +195,8 @@ _US_YAHOO_EXCHANGES = frozenset(
     }
 )
 
+_US_LISTING_RE = re.compile(r"^([A-Za-z][A-Za-z0-9-]{0,9})\.US$", re.IGNORECASE)
+
 # Hard caps so a broad query cannot bloat the envelope.
 _MAX_LIMIT = 25
 _DEFAULT_LIMIT = 10
@@ -274,6 +276,12 @@ class SymbolSearchTool(BaseTool):
             return _error("'query' is required and must be a non-empty string")
 
         limit = _clamp_limit(kwargs.get("limit", _DEFAULT_LIMIT))
+        # ``ASML.US`` is this project's spelling, which no provider knows: the
+        # search returned nothing for the very symbol it hands out, and the
+        # identity hint that names it led to a dead end. Search the bare
+        # ticker and keep only that exact listing.
+        us_listing = _US_LISTING_RE.match(query)
+        provider_query = us_listing.group(1).upper() if us_listing else query
 
         candidates: List[Dict[str, Any]] = []
         sources: Dict[str, str] = {}
@@ -305,7 +313,7 @@ class SymbolSearchTool(BaseTool):
                 sources[public_source] = public_status or "ok"
                 candidates.extend(public_hits)
 
-        em_hits, sources["eastmoney"] = _search_eastmoney(query)
+        em_hits, sources["eastmoney"] = _search_eastmoney(provider_query)
         candidates.extend(em_hits)
 
         # An explicit FX pair searches Yahoo by its canonical ``XXXYYY=X``
@@ -314,7 +322,7 @@ class SymbolSearchTool(BaseTool):
         # Yahoo (the earlier "GBP/USD -> 0 candidates" failure) never turns a
         # canonical pair into nothing.
         fx_pair = _canonical_fx_pair(query)
-        yh_hits, sources["yahoo"] = _search_yahoo(fx_pair or query)
+        yh_hits, sources["yahoo"] = _search_yahoo(fx_pair or provider_query)
         candidates.extend(yh_hits)
         if fx_pair is not None:
             pair_no_x = fx_pair[:-2]
@@ -372,7 +380,7 @@ class SymbolSearchTool(BaseTool):
                 and not query.startswith("^") and not _is_canadian_symbol(query)):
             from src.tools.gildata_identity import search_candidates
 
-            gildata_hits, gildata_status = search_candidates(query, limit)
+            gildata_hits, gildata_status = search_candidates(provider_query, limit)
             if gildata_status is not None:
                 sources["gildata"] = gildata_status
                 candidates.extend(gildata_hits)
@@ -390,6 +398,12 @@ class SymbolSearchTool(BaseTool):
             ]
 
         merged = _merge_candidates(candidates)
+        if us_listing:
+            merged = [
+                candidate
+                for candidate in merged
+                if str(candidate.get("symbol") or "").strip().upper() == query.upper()
+            ]
         merged, sources["sec_edgar"] = _enrich_us_cik(merged)
         if sources["sec_edgar"] == _NO_US:
             del sources["sec_edgar"]
