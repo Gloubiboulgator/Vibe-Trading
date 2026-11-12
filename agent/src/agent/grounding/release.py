@@ -332,10 +332,27 @@ class _ReleaseMixin:
             if self._symbol_resolution_attempts < MAX_SYMBOL_RESOLUTION_ATTEMPTS:
                 return _RESOLVER_TOOL
             return None
-        if self.identity_status == "locked" and any(
-            issue.get("code") in {"numeric_claim_unavailable", "unsourced_symbol_figures"}
+        # A derived or cited figure without evidence is not a missing price,
+        # and once market data answered "no data" (a stock not listed yet)
+        # another source will not find any: the valuation question fetched
+        # ANT.US three times for nothing (2026-11-12).
+        price_claim = any(
+            issue.get("code") == "unsourced_symbol_figures"
+            or (
+                issue.get("code") == "numeric_claim_unavailable"
+                and issue.get("role") in (None, "observed")
+            )
             for issue in validation.issues
-        ):
+        )
+        unavailable = " ".join(
+            str(failure.get("message") or "")
+            for failure in self._tool_failures
+            if failure.get("tool") == "get_market_data" and failure.get("error_code") == "no_market_data"
+        )
+        no_market_data = bool(self.authorized_symbols) and all(
+            symbol in unavailable for symbol in self.authorized_symbols
+        )
+        if self.identity_status == "locked" and price_claim and not no_market_data:
             if self._price_evidence_attempts < MAX_PRICE_EVIDENCE_ATTEMPTS:
                 return "get_market_data"
         return None

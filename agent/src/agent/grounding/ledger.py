@@ -108,20 +108,30 @@ _ACTIONABLE_MARKET_RE = re.compile(
 )
 
 
-def _headlines(payload: Mapping[str, Any]) -> list[str]:
-    """The title and snippet of each item of a search or news result."""
+def _headlines(payload: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Each item of a search or news result as ``{"content", "url"}``.
+
+    The content is the item's title and snippet; the url, when the item has
+    one, lets a ref name the site ("zacks") the snippet came from.
+    """
     items = payload.get("results")
     if not isinstance(items, list):
         data = payload.get("data")
         items = data.get("articles") if isinstance(data, Mapping) else None
     if not isinstance(items, list):
         return []
-    texts = (
-        f"{item.get('title') or ''}\n{item.get('snippet') or item.get('summary') or ''}".strip()
-        for item in items
-        if isinstance(item, Mapping)
-    )
-    return [text for text in texts if text]
+    headlines = []
+    for item in items:
+        if not isinstance(item, Mapping):
+            continue
+        text = f"{item.get('title') or ''}\n{item.get('snippet') or item.get('summary') or ''}".strip()
+        if not text:
+            continue
+        headline = {"content": text}
+        if isinstance(item.get("url"), str) and item["url"].startswith(("http://", "https://")):
+            headline["url"] = item["url"]
+        headlines.append(headline)
+    return headlines
 
 
 class GroundingLedger(
@@ -424,9 +434,7 @@ class GroundingLedger(
             # One item at a time: a Dutch snippet ("+42,800", decimal comma)
             # beside English ones was read with their thousands commas.
             for headline in _headlines(payload):
-                self._ingest_document_text(
-                    arguments, {"content": headline}, call_id, tool_name=tool_name
-                )
+                self._ingest_document_text(arguments, headline, call_id, tool_name=tool_name)
         elif payload is not None:
             self._ingest_generic_numeric(tool_name, arguments, payload, call_id)
         self.persist()

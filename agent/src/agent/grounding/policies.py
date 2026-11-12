@@ -47,6 +47,7 @@ from src.agent.grounding.figures import (
 )
 
 import re
+from urllib.parse import urlparse
 
 # ``a.0.b`` and ``a[0].b`` name the same list element; evidence paths are
 # emitted with brackets, so refs are compared in that spelling.
@@ -1180,6 +1181,12 @@ class _PolicyMixin:
                                     symbol = ref_symbol
                                 break
                 if not records and not metrics:
+                    # "techcrunch", "zacks": the site a page was read from,
+                    # named the way the answer credits it. Unread, every ratio
+                    # over TechCrunch's figures had no anchor and the
+                    # valuation multiples were dropped (2026-11-12).
+                    records = self._site_scope(key)
+                if not records and not metrics:
                     # Preserve the legacy loose-ref contract: a ref such as a
                     # symbol that names no field/call/tool falls back to the
                     # ordinary evidence path. Ambiguous or composite field
@@ -1340,6 +1347,34 @@ class _PolicyMixin:
         if scope is None:
             return (call_id, field), f"{call_id}::{field}"
         return ("scope", scope), f"{scope}::{field}" if scope else f"{call_id}::{field}"
+
+    def _site_scope(self, key: str) -> list[EvidenceRecord]:
+        """The web-text records read from a site the ref names ("techcrunch").
+
+        A ref token of four letters or more matches a label of the page's host
+        ("techcrunch" in techcrunch.com, "zacks" in www.zacks.com); only pages,
+        search snippets and news items are read this way.
+        """
+        tokens = {
+            token
+            for token in re.split(r"[^a-z0-9-]+", key.casefold())
+            if len(token) >= 4
+        }
+        if not tokens:
+            return []
+        found = []
+        for record in self._evidence:
+            if (
+                record.tool not in _WEB_TEXT_TOOLS
+                or record.status != "observed"
+                or record.value is None
+                or not isinstance(record.artifact, str)
+            ):
+                continue
+            host = urlparse(record.artifact).hostname or ""
+            if tokens & set(host.casefold().split(".")):
+                found.append(record)
+        return found
 
     def _artifact_scope(self, key: str) -> list[EvidenceRecord] | None:
         """The backtest output a ref names by run directory or file, or None.
@@ -2494,6 +2529,18 @@ class _PolicyMixin:
                     and _normalize_symbol(record.symbol) not in named_symbols
                 )
             )
+            # "1404 / 81" in billions, over a page's "$1.404 trillion" and "$81
+            # billion": a document amount also anchors in thousands, millions
+            # and billions (2026-11-12).
+            anchors.extend(
+                float(record.value) / unit
+                for record in scoped[0]
+                if record.source == "document"
+                and record.field == "document.amount"
+                and abs(float(record.value)) >= 1e6
+                and (currency_code is None or record.currency == currency_code)
+                for unit in (1e3, 1e6, 1e9)
+            )
             # A literal percent in a formula is parsed as its fraction, while
             # document.ratio records retain the percent as printed. This
             # conversion belongs only to the explicitly named document scope.
@@ -2660,6 +2707,17 @@ class _PolicyMixin:
             if not sign or target * sign >= 0
         )
 
+    def _ref_names_nothing(self, declaration: Declaration | None, symbol: str | None) -> bool:
+        """Whether a declaration's ref resolves to no evidence of this session."""
+        if declaration is None or not declaration.ref.strip():
+            return False
+        parts = [part.strip() for part in re.split(r"[,;]", declaration.ref) if part.strip()]
+        return all(
+            (scoped := self._referenced(part, symbol, None, pool_ambiguous=True)) is None
+            or (not scoped[0] and not scoped[1])
+            for part in parts
+        )
+
     @grounding_check(name="figure-derived", code="numeric_claim_conflict",
                      additional_codes=("numeric_claim_unavailable",),
                      description="Validate the derived figure contract against evidence.")
@@ -2695,6 +2753,13 @@ class _PolicyMixin:
                     else "is declared derived, but its note adds or subtracts an operand "
                     "this session did not observe"
                     if derivation == "additive_operand_not_observed"
+                    # The ref named no evidence at all: say so, or the model
+                    # rewrites a correct formula four drafts in a row
+                    # (2026-11-12, refs naming a site the gate did not read).
+                    else f"is declared derived from {declaration.ref!r}, which names no "
+                    "evidence of this session; set ref to the tool or call that returned "
+                    "the operands (read_url, web_search, a call id)"
+                    if derivation == "no_evidence" and self._ref_names_nothing(declaration, symbol)
                     else "is declared derived, but its note is not arithmetic over at "
                     "least two operands with one of them observed in this session",
                 )
