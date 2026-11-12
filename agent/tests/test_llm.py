@@ -486,6 +486,12 @@ def test_is_anthropic_temperature_unsupported_error_matching() -> None:
     assert _is_anthropic_temperature_unsupported_error(
         ValueError("temperature is not supported")
     )
+    assert _is_anthropic_temperature_unsupported_error(
+        RuntimeError(
+            "Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', "
+            "'message': 'temperature: Extra inputs are not permitted'}}"
+        )
+    )
     # Unrelated errors must not trigger the temperature retry path.
     assert not _is_anthropic_temperature_unsupported_error(
         RuntimeError("max_tokens is required")

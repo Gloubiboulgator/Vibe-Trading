@@ -1069,7 +1069,12 @@ def _is_anthropic_temperature_unsupported_error(exc: BaseException) -> bool:
     message = str(getattr(exc, "message", "") or exc).lower()
     if "temperature" not in message:
         return False
-    return "deprecated" in message or "not supported" in message or "unsupported" in message or "not allowed" in message
+    # "temperature: Extra inputs are not permitted" is the schema-validation
+    # wording the API answered claude-opus-5-5 with (2026-11-12).
+    return any(
+        phrase in message
+        for phrase in ("deprecated", "not supported", "unsupported", "not allowed", "not permitted")
+    )
 
 
 #: Output limit for a Claude model langchain-anthropic has no profile for. Its
