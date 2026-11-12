@@ -19,8 +19,15 @@ from src.agent.grounding.identity import (
     _utc_now,
 )
 from src.agent.grounding.evidence import EvidenceRecord, _EvidenceMixin, _json_object
-from src.agent.grounding.figures import Figure, FiguresBlock, parse_figures_block, scan_figures, strip_figures_block
-from src.agent.grounding.policies import ValidationResult, _PolicyMixin
+from src.agent.grounding.figures import (
+    Figure,
+    FiguresBlock,
+    _prose_writes_decimal_commas,
+    parse_figures_block,
+    scan_figures,
+    strip_figures_block,
+)
+from src.agent.grounding.policies import DOCUMENT_DECIMAL_COMMAS, ValidationResult, _PolicyMixin
 from src.agent.grounding.registry import GROUNDING_CHECKS
 from src.agent.grounding.release import (
     MAX_GROUNDING_RECOVERY_ROUNDS,
@@ -491,9 +498,13 @@ class GroundingLedger(
         self._active_figures = figures
         self._active_content = content
         issues: list[dict[str, Any]] = []
-        issues.extend(self._validate_identity(content))
-        issues.extend(GROUNDING_CHECKS.run_phase("answer", self, content))
-        issues.extend(self._validate_figures(content, block, figures))
+        notation = DOCUMENT_DECIMAL_COMMAS.set(_prose_writes_decimal_commas(content))
+        try:
+            issues.extend(self._validate_identity(content))
+            issues.extend(GROUNDING_CHECKS.run_phase("answer", self, content))
+            issues.extend(self._validate_figures(content, block, figures))
+        finally:
+            DOCUMENT_DECIMAL_COMMAS.reset(notation)
         issues = self._dedupe_issues(issues)
         result = ValidationResult(
             valid=not issues,

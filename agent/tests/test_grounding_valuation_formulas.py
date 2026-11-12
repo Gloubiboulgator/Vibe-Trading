@@ -109,3 +109,48 @@ def test_an_unobserved_operand_is_still_refused(tmp_path) -> None:
         "864 | derived | 12345678901 × 70 / 1e9 + 7 | read_url",
     )
     assert issues
+
+
+def _close_ledger(tmp_path: Path) -> GroundingLedger:
+    ledger = GroundingLedger(run_dir=tmp_path / "run", user_message="Compare à une autre introduction en bourse.")
+    ledger.ingest_tool_result(
+        tool_name="read_url",
+        arguments={"url": "https://ipo.example.com/otherco"},
+        result=json.dumps({"status": "ok", "url": "https://ipo.example.com/otherco", "content": (
+            "Otherco priced its offering at $120 per share. The stock closed last week at $131.475."
+        )}),
+        call_id="read_url-2",
+        success=True,
+    )
+    return ledger
+
+
+def test_a_french_close_with_three_decimals_reads_as_written_in_a_formula(tmp_path) -> None:
+    issues = _issues(
+        _close_ledger(tmp_path),
+        "Introduite à 120 USD, l'action a clôturé la semaine dernière à 131,475 USD, soit +9,6 %.",
+        "120 | observed | prix d'introduction, USD | read_url",
+        "131,475 | observed | dernière clôture, USD | read_url",
+        "+9,6 % | derived | 131,475 / 120 − 1 | read_url",
+    )
+    assert issues == []
+
+
+def test_a_return_over_a_wrongly_read_close_is_refused(tmp_path) -> None:
+    issues = _issues(
+        _close_ledger(tmp_path),
+        "Introduite à 120 USD, l'action a clôturé à 131,475 USD, soit +15 %.",
+        "120 | observed | prix d'introduction, USD | read_url",
+        "131,475 | observed | dernière clôture, USD | read_url",
+        "+15 % | derived | 131,475 / 120 − 1 | read_url",
+    )
+    assert issues
+
+
+def test_an_annual_rate_over_a_fractional_horizon(tmp_path) -> None:
+    issues = _issues(
+        _ledger(tmp_path),
+        "Le revenu a crû d'environ 18,6 % par an sur sept ans et demi.",
+        "18,6 % | derived | (180 / 50)^(1/7,5) − 1 | read_url",
+    )
+    assert issues == []

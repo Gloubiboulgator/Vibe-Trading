@@ -8,6 +8,7 @@ prose word: roles come from the model, shape from :mod:`figures`.
 from __future__ import annotations
 
 import ast
+import contextvars
 import json
 import math
 import os
@@ -479,13 +480,23 @@ _FORMULA_DECIMAL_COMMA_RE = re.compile(r"(?<![\d.,])(\d+),(\d+)(?![\d,]|\.\d)")
 _FORMULA_SPACED_GROUP_RE = re.compile(r"(?<=\d)[   ](?=\d{3}(?![\d]))")
 
 
+#: Whether the answer under validation writes decimal commas. A note's "142,595"
+#: reads as the answer reads it: a French answer's weekly close 142,595 became
+#: 142595 in "142,595 / 135 − 1" and every return over it was refused
+#: (2026-11-12). Set by the ledger for the duration of one validation.
+DOCUMENT_DECIMAL_COMMAS: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "grounding_document_decimal_commas", default=False
+)
+
+
 def _formula_decimal_commas(text: str) -> str:
     """Read a note's French-style numbers ("1 362,50") the way its prose writes them."""
     text = _FORMULA_SPACED_GROUP_RE.sub("", text)
+    french = DOCUMENT_DECIMAL_COMMAS.get()
     return _FORMULA_DECIMAL_COMMA_RE.sub(
         lambda match: (
             f"{match[1]}.{match[2]}"
-            if len(match[2]) != 3 or match[1] == "0"
+            if french or len(match[2]) != 3 or match[1] == "0"
             else match[0]
         ),
         text,
@@ -508,8 +519,12 @@ def _is_ratio(node: ast.AST) -> bool:
     return isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)
 
 
-def _root_degree(node: ast.AST) -> int | None:
-    """The n of a literal "1/n" exponent, for n from 2 to 50, or None."""
+def _root_degree(node: ast.AST) -> float | None:
+    """The n of a literal "1/n" exponent, for n from 1 to 50, or None.
+
+    A holding period need not be whole: "(69,96 / 45)^(1/7,5) − 1" is an
+    annual return over seven and a half years (2026-11-12).
+    """
     if not (
         isinstance(node, ast.BinOp)
         and isinstance(node.op, ast.Div)
@@ -519,9 +534,9 @@ def _root_degree(node: ast.AST) -> int | None:
     ):
         return None
     degree = node.right.value
-    if isinstance(degree, bool) or not isinstance(degree, (int, float)) or degree != int(degree):
+    if isinstance(degree, bool) or not isinstance(degree, (int, float)):
         return None
-    return int(degree) if 2 <= degree <= 50 else None
+    return float(degree) if 1 < degree <= 50 else None
 
 
 def _is_small_exponent(node: ast.AST) -> bool:
