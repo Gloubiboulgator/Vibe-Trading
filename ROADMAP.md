@@ -56,8 +56,24 @@ inventées.
    sur deux ou trois questions représentatives, et jamais pendant qu'une
    requête tourne.
 
-**Coût.** Les étapes 1 à 6 ne font aucun appel facturé. La seule dépense est
-l'étape 7, quelques relances par lot au lieu d'une par correction.
+**Coût en API.** Les étapes 1 à 6 ne font aucun appel facturé. La seule
+dépense est l'étape 7, quelques relances par lot au lieu d'une par correction.
+
+**Coût en abonnement Claude.** Le travail le plus lourd (rejeu, bilan, tri) est
+fait par des scripts, pas par l'assistant :
+
+- les scripts n'affichent qu'un résumé court (familles, compteurs, une ligne
+  par refus suspect), jamais un brouillon, une trace ou un fichier de preuves
+  en entier ;
+- le tri de l'étape 3 est déterministe ; seuls les suspects qu'il ne sait pas
+  trancher sont lus, un exemple par famille et non chaque occurrence ;
+- une famille = une session courte avec un brief écrit (fichiers, test
+  attendu, commande de rejeu), plutôt qu'une longue conversation qui recharge
+  tout son historique à chaque échange ;
+- les tâches mécaniques (lancer le rejeu, comparer au bilan de référence,
+  lancer les tests) passent par un modèle léger ou par les scripts seuls ;
+  le modèle principal ne sert qu'à concevoir les corrections ;
+- la suite complète tourne une fois par lot, les tests ciblés sinon.
 
 **Terminé quand** le rejeu du corpus ne montre plus aucun faux refus connu,
 qu'aucune question ne finit en réponse de secours faute de pouvoir lire un
