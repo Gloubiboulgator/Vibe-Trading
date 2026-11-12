@@ -15,7 +15,7 @@ import logging
 from typing import Any
 
 from src.agent.tools import BaseTool
-from src.tools.path_utils import allowed_file_roots, resolve_safe_path
+from src.tools.path_utils import safe_document_path
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ class AnalyzeImageTool(BaseTool):
         "properties": {
             "path": {
                 "type": "string",
-                "description": "Path to the image file (must be inside the allowed file roots).",
+                "description": "The uploads/<name> handle of an uploaded image, or an absolute path inside the allowed file roots.",
             },
             "question": {
                 "type": "string",
@@ -102,7 +102,9 @@ class AnalyzeImageTool(BaseTool):
             return _error("question must be a string")
 
         try:
-            path = resolve_safe_path(raw_path.strip(), None, allowed_file_roots(), purpose="file")
+            # The same resolver as read_document: an upload arrives as the
+            # "uploads/<name>" handle, which a run-relative lookup misses.
+            path = safe_document_path(raw_path.strip())
         except ValueError as exc:
             return _error(str(exc))
         if not path.is_file():

@@ -84,3 +84,19 @@ def test_provider_failure_closes_chat_client(tool, png_in_allowed_root):
 
     assert result["ok"] is False
     chat_cls.return_value.close.assert_called_once_with()
+
+
+def test_an_upload_handle_reads_the_uploaded_image(tool, tmp_path, monkeypatch):
+    # 2026-11-12: a screenshot attached in the chat reached the tool as
+    # "uploads/<name>" and was looked up under the working directory.
+    monkeypatch.setenv("VIBE_TRADING_HOME", str(tmp_path))
+    uploads = tmp_path / "uploads"
+    uploads.mkdir()
+    (uploads / "shot.png").write_bytes(_PNG_BYTES)
+    response = MagicMock()
+    response.content = "A screenshot."
+    with patch("src.providers.chat.ChatLLM") as chat_cls:
+        chat_cls.return_value.chat.return_value = response
+        result = json.loads(tool.execute(path="uploads/shot.png"))
+    assert result["ok"] is True
+    assert result["data"]["path"] == str((uploads / "shot.png").resolve())

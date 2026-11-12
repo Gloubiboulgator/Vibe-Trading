@@ -1136,6 +1136,21 @@ class _IdentityMixin:
                 exact.append(candidate)
             if candidate.get("also_from") or candidate.get("cik"):
                 strong.append(candidate)
+        # The SEC registrant named as the query is the company itself; a token
+        # or fund whose ticker spells the name only borrows it ("Anthropic"
+        # locked the crypto ANTHROPIC-USD over ANT.US "Anthropic PBC-A",
+        # 2026-11-12).
+        query_words = _name_words(query)
+        issuers = [
+            candidate
+            for candidate in candidates
+            if candidate.get("cik")
+            and str(candidate.get("exchange") or "").upper() not in _OTC_EXCHANGES
+            and query_words
+            and _same_name(query_words, _issuer_words(str(candidate.get("name") or "")))
+        ]
+        if len(issuers) == 1:
+            return issuers[0]
         if len(exact) == 1:
             return exact[0]
         if len(strong) == 1:
@@ -1267,6 +1282,16 @@ def _name_words(name: str) -> list[str]:
     text = _DOTTED_FORM_RE.sub(lambda match: match.group(0).replace(".", ""), text)
     words = re.findall(r"[a-z\u3400-\u9fff]+", text)
     return [word for word in words if word not in _LEGAL_WORDS]
+
+
+def _issuer_words(name: str) -> list[str]:
+    """A US registrant's name as comparable words, without its US legal form."""
+    return [word for word in _name_words(name) if word not in _US_LEGAL_WORDS]
+
+
+# US legal forms, dropped only when matching a SEC registrant's name: the euro
+# listing rules keep "Corp." so NVD.DE "NVIDIA Corp." never stands for Nvidia.
+_US_LEGAL_WORDS = frozenset("co corp corporation inc incorporated llc lp ltd pbc".split())
 
 
 # "N.V.", "S.p.A.", "S.A": letters of one or three, each followed by a dot.

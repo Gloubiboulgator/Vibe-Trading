@@ -19,7 +19,7 @@ import string
 import unicodedata
 from dataclasses import dataclass, replace
 from decimal import Decimal, InvalidOperation
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence
 
 from src.agent.grounding.identity import _CANONICAL_SYMBOL_RE
 
@@ -875,6 +875,20 @@ def _is_currency_mark(word: str) -> bool:
     )
 
 
+#: A declared percent in a filing's parentheses: "(3) %", "(12.5)%".
+_ACCOUNTING_PERCENT_RE = re.compile(r"\(\s*(?P<digits>\d[\d.,]*)\s*\)\s*(?P<mark>[%％])")
+
+
+def _accounting_negative(text: str, token: Any) -> bool:
+    """Whether an unsigned number stands alone in parentheses: "(3)" of "(3)%"."""
+    return (
+        not token.sign
+        and token.start > 0
+        and text[token.start - 1] == "("
+        and text[token.end : token.end + 1] == ")"
+    )
+
+
 def _parse_value(
     text: str, decimal_commas: bool | None = None
 ) -> tuple[float, bool, str] | None:
@@ -885,6 +899,10 @@ def _parse_value(
         exactly one number and its marks.
     """
     field = _normalize(text).text.strip()
+    accounting = _ACCOUNTING_PERCENT_RE.fullmatch(field)
+    if accounting is not None:
+        # "(3) %": a negative percent as a filing prints it.
+        field = "-" + accounting.group("digits") + accounting.group("mark")
     fraction = _FRACTION_RE.fullmatch(field)
     if fraction is not None:
         # "1/3" for an equal weight: a value, not two numbers.
@@ -1520,11 +1538,17 @@ def scan_figures(content: str, block: FiguresBlock) -> list[Figure]:
     figures: list[Figure] = []
     for token in _numbers(text):
         unit, unit_end, point_marked = _percent_mark(text, token.end)
-        reading = _reading(token.sign, token.digits, unit)
+        sign, opening = token.sign, token.start
+        if not unit and _accounting_negative(text, token):
+            # "(3)% Operating Margin": a filing's negative percent (2026-11-12).
+            closed = _percent_mark(text, token.end + 1)
+            if closed[0]:
+                (unit, unit_end, point_marked), sign, opening = closed, "-", token.start - 1
+        reading = _reading(sign, token.digits, unit)
         if reading is None:
             continue
         percent = unit > 0
-        start, digits_end, end = view.start(token.start), view.end(token.end), view.end(unit_end)
+        start, digits_end, end = view.start(opening), view.end(token.end), view.end(unit_end)
         cell = next((entry for entry in cells if entry[0] <= start and end <= entry[1]), None)
         row, position = (cell[2], cell[3]) if cell else (None, None)
         structural = row is not None and position in (row.date_column, row.symbol_column)
@@ -1582,7 +1606,7 @@ def scan_figures(content: str, block: FiguresBlock) -> list[Figure]:
                 currency=currency,
                 currency_code=currency_code,
                 digits=token.digits,
-                sign=token.sign,
+                sign=sign,
                 point_marked=point_marked,
                 extent=(view.start(prefix_start), view.end(mark_end)),
                 fence=next(

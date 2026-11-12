@@ -401,6 +401,34 @@ class _ReleaseMixin:
             for validation in self._validations
             for code in (issue.get("code") for issue in validation.get("issues", []))
         }
+        # An instrument's print, or a figure with no evidence at all ("买入价
+        # 1500.5 元" before any market data), is what the price message is for.
+        about_instruments = any(
+            issue.get("symbol") or issue.get("code") == "numeric_claim_unavailable"
+            for validation in self._validations
+            for issue in validation.get("issues", [])
+        )
+        if issue_codes & _REDACTABLE_CODES and not self._analysis_completed and not about_instruments:
+            # Figures from pages and filings, none of them an instrument's
+            # print: "prices no tool obtained" sent the user after market data
+            # the answer never needed (2026-11-12, an IPO prospectus).
+            if is_fr:
+                return (
+                    "Ma réponse n'a pas passé le contrôle des chiffres : certains ne "
+                    "correspondaient pas aux sources lues par cette session, elle n'a donc "
+                    "pas été publiée. Réessayez, ou demandez-moi de ne citer que les "
+                    "chiffres tels que les sources les donnent."
+                )
+            if is_zh:
+                return (
+                    "我的回答没有通过数字核验：草稿里有数字无法与本会话读取的来源对上，"
+                    "按规则没有发布。可以重试，或让我只引用来源原样给出的数字。"
+                )
+            return (
+                "My answer did not pass the figure check: some of its figures could not be "
+                "matched to the sources this session read, so it was not released. Retry, "
+                "or ask me to quote only the figures as the sources give them."
+            )
         if issue_codes & _REDACTABLE_CODES and not self._analysis_completed:
             if is_fr:
                 return (

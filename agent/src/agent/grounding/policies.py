@@ -655,6 +655,20 @@ class _PolicyMixin:
         scalar_parameters: list[float] = []
         for parameter in figures:
             declared = block.match(parameter.value, parameter.percent, parameter.digits)
+            if declared is not None and declared.role != "count":
+                # "4x | observed" declared before "4 | count | trimestres par
+                # an" hid the count: the first same-valued line is not the only
+                # one (2026-11-12).
+                declared = next(
+                    (
+                        item
+                        for item in block.declarations
+                        if item.role == "count"
+                        and item.percent == parameter.percent
+                        and math.isclose(item.value, parameter.value, rel_tol=1e-9, abs_tol=1e-9)
+                    ),
+                    declared,
+                )
             if (
                 declared is None
                 or declared.role != "count"
