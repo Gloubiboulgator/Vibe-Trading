@@ -37,6 +37,10 @@ class TurnStream:
         self.thinking_chunks.append(delta)
         self.stream_total += len(delta)
         if self.buffer_text_output or self.stream_frozen:
+            # Held back for the figure check: the page still hears from the
+            # model, or it gives up after its SSE timeout while the answer is
+            # being written (115 s on 2026-11-12, "Attente interrompue").
+            self.on_waiting()
             return
         # Neither the figures block nor an unchecked measurement streams
         # (see streamable_length). Only a fence character or a digit
