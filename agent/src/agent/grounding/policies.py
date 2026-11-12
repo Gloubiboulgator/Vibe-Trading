@@ -349,8 +349,7 @@ def _unanchored_term(tree: ast.Expression, observed: Callable[[float], bool]) ->
             unit_beside_ratio = (
                 isinstance(side, ast.Constant)
                 and side.value == 1
-                and isinstance(other, ast.BinOp)
-                and isinstance(other.op, ast.Div)
+                and _is_ratio(other)
             )
             if not _is_sum(side) and not unit_beside_ratio and not anchored(side):
                 return True
@@ -415,6 +414,14 @@ def _evaluate_formula(
         if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Pow):
             # A square or a cube (HHI is a sum of squared weights). The
             # exponent is part of the operator, not an operand.
+            root = _root_degree(node.right)
+            if root is not None:
+                # "(234 / 81)^(1/4) − 1": an annual rate over four years. The
+                # degree is the horizon, not an operand (2026-11-12).
+                base = visit(node.left)
+                if base < 0:
+                    raise ValueError("root of a negative number")
+                return base ** (1.0 / root)
             if not _is_small_exponent(node.right):
                 raise ValueError("unsupported exponent")
             return visit(node.left) ** int(node.right.value)
@@ -424,10 +431,10 @@ def _evaluate_formula(
             multiplicative = isinstance(node.op, (ast.Mult, ast.Div))
             unit_factor = factor and _is_unit_factor(node)
             left = visit(node.left, factor=multiplicative, unit_one=(
-                multiplicative or unit_factor or (isinstance(node.right, ast.BinOp) and isinstance(node.right.op, ast.Div))
+                multiplicative or unit_factor or _is_ratio(node.right)
             ))
             right = visit(node.right, factor=multiplicative, unit_one=(
-                multiplicative or unit_factor or (isinstance(node.left, ast.BinOp) and isinstance(node.left.op, ast.Div))
+                multiplicative or unit_factor or _is_ratio(node.left)
             ))
             if isinstance(node.op, ast.Add):
                 return left + right
@@ -492,6 +499,29 @@ def _expand_formula_units(text: str) -> str:
         lambda match: repr(float(match[1].replace(",", "")) * _MAGNITUDES.get(match[2], 1.0)),
         text,
     )
+
+
+def _is_ratio(node: ast.AST) -> bool:
+    """A quotient, or a root of one: "a / b", "(a / b)^(1/n)" (a growth factor)."""
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Pow) and _root_degree(node.right) is not None:
+        node = node.left
+    return isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)
+
+
+def _root_degree(node: ast.AST) -> int | None:
+    """The n of a literal "1/n" exponent, for n from 2 to 50, or None."""
+    if not (
+        isinstance(node, ast.BinOp)
+        and isinstance(node.op, ast.Div)
+        and isinstance(node.left, ast.Constant)
+        and isinstance(node.right, ast.Constant)
+        and node.left.value == 1
+    ):
+        return None
+    degree = node.right.value
+    if isinstance(degree, bool) or not isinstance(degree, (int, float)) or degree != int(degree):
+        return None
+    return int(degree) if 2 <= degree <= 50 else None
 
 
 def _is_small_exponent(node: ast.AST) -> bool:
@@ -590,6 +620,10 @@ def _formula_in_note(note: str) -> tuple[float, list[float], ast.Expression] | N
 
 #: Tools whose prose answers become document evidence (see GroundingLedger.ingest_tool_result).
 _WEB_TEXT_TOOLS = frozenset({"read_url", "web_search", "get_stock_news"})
+#: "pour 1 $", "per 1 €", "每1元": the unit a ratio is read in.
+_PER_UNIT_RE = re.compile(r"(?:\b(?:pour|par|per|for)|每)\s*[$€£¥]?\s*$", re.IGNORECASE)
+#: Unit conversions a formula may divide or multiply by without observing them.
+_UNIT_CONSTANTS = frozenset({1e3, 1e6, 1e9, 1e12})
 
 class _PolicyMixin:
     """Policy behaviour of :class:`GroundingLedger`."""
@@ -845,7 +879,9 @@ class _PolicyMixin:
             chained = tuple(
                 value
                 for figure, result in verified
-                for value in (figure.value * float(figure.scale or 1.0), result)
+                # "1021 Md$" reused as "1021 / 81": the value as written too,
+                # not only scaled or as its formula evaluates (2026-11-12).
+                for value in (figure.value * float(figure.scale or 1.0), figure.value, result)
             )
             for item in list(pending):
                 figure, declaration, symbol, records, parameters, _ = item
@@ -861,6 +897,19 @@ class _PolicyMixin:
         for *_, found in pending:
             issues.extend(found)
         return issues
+
+    def _observed_magnitudes(self) -> list[float]:
+        """Every observed value of the session, with document amounts also in
+        thousands, millions and billions ("$1.404 trillion" is 1404 billion)."""
+        values: list[float] = []
+        for record in self._evidence:
+            if record.status != "observed" or record.value is None:
+                continue
+            value = float(record.value)
+            values.append(value)
+            if record.source == "document" and record.field == "document.amount" and abs(value) >= 1e6:
+                values.extend(value / unit for unit in (1e3, 1e6, 1e9))
+        return values
 
     def _resolve_totals(
         self,
@@ -887,14 +936,24 @@ class _PolicyMixin:
                     if other is not figure
                     and bool(other.currency) == bool(figure.currency)
                     and other.currency_code == figure.currency_code
-                    for value in (computed, other.value * float(other.scale or 1.0))
+                    for value in (computed, other.value * float(other.scale or 1.0), other.value)
                 ]
                 # A term is a verified line as written, to the cent: the 0.5%
                 # evidence tolerance would let "2110" stand for 2100.18.
+                def matches(operand: float, values: Iterable[float]) -> bool:
+                    return any(
+                        math.isclose(abs(operand), abs(t), rel_tol=1e-4, abs_tol=0.006) for t in values
+                    )
+
+                # "1404 − 1021": one term verified here, the other observed in
+                # the session (a page's "$1.404 trillion"), also to the cent
+                # (2026-11-12). At least one term must be a verified line.
+                observed = self._observed_magnitudes()
                 if all(
-                    any(math.isclose(abs(operand), abs(t), rel_tol=1e-4, abs_tol=0.006) for t in terms)
-                    for operand in operands
-                ) and self._result_matches(figure, result):
+                    matches(operand, terms) or matches(operand, observed) for operand in operands
+                ) and any(matches(operand, terms) for operand in operands) and self._result_matches(
+                    figure, result
+                ):
                     verified.append((figure, result))
                     pending.remove(item)
                     progress = True
@@ -926,6 +985,15 @@ class _PolicyMixin:
     @grounding_check(name="undeclared-figure", code="figure_undeclared",
                      description="An undeclared measurement must be observed in this session.", additional_codes=('numeric_claim_conflict', 'numeric_claim_unavailable'))
     def _check_undeclared_figure(self, figure, symbol, records, block):
+        content = getattr(self, "_active_content", "")
+        if (
+            figure.value == 1
+            and not figure.percent
+            and _PER_UNIT_RE.search(content[max(0, figure.start - 8) : figure.start])
+        ):
+            # "pour 1 $ de chiffre d'affaires": the unit a multiple is read
+            # in, not a figure (2026-11-12).
+            return []
         found = self._check_observed(figure, None, symbol, records)
         if block.present and found:
             # Declared, but as a fraction where the answer writes a
@@ -2573,6 +2641,9 @@ class _PolicyMixin:
         if any(
             not observed(operand)
             and operand != 1
+            # "13086672593 × 78 / 1000000000": a unit, not a datum; the
+            # result is still checked (2026-11-12).
+            and operand not in _UNIT_CONSTANTS
             and not (whole and operand == 100)
             and not any(
                 math.isclose(abs(operand), abs(parameter), rel_tol=1e-12, abs_tol=0.0)

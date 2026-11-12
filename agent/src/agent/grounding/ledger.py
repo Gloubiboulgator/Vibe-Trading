@@ -489,6 +489,7 @@ class GroundingLedger(
         self._active_check_findings: list[dict[str, Any]] = []
         self._active_block = block
         self._active_figures = figures
+        self._active_content = content
         issues: list[dict[str, Any]] = []
         issues.extend(self._validate_identity(content))
         issues.extend(GROUNDING_CHECKS.run_phase("answer", self, content))

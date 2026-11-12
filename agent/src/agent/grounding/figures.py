@@ -810,6 +810,34 @@ def _reading(sign: str, digits: str, unit: float) -> tuple[float, str] | None:
     return float(amount), format(amount, "f")
 
 
+def _prose_writes_decimal_commas(content: str) -> bool:
+    """The answer's notation, read from its prose without the figures blocks.
+
+    A declaration copies a source's spelling: one "13,086,672,593 | cited"
+    switched a French answer to English notation, and its "1 404" became 404
+    and its "16,96" two numbers (2026-11-12).
+    """
+    prose, cells, cursor = [], [], 0
+    for start, end, info, _ in _fenced_blocks(content):
+        if info == BLOCK_LANGUAGE:
+            prose.append(content[cursor:start])
+            cells += [line.split("|", 1)[0] for line in content[start:end].splitlines() if "|" in line]
+            cursor = end
+    prose.append(content[cursor:])
+    text = _normalize("\n".join(prose)).text
+    if _writes_decimal_commas(text):
+        return True
+    # Short or mixed prose proves nothing, but a declared "20,2" or "1 021" is
+    # only ever French: read the prose the same way, or its "20,2" becomes two
+    # unchecked numbers beside a declaration that reads 20.2. Prose that groups
+    # in English ("1,234,567", "1,234.5") keeps its own reading.
+    french = any(
+        _FRENCH_ONLY_RE.search(cell) and not _ENGLISH_GROUP_RE.search(cell)
+        for cell in (_normalize(cell).text for cell in cells)
+    )
+    return french and not _ENGLISH_ONLY_RE.search(text)
+
+
 def _fenced_blocks(content: str) -> list[tuple[int, int, str, tuple[int, int]]]:
     """Return ``(start, end, info, body)`` for every fenced block (CommonMark).
 
@@ -875,6 +903,15 @@ def _is_currency_mark(word: str) -> bool:
     )
 
 
+#: A declared value only French notation writes: a comma before one or two
+#: digits ("16,96"), or digits grouped by spaces ("1 021").
+_FRENCH_ONLY_RE = re.compile(r"\d,\d{1,2}(?!\d)|\d \d{3}(?!\d)")
+#: Only English writes two comma groups ("13,086,672,593") or a comma group
+#: before a dot ("1,234.5").
+_ENGLISH_ONLY_RE = re.compile(r"\d,\d{3},\d{3}(?!\d)|\d,\d{3}\.\d")
+#: A comma before three digits, or a dot: English grouping or a dot decimal.
+_ENGLISH_GROUP_RE = re.compile(r"\d,\d{3}(?!\d)|\d\.\d")
+
 #: A declared percent in a filing's parentheses: "(3) %", "(12.5)%".
 _ACCOUNTING_PERCENT_RE = re.compile(r"\(\s*(?P<digits>\d[\d.,]*)\s*\)\s*(?P<mark>[%％])")
 
@@ -899,6 +936,9 @@ def _parse_value(
         exactly one number and its marks.
     """
     field = _normalize(text).text.strip()
+    if decimal_commas is not False and _ENGLISH_ONLY_RE.search(field) and not _FRENCH_ONLY_RE.search(field):
+        # "13,086,672,593" or "1,234.5": English grouping, copied from a source.
+        decimal_commas = False
     accounting = _ACCOUNTING_PERCENT_RE.fullmatch(field)
     if accounting is not None:
         # "(3) %": a negative percent as a filing prints it.
@@ -1017,7 +1057,7 @@ def parse_figures_block(content: str) -> FiguresBlock:
     malformed: list[tuple[int, str]] = []
     # The prose decides whether "2,639" is a decimal; a declaration cell must agree
     # with it. ``None`` (no document evidence) lets the cell speak for itself.
-    document_reading = _writes_decimal_commas(_normalize(content).text) or None
+    document_reading = _prose_writes_decimal_commas(content) or None
     # A French answer whose block is written "71.14 | 0.2055 | 5.051": the
     # block's own unambiguous points say "5.051" is five, not five thousand.
     # Only dotted cells switch; "3 000" keeps the document's grouping.
@@ -1536,7 +1576,7 @@ def scan_figures(content: str, block: FiguresBlock) -> list[Figure]:
     index_cells = _index_cells(rows)
 
     figures: list[Figure] = []
-    for token in _numbers(text):
+    for token in _numbers(text, decimal_commas=_prose_writes_decimal_commas(content)):
         unit, unit_end, point_marked = _percent_mark(text, token.end)
         sign, opening = token.sign, token.start
         if not unit and _accounting_negative(text, token):
