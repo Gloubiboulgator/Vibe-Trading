@@ -653,7 +653,18 @@ class _ReleaseMixin:
         # so does a completed analysis: naming 600519.SH in a backtest request
         # makes it a market answer, but the backtest's own output is what the
         # surviving figures were checked against.
-        if self._identity_required and not self._price_records() and not self._analysis_completed:
+        # So does an answer drawn from documents: a stock not listed yet has no
+        # price to observe, and an IPO answer checked against its prospectus was
+        # refused whole for one cited figure (2026-11-12).
+        read_documents = any(
+            record.source == "document" and record.status == "observed" for record in self._evidence
+        )
+        if (
+            self._identity_required
+            and not self._price_records()
+            and not self._analysis_completed
+            and not read_documents
+        ):
             return None
         text = _strip_release_markers(content)
         # Stripping shifts offsets and the cuts anchor on issue spans, so the

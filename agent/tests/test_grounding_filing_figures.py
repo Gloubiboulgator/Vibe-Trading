@@ -87,3 +87,24 @@ def test_the_fallback_for_a_page_s_figures_does_not_ask_for_prices(tmp_path) -> 
     )
     message = ledger.safe_fallback()
     assert "prix" not in message and "sources" in message
+
+
+def test_an_answer_on_an_unlisted_stock_is_released_cut(tmp_path) -> None:
+    # The third rerun locked ANT.US, which has no price before its listing,
+    # and its last draft failed on one cited figure: the whole answer was
+    # replaced by the fallback instead of losing that figure.
+    ledger = _ledger(tmp_path)
+    ledger._identity_required = True
+    draft = (
+        "Le chiffre d'affaires du T3 est de 12.0 Md$ (site IPO).\n\n"
+        "La dernière levée valorisait la société 640 Md$.\n\n```figures\n"
+        f"12.0 | observed | CA T3 Md$ | {_REF}\n"
+        "640 | cited | levée de mai, FinanceFeeds | web_search\n```\n"
+    )
+    validation = ledger.validate_final_answer(draft)
+    assert [issue["reason"] for issue in validation.issues] == ["citation_not_visible"]
+
+    released = ledger.redacted_release(draft, validation)
+
+    assert released is not None
+    assert "12.0" in released and "640" not in released
