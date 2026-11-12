@@ -101,3 +101,51 @@ def test_carried_observations_are_not_persisted_again(tmp_path) -> None:
     stored = json.loads(next((tmp_path / "turn2").rglob("*.json")).read_text(encoding="utf-8"))
     assert stored["evidence"] == []
     assert load_prior_evidence([tmp_path / "turn2"]) == []
+
+
+def _carried_closes(symbol: str, count: int) -> list[dict]:
+    return [
+        {
+            "call_id": f"get_market_data-{symbol}", "tool": "get_market_data", "symbol": symbol,
+            "source": "yahoo", "timestamp": f"2026-01-{index % 28 + 1:02d}", "field": "close",
+            "value": 10.0 + index, "status": "observed", "currency": "USD",
+        }
+        for index in range(count)
+    ]
+
+
+def _read_page(ledger: GroundingLedger) -> None:
+    ledger.ingest_tool_result(
+        tool_name="read_url",
+        arguments={"url": "https://ipo.example.com/otherco"},
+        result=json.dumps({"status": "ok", "url": "https://ipo.example.com/otherco", "content": (
+            "Otherco priced its offering at $120 per share. The stock closed last week at $131.475."
+        )}),
+        call_id="read_url-turn2",
+        success=True,
+    )
+
+
+def test_many_carried_records_leave_room_for_this_turn_s_documents(tmp_path) -> None:
+    ledger = GroundingLedger(
+        run_dir=tmp_path / "turn2", user_message="Et ma capture ?",
+        prior_evidence=_carried_closes("OLDCO.US", 2500),
+    )
+    _read_page(ledger)
+    assert any(record.call_id == "read_url-turn2" for record in ledger._evidence)
+
+
+def test_carried_closes_of_an_unnamed_instrument_ask_for_no_provenance(tmp_path) -> None:
+    ledger = GroundingLedger(
+        run_dir=tmp_path / "turn2", user_message="Et ma capture ?",
+        prior_evidence=_carried_closes("OLDCO.US", 5),
+    )
+    _read_page(ledger)
+    issues = _issues(
+        ledger,
+        "Introduite à 120 USD, l'action a clôturé à 131,475 USD, soit +9,6 %.",
+        "120 | observed | prix d'introduction, USD | read_url",
+        "131,475 | observed | dernière clôture, USD | read_url",
+        "+9,6 % | derived | 131,475 / 120 − 1 | read_url",
+    )
+    assert issues == []

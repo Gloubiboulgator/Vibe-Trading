@@ -1834,7 +1834,10 @@ class _EvidenceMixin:
             )
         room = min(
             _MAX_DOCUMENT_FIGURES,
-            _MAX_GENERIC_EVIDENCE - len(self._evidence),
+            # This run's records only: a follow-up carries thousands of the
+            # session's earlier observations, and counting them left no room,
+            # so a screenshot's reading became no evidence at all (2026-11-12).
+            _MAX_GENERIC_EVIDENCE - (len(self._evidence) - getattr(self, "_carried_count", 0)),
         )
         if room <= 0:
             return

@@ -230,6 +230,7 @@ class GroundingLedger(
         # Calls of earlier turns whose records were carried in: they ground
         # figures but are that run's to persist, not this one's.
         self._prior_calls: set[str] = set()
+        self._carried_count = 0
         self._tool_failures: list[dict[str, Any]] = []
         self._analysis_completed: list[dict[str, Any]] = []
         self._analysis_metrics: list[dict[str, Any]] = []
@@ -280,6 +281,7 @@ class GroundingLedger(
                 continue
             self._prior_calls.add(record.call_id)
             self._evidence.append(record)
+            self._carried_count += 1
 
     @property
     def authorized_symbols(self) -> set[str]:

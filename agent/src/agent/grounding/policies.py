@@ -875,7 +875,19 @@ class _PolicyMixin:
             issues.extend(GROUNDING_CHECKS.run("figure-observed", self, figure, declaration, symbol, records))
         issues.extend(self._resolve_chained(verified_derived, pending_chained))
         issues.extend(self._resolve_totals(verified_derived, pending_totals))
-        market_records = self._price_records()
+        # Closes carried from the session's earlier turns had their symbol,
+        # source and currency surfaced when they were read. They join the
+        # provenance pool only for an instrument this answer names: otherwise
+        # a screenshot question was told five times to name SPCX.US, UBER.US
+        # and their source, and ended in the fallback (2026-11-12).
+        prior_calls = getattr(self, "_prior_calls", ())
+        written = _scan_symbols(content)
+        market_records = [
+            record
+            for record in self._price_records()
+            if record.call_id not in prior_calls
+            or (record.symbol and (record.symbol in written or record.symbol.casefold() in content.casefold()))
+        ]
         if checked_price and market_records:
             issues.extend(self._validate_price_provenance(content, market_records))
         return issues
