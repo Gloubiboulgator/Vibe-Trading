@@ -697,8 +697,9 @@ class _PolicyMixin:
         line_symbols = [
             self._symbol_for_claim(line, symbol_records) for line, _ in positions
         ]
+        # In the unit each is written in: "91 Md$" cited is no 91.39 close.
         declared_observed = {
-            declaration.value
+            declaration.value * declaration.scale
             for declaration in block.declarations
             if declaration.role == "observed"
         }
@@ -3021,7 +3022,7 @@ class _PolicyMixin:
                     "is declared cited but names no source in its note",
                 )
             ]
-        if any(_close(figure.value, value) for value in declared_observed):
+        if any(_close(figure.value * figure.scale, value) for value in declared_observed):
             return [
                 self._figure_issue(
                     "numeric_claim_conflict",

@@ -1417,7 +1417,6 @@
      "repaired": false,
      "refusals": {
       "figures_block_malformed/unparseable_declaration": 1,
-      "numeric_claim_conflict/cited_as_observed": 2,
       "numeric_claim_conflict/formula_not_evaluable": 3
      }
     },
@@ -1427,7 +1426,6 @@
      "repaired": false,
      "refusals": {
       "figures_block_malformed/unparseable_declaration": 1,
-      "numeric_claim_conflict/cited_as_observed": 2,
       "numeric_claim_conflict/formula_not_evaluable": 3
      }
     },
@@ -1437,17 +1435,14 @@
      "repaired": false,
      "refusals": {
       "figures_block_malformed/unparseable_declaration": 1,
-      "numeric_claim_conflict/cited_as_observed": 2,
       "numeric_claim_conflict/formula_not_evaluable": 3
      }
     },
     {
      "draft": 5,
-     "valid": false,
+     "valid": true,
      "repaired": false,
-     "refusals": {
-      "numeric_claim_conflict/cited_as_observed": 1
-     }
+     "refusals": {}
     }
    ]
   },

@@ -915,3 +915,25 @@ def test_words_in_a_price_column_cell_do_not_unbind_it() -> None:
     table = "| 代码 | 收盘 |\n|---|---|\n| 159516.SZ | 300 est |\n"
     shapes = {f.text: f.shape for f in scan_figures(table, parse_figures_block(table))}
     assert shapes["300"] == "measured"
+
+
+def test_cited_amount_in_billions_is_not_a_close_of_the_same_digits(tmp_path: Path) -> None:
+    """"0.667 Md$" cited from a page is not the 0.666 close declared observed.
+
+    Since French scale words scale a figure, a cited capitalization near an
+    observed price in raw digits was refused as cited_as_observed (2026-11-08
+    draft, refused on replay). The same digits without a scale still are.
+    """
+    ledger = _ledger(tmp_path)
+
+    in_billions = ledger.validate_final_answer(
+        HDR + " 同业市值 0.667 Md$（example.com）。"
+        + _block(HDR_ROW, "0.667 Md$ | cited | 市值 example.com | read_url")
+    )
+    same_scale = ledger.validate_final_answer(
+        HDR + " 同业报价 0.667（example.com）。"
+        + _block(HDR_ROW, "0.667 | cited | 报价 example.com | read_url")
+    )
+
+    assert in_billions.valid is True, in_billions.issues
+    assert "cited_as_observed" in [i["reason"] for i in same_scale.issues]

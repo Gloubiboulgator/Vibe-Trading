@@ -163,6 +163,16 @@ class Declaration:
     role: str
     note: str
     ref: str
+    #: The magnitude its value is written in ("91 Md$" -> 1e9), as the prose's
+    #: :attr:`Figure.scale`; ``value`` stays the written number.
+    scale: float = 1.0
+
+
+def _declared_scale(text: str) -> float:
+    """The magnitude mark after a declared value ("12.7 Md EUR" -> 1e9), or 1."""
+    field = _normalize(text).text.strip()
+    tokens = _numbers(field)
+    return magnitude_suffix(field, tokens[0].end)[0] if len(tokens) == 1 else 1.0
 
 
 @dataclass(frozen=True)
@@ -1109,6 +1119,7 @@ def parse_figures_block(content: str) -> FiguresBlock:
                 role=role,
                 note=parts[2] if len(parts) > 2 else "",
                 ref=parts[3] if len(parts) > 3 else "",
+                scale=1.0 if percent else _declared_scale(parts[0]),
             )
         )
     return FiguresBlock(
