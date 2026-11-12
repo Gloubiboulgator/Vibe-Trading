@@ -43,7 +43,7 @@ from src.agent.user_language import writes_french
 from src.agent.context import ContextBuilder
 from src.agent.tool_loading import prepare_registry, request_definitions
 from src.agent.grounding import GroundingLedger
-from src.agent.grounding.ledger import load_prior_identities
+from src.agent.grounding.ledger import load_prior_evidence, load_prior_identities
 from src.agent.grounding.release import MAX_GROUNDING_REVISIONS
 from src.agent.memory import WorkspaceMemory
 from src.agent.progress import HeartbeatTimer as HeartbeatTimer, ProgressEvent as ProgressEvent, _set_emitter as _set_emitter
@@ -481,6 +481,7 @@ class AgentLoop(ToolCallLifecycle):
             self.memory.run_dir = str(run_dir)
 
         state_store.save_request(run_dir, user_message, {"session_id": session_id})
+        earlier_runs = _earlier_session_runs(session_id, run_dir)
         self._grounding = GroundingLedger(
             run_dir=run_dir,
             user_message=user_message,
@@ -491,9 +492,8 @@ class AgentLoop(ToolCallLifecycle):
             standing_markets=(
                 ((PEA_STANDING_MARKET, PEA_SOURCE_ID),) if pea_mode else ()
             ),
-            prior_identities=load_prior_identities(
-                _earlier_session_runs(session_id, run_dir)
-            ),
+            prior_identities=load_prior_identities(earlier_runs),
+            prior_evidence=load_prior_evidence(earlier_runs),
         )
 
         context = ContextBuilder(self.registry, self.memory,

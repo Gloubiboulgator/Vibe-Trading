@@ -489,6 +489,14 @@ DOCUMENT_DECIMAL_COMMAS: contextvars.ContextVar[bool] = contextvars.ContextVar(
 )
 
 
+#: A ref naming the session's earlier turns rather than a tool of this one.
+_PRIOR_TURN_RE = re.compile(
+    r"\b(?:prior|previous|earlier)\s+(?:turns?|questions?|answers?)\b"
+    r"|\b(?:tours?|questions?|r[ée]ponses?)\s+pr[ée]c[ée]dent(?:e|s|es)?\b",
+    re.IGNORECASE,
+)
+
+
 def _formula_decimal_commas(text: str) -> str:
     """Read a note's French-style numbers ("1 362,50") the way its prose writes them."""
     text = _FORMULA_SPACED_GROUP_RE.sub("", text)
@@ -1225,6 +1233,16 @@ class _PolicyMixin:
                 # A backtest's run directory or one of its files: everything
                 # that backtest observed there, and nothing another run did.
                 records, metrics = artifact_scope, []
+            elif _PRIOR_TURN_RE.search(key):
+                # "prior turn": what the session's earlier questions fetched.
+                records = [
+                    record
+                    for record in self._evidence
+                    if record.call_id in getattr(self, "_prior_calls", ())
+                    and record.status == "observed"
+                    and record.value is not None
+                ]
+                metrics = []
             else:
                 records = [
                     record

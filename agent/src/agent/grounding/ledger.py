@@ -5,9 +5,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import asdict
+from dataclasses import asdict, fields as dataclass_fields
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 
 from src.agent.resolution_context import ResolutionContext
 
@@ -58,6 +58,43 @@ def load_prior_identities(run_dirs: Sequence[Path]) -> list[dict[str, Any]]:
         identity = payload.get("identity") if isinstance(payload, dict) else None
         for record in (identity or {}).get("records") or ():
             if isinstance(record, dict):
+                records.append(record)
+    return records
+
+
+#: Earlier turns whose observations a new turn may reuse, newest last.
+MAX_PRIOR_EVIDENCE_RUNS = 12
+
+
+def load_prior_evidence(run_dirs: Sequence[Path]) -> list[dict[str, Any]]:
+    """Read the observed values earlier runs of the session persisted.
+
+    A follow-up question ("Et Uber ?", "compare à SpaceX") answers from the
+    closes and pages the previous turns fetched; each of them was refused as
+    unobserved, and ten figures were cut from one answer (2026-11-12).
+    Backtest output is left out: its records name files of their own run.
+
+    Args:
+        run_dirs: Run directories of the session's earlier turns, oldest first.
+
+    Returns:
+        Observed records of the last :data:`MAX_PRIOR_EVIDENCE_RUNS` runs. A
+        missing or unreadable artifact contributes nothing.
+    """
+    records: list[dict[str, Any]] = []
+    for run_dir in list(run_dirs)[-MAX_PRIOR_EVIDENCE_RUNS:]:
+        try:
+            payload = json.loads((Path(run_dir) / "artifacts" / GROUNDING_ARTIFACT).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        for record in (payload.get("evidence") if isinstance(payload, dict) else None) or ():
+            if (
+                isinstance(record, dict)
+                and record.get("status") == "observed"
+                and record.get("value") is not None
+                and not record.get("scope")
+                and record.get("tool") not in _ANALYSIS_TOOLS
+            ):
                 records.append(record)
     return records
 
@@ -158,6 +195,7 @@ class GroundingLedger(
         contextual_identity_constraints: bool = True,
         standing_markets: Sequence[tuple[str, str]] = (),
         prior_identities: Sequence[Mapping[str, Any]] = (),
+        prior_evidence: Sequence[Mapping[str, Any]] = (),
     ) -> None:
         """Create a ledger and seed only authoritative prior identities.
 
@@ -175,6 +213,9 @@ class GroundingLedger(
             prior_identities: Identity records earlier runs of the same
                 session persisted (:func:`load_prior_identities`). Their locks
                 carry over unless the current message contradicts them.
+            prior_evidence: Observed records earlier runs of the same session
+                persisted (:func:`load_prior_evidence`). They ground figures
+                like this run's own, and are not persisted again.
         """
         self.run_dir = Path(run_dir)
         self.user_message = user_message
@@ -186,6 +227,9 @@ class GroundingLedger(
         )
         self._identities: dict[str, IdentityRecord] = {}
         self._evidence: list[EvidenceRecord] = []
+        # Calls of earlier turns whose records were carried in: they ground
+        # figures but are that run's to persist, not this one's.
+        self._prior_calls: set[str] = set()
         self._tool_failures: list[dict[str, Any]] = []
         self._analysis_completed: list[dict[str, Any]] = []
         self._analysis_metrics: list[dict[str, Any]] = []
@@ -223,7 +267,19 @@ class GroundingLedger(
 
         self._seed_symbols(user_message, source="user_message")
         self._carry_prior_identities(prior_identities)
+        self._carry_prior_evidence(prior_evidence)
         self.persist()
+
+    def _carry_prior_evidence(self, records: Iterable[Mapping[str, Any]]) -> None:
+        """Seed the observations earlier turns of the session made."""
+        known = {field.name for field in dataclass_fields(EvidenceRecord)}
+        for raw in records:
+            try:
+                record = EvidenceRecord(**{key: value for key, value in raw.items() if key in known})
+            except TypeError:
+                continue
+            self._prior_calls.add(record.call_id)
+            self._evidence.append(record)
 
     @property
     def authorized_symbols(self) -> set[str]:
@@ -544,7 +600,9 @@ class GroundingLedger(
                 "identity": self.identity_summary(),
                 "session_symbols": sorted(self._session_symbols),
                 "session_symbol_roots": sorted(self._session_symbol_roots),
-                "evidence": [asdict(record) for record in self._evidence],
+                "evidence": [
+                    asdict(record) for record in self._evidence if record.call_id not in self._prior_calls
+                ],
                 "tool_failures": list(self._tool_failures),
                 "analysis_completed": list(self._analysis_completed),
                 "analysis_evidence": list(self._analysis_metrics),
