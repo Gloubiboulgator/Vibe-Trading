@@ -937,3 +937,37 @@ def test_cited_amount_in_billions_is_not_a_close_of_the_same_digits(tmp_path: Pa
 
     assert in_billions.valid is True, in_billions.issues
     assert "cited_as_observed" in [i["reason"] for i in same_scale.issues]
+
+
+def test_a_percent_borrows_a_bare_derivation_whose_formula_is_the_fraction(tmp_path: Path) -> None:
+    """"−36,75 %" in the prose, "-36.75 | derived | (a − b) / b" in the block.
+
+    The block forgot the "%", but the formula yields −0.3675: the line can
+    only be that percent. The derived check still judges the arithmetic, so
+    a bare line whose formula is not that fraction covers nothing.
+    """
+    ledger = _ledger(tmp_path)
+
+    fraction = ledger.validate_final_answer(
+        HDR + " 自高点回撤 −36.75 %。"
+        + _block(HDR_ROW, "-36.75 | derived | (0.666 − 1.053) / 1.053 | c1")
+    )
+    other_formula = ledger.validate_final_answer(
+        HDR + " 自高点回撤 −36.75 %。"
+        + _block(HDR_ROW, "-36.75 | derived | 0.666 − 1.053 × 35 | c1")
+    )
+
+    assert fraction.valid is True, fraction.issues
+    assert other_formula.valid is False
+
+
+def test_a_percent_borrows_a_bare_derivation_that_multiplies_by_100(tmp_path: Path) -> None:
+    """"-36.8 | derived | (a − b) / b × 100": rounded, and already in points."""
+    ledger = _ledger(tmp_path)
+
+    result = ledger.validate_final_answer(
+        HDR + " 自高点回撤 −36.8 %。"
+        + _block(HDR_ROW, "-36.8 | derived | (0.666 − 1.053) / 1.053 × 100 | c1")
+    )
+
+    assert result.valid is True, result.issues

@@ -12,7 +12,7 @@ import contextvars
 import json
 import math
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
 
@@ -784,6 +784,8 @@ class _PolicyMixin:
                     ):
                         declaration = item
                         break
+            if declaration is None and figure.percent:
+                declaration = _bare_derived_percent(block, figure)
             symbol = self._figure_symbol(
                 content,
                 figure,
@@ -3279,6 +3281,36 @@ def _declared_in_other_unit(block: FiguresBlock, figure: Figure) -> Declaration 
         # ("0.0151" for "−1.51pp") is still the value the model meant to name.
         if abs(abs(in_figure_units) - abs(figure.value)) <= half_unit * (1 + 1e-9):
             return declaration
+    return None
+
+
+def _bare_derived_percent(block: FiguresBlock, figure: Figure) -> Declaration | None:
+    """A derived line declared without its "%" whose formula states a percent.
+
+    "−9,9 %" in the prose, "-9.9 | derived | a / b − 1" in the block: the
+    formula evaluates to −0.0987, so the line can only mean the percent. So
+    does "12.3 | derived | 0.123 × 100". The model forgot the mark, and the
+    gate cut such figures from table after table (replay of 2026-11-12). The
+    line is read as that percent, rounding included, and the derived check
+    still judges its arithmetic.
+    """
+    for declaration in block.declarations:
+        if declaration.role != "derived" or declaration.percent:
+            continue
+        evaluated = _formula_in_note(declaration.note)
+        if evaluated is None:
+            continue
+        result, operands, _ = evaluated
+        percent = result if any(operand == 100 for operand in operands) else result * 100.0
+        band = max(abs(declaration.value) * _TOLERANCE, _written_half_unit(declaration.value_text), 1e-9)
+        if abs(percent - declaration.value) > band:
+            continue
+        as_percent = replace(declaration, percent=True)
+        borrowed = replace(block, declarations=(as_percent,)).match(
+            figure.value, True, figure.digits, figure.point_marked
+        )
+        if borrowed is not None:
+            return borrowed
     return None
 
 
