@@ -265,6 +265,39 @@ def _is_unit_factor(node: ast.AST) -> bool:
     return isinstance(node, ast.Constant) and node.value == 1
 
 
+def _sole_owner(operands: Sequence[float], records: Sequence[EvidenceRecord]) -> str | None:
+    """The one symbol whose observed records hold every data operand, or None."""
+    data = [operand for operand in operands if operand not in (1, 100)]
+    if len(data) < 2:
+        return None
+    by_symbol: dict[str, list[float]] = {}
+    for record in records:
+        if record.symbol and record.status == "observed" and record.value is not None:
+            by_symbol.setdefault(record.symbol, []).append(float(record.value))
+    owners = [
+        symbol
+        for symbol, values in by_symbol.items()
+        if all(
+            any(math.isclose(operand, value, rel_tol=0.0, abs_tol=max(abs(operand) * 1e-4, 0.005)) for value in values)
+            for operand in data
+        )
+    ]
+    return owners[0] if len(owners) == 1 else None
+
+
+def _complements_a_hundred(tree: ast.Expression) -> bool:
+    """Whether a formula takes a share from its whole: "100 − 35,67"."""
+    return any(
+        isinstance(item, ast.BinOp)
+        and isinstance(item.op, (ast.Add, ast.Sub))
+        and any(
+            isinstance(side, ast.Constant) and _is_number(side.value) and side.value == 100
+            for side in (item.left, item.right)
+        )
+        for item in ast.walk(tree)
+    )
+
+
 def _unanchored_term(tree: ast.Expression, observed: Callable[[float], bool]) -> bool:
     """Whether a formula adds or subtracts a term holding no observed operand.
 
@@ -1068,6 +1101,12 @@ class _PolicyMixin:
                 if len({record.call_id for record in by_tool}) == 1:
                     by_call = by_tool
             records = by_call if by_call or metrics else self._artifact_scope(key) or []
+        elif self._names_a_session_symbol(key):
+            # "SU.PA" names the instrument, not a field: read as a field-name
+            # tail it matched "data.inputs.weights.SU.PA" of a portfolio call
+            # and hid the instrument's closes (2026-11-12). The legacy loose
+            # path below checks the figure against that symbol's evidence.
+            return None
         else:
             records, entries = self._field_sources(key, symbol)
             artifact_scope = None if records or entries else self._artifact_scope(key)
@@ -1154,6 +1193,13 @@ class _PolicyMixin:
             ]
             metrics = []
         return records, metrics
+
+    def _names_a_session_symbol(self, ref: str) -> bool:
+        """Whether ``ref`` is exactly a symbol this session's evidence carries."""
+        wanted = ref.strip().upper()
+        return bool(wanted) and " " not in wanted and any(
+            record.symbol == wanted for record in self._evidence
+        )
 
     def _analysis_entries(self, symbol: str | None) -> list[dict[str, Any]]:
         """Scope metrics by explicit observed symbols recorded on their call.
@@ -2305,6 +2351,12 @@ class _PolicyMixin:
         # would look anchored with nothing to anchor it to. Only evidence that
         # belongs to no instrument, named by the ref, can anchor it then — a
         # difference between two backtests' Sharpes is a portfolio figure.
+        if not symbol:
+            # "(25.26 − 20.63) / 20.63" over a ten-symbol market-data call
+            # whose prose names the company, not the ticker: when one
+            # instrument alone printed every operand, the formula is about it
+            # (2026-11-12). Two candidates keep it unattributed.
+            symbol = _sole_owner(operands, records) or symbol
         unattributed = not symbol and len({record.symbol for record in records if record.symbol}) > 1
         # A nonempty single ref that names no call, tool, field or artifact
         # must not borrow a coincidentally equal value from session pools.
@@ -2446,11 +2498,15 @@ class _PolicyMixin:
 
         if not any(observed(operand) for operand in operands):
             return "no_symbol" if unattributed else "formula_not_anchored"
-        if _unanchored_term(tree, observed):
+        # "100 − 35,67": the whole, for a percent share, is the unit itself.
+        # Only as a term of its own: "125 / 100" still needs its 100 observed.
+        whole = percent and _complements_a_hundred(tree)
+        if _unanchored_term(tree, (lambda value: value == 100 or observed(value)) if whole else observed):
             return "additive_operand_not_observed"
         if any(
             not observed(operand)
             and operand != 1
+            and not (whole and operand == 100)
             and not any(
                 math.isclose(abs(operand), abs(parameter), rel_tol=1e-12, abs_tol=0.0)
                 for parameter in scalar_parameters
@@ -2547,8 +2603,8 @@ class _PolicyMixin:
                         saw_percent = True
                     else:
                         saw_plain = True
-            if operand == 1 and not saw_percent and not saw_plain:
-                continue  # Structural multiplicative identity, not a data unit.
+            if operand in (1, 100) and not saw_percent and not saw_plain:
+                continue  # Structural identity or whole, not a data unit.
             if not saw_percent or saw_plain:
                 return False
         return True

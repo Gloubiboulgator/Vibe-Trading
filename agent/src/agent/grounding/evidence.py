@@ -884,6 +884,26 @@ def _document_figure(text: str, figure: Figure, opening: Figure | None) -> Figur
     )
 
 
+#: Signs that name one currency wherever they stand ("en €" in a header).
+_CURRENCY_SIGNS = {"€": "EUR", "£": "GBP", "₩": "KRW", "₹": "INR", "¥": "JPY"}
+_ISO_WORD_RE = re.compile(r"(?<![A-Za-z])[A-Z]{3}(?![A-Za-z])")
+
+
+def _sole_document_currency(text: str, figures: list[Figure]) -> str | None:
+    """The one currency a document names, which its unmarked amounts are in.
+
+    A securities statement writes "Valorisation (EUR)" once and its amounts
+    bare; an answer quoting "6 947,80 €" from it was refused for a currency
+    the document never gave the figure (2026-11-12). A document naming two
+    currencies, or none, leaves its bare amounts without one.
+    """
+    codes = {figure.currency_code for figure in figures if figure.currency_code}
+    codes |= {word for word in _ISO_WORD_RE.findall(text) if word in _CURRENCY_CODES}
+    codes |= {code for mark, code in _CURRENCY_SIGNS.items() if mark in text}
+    codes = {{"CNH": "CNY", "RMB": "CNY"}.get(code, code) for code in codes}
+    return next(iter(codes)) if len(codes) == 1 else None
+
+
 _PREFIXED_DOLLARS = {
     "US": "USD", "HK": "HKD", "A": "AUD", "AU": "AUD", "C": "CAD", "CA": "CAD",
     "NT": "TWD", "S": "SGD", "NZ": "NZD", "R": "BRL",
@@ -1772,7 +1792,9 @@ class _EvidenceMixin:
         seen: set[tuple[float, bool, str | None]] = set()
         text = _document_percent_cells(text)
         previous: Figure | None = None
-        for figure in scan_figures(text, parse_figures_block(text)):
+        figures = scan_figures(text, parse_figures_block(text))
+        sole_currency = _sole_document_currency(text, figures)
+        for figure in figures:
             if room <= 0:
                 return
             opens_range = previous is not None and previous.shape == "measured"
@@ -1780,6 +1802,12 @@ class _EvidenceMixin:
             if figure is None:
                 continue
             figure = _dollar_is_usd(text, figure)
+            if (
+                sole_currency is not None
+                and figure.currency_code is None
+                and not figure.percent
+            ):
+                figure = replace(figure, currency_code=sole_currency)
             values = [float(figure.value) * float(figure.scale or 1.0)]
             if float(figure.scale or 1.0) != 1.0 and tool_name != "read_document":
                 # The figure as printed stays evidence too, for a formula noted

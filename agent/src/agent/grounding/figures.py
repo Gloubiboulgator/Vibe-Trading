@@ -509,9 +509,11 @@ _DOTTED_GROUPING_RE = re.compile(
 # thousands with a dot decimal, which a mixed French answer writes and which
 # was split into "2" and an unmatched "852.64", 2026-11-08).
 # A hyphen inside a word is not a sign: "05-Nov-26 125,000€" read as 26 125,000
-# (2026-11-11), the date's year glued to a share count.
+# (2026-11-11), the date's year glued to a share count. A short date's year
+# is not a thousands group either: "30/09/26 762,48" read as 26 762,48 in a
+# broker statement (2026-11-12).
 _SPACED_GROUPING_RE = re.compile(
-    r"(?<![A-Za-z0-9_.,])(?<![A-Za-z0-9]-)[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+|\.\d{1,2})?(?!\d|[.,]\d)"
+    r"(?<![A-Za-z0-9_.,])(?<![A-Za-z0-9]-)(?<!\d/)[+-]?[1-9]\d{0,2}(?: \d{3})+(?:,\d+|\.\d{1,2})?(?!\d|[.,]\d)"
 )
 
 
