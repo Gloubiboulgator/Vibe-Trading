@@ -1,0 +1,1661 @@
+{
+ "version": 1,
+ "questions": [
+  {
+   "session": "0e54a6db7b05",
+   "attempt": "02ae3862e76f",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 26,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 21,
+      "numeric_claim_conflict/no_symbol": 1,
+      "numeric_claim_conflict/operand_not_observed": 3,
+      "numeric_claim_conflict/symbol_mismatch": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 20,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 3,
+      "numeric_claim_conflict/symbol_mismatch": 1
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 26,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 3,
+      "numeric_claim_conflict/symbol_mismatch": 1
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 26,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 3,
+      "numeric_claim_conflict/symbol_mismatch": 1
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "853426bb2dd9",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "a5b070c2734e",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "2c87faf6b75f",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 3,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 4,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "3c99392300b1",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "c6810203673e",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 3,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "4ad308d04444",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "d3001f6432b7",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/additive_operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "d0415095ee97",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "2441268ea6ac",
+   "attempt": "f9d3ece90334",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "41a1947cb39e",
+   "attempt": "5bfc8d116745",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "4aa008957d8c",
+   "attempt": "faf2e9d79e1c",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "05d0e929176f",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 6,
+      "numeric_claim_conflict/not_in_referenced_call": 1,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "b3f3633f4624",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 2,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 14,
+      "numeric_claim_conflict/operand_not_observed": 2
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 2
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 2
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 2
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "6913637e66d9",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 1,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 11
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "7f2437f276ce",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 18
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "b3f334c1c15b",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 7,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 3,
+      "numeric_claim_conflict/operand_not_observed": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 4,
+      "numeric_claim_conflict/operand_not_observed": 2
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 3,
+      "numeric_claim_conflict/operand_not_observed": 2
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 4,
+      "numeric_claim_conflict/operand_not_observed": 2
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "827a53f21573",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 1,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 5,
+      "numeric_claim_conflict/additive_operand_not_observed": 1,
+      "numeric_claim_conflict/citation_not_visible": 13,
+      "numeric_claim_conflict/operand_not_observed": 4
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "a86abe4fd944",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "4eb82783c340",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "currency_not_surfaced/currency_not_surfaced": 1,
+      "figure_undeclared/undeclared": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "6c26f8077c7a",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "8f9e6e5ed7c9",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/operand_not_observed": 7
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "62c0bc165751",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 1,
+      "numeric_claim_conflict/formula_not_evaluable": 2,
+      "numeric_claim_unavailable/no_evidence": 8
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "a7fd6bc77817",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "44562150f3e3",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 1,
+      "numeric_claim_conflict/formula_not_evaluable": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "194d6e9997b9",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "ef213f721454",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 3,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 4,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 5,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "unsourced_symbol_figures/symbol_never_handled": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "e2dc232f9dee",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "8f776efa18ed",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/citation_not_visible": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "7fe41778bb1a",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "67aae71bf7f2",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "4d910ab7209d",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "6dd1b309fbec",
+   "outcome": "fallback",
+   "passing_draft": null,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/citation_not_visible": 1,
+      "numeric_claim_conflict/formula_not_evaluable": 1,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_unavailable/no_evidence": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/formula_not_anchored": 2,
+      "numeric_claim_conflict/not_in_referenced_call": 2,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "805e36777c66",
+   "attempt": "7b04e5395db5",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "805e36777c66",
+   "attempt": "f2da22a6ce7d",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a145f3d59533",
+   "attempt": "a39f89229d3c",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a145f3d59533",
+   "attempt": "764ae26b6ab9",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 1,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/additive_operand_not_observed": 1,
+      "numeric_claim_conflict/derivation_result_mismatch": 4,
+      "numeric_claim_conflict/not_in_referenced_call": 13
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "a145f3d59533",
+   "attempt": "d77a8e53d16c",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 3,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a64b12e409ee",
+   "attempt": "0e83f7c0ef95",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a64b12e409ee",
+   "attempt": "8d59670d3672",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 1
+     }
+    },
+    {
+     "draft": 4,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a64b12e409ee",
+   "attempt": "744f3a301af3",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 2,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/not_in_referenced_call": 1,
+      "numeric_claim_conflict/value_mismatch": 1,
+      "numeric_claim_unavailable/no_evidence": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a64b12e409ee",
+   "attempt": "67d65a5de6e1",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/additive_operand_not_observed": 1,
+      "numeric_claim_conflict/formula_not_anchored": 2
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "a721ea39e1e0",
+   "attempt": "02e5a4cda77a",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 93,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 90,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 90,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 90,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 90,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 5,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 36,
+      "numeric_claim_conflict/no_symbol": 1,
+      "numeric_claim_conflict/operand_not_observed": 17,
+      "numeric_claim_conflict/value_mismatch": 7
+     }
+    }
+   ]
+  },
+  {
+   "session": "af9e1bb98abc",
+   "attempt": "ffb001e8ef9a",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 20,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 22,
+      "numeric_claim_conflict/formula_not_anchored": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 19
+     }
+    }
+   ]
+  },
+  {
+   "session": "bfe957b59903",
+   "attempt": "647b7e9b3d12",
+   "outcome": "passed",
+   "passing_draft": 5,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/value_mismatch": 9,
+      "numeric_claim_unavailable/no_evidence": 2
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/value_mismatch": 6,
+      "numeric_claim_unavailable/no_evidence": 2
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/value_mismatch": 6,
+      "numeric_claim_unavailable/no_evidence": 2
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/value_mismatch": 6,
+      "numeric_claim_unavailable/no_evidence": 2
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "bfe957b59903",
+   "attempt": "48abd4d00fce",
+   "outcome": "fallback",
+   "passing_draft": null,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/not_in_referenced_call": 16
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/ambiguous_field_ref": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "c31ec3e98602",
+   "attempt": "7be9f9c0cec9",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 13,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4,
+      "numeric_claim_conflict/citation_not_visible": 2,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4,
+      "numeric_claim_conflict/citation_not_visible": 2,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 4
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4,
+      "numeric_claim_conflict/citation_not_visible": 2,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 4
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4,
+      "numeric_claim_conflict/citation_not_visible": 2,
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 4
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "c31ec3e98602",
+   "attempt": "5383fcea1aa6",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 17,
+      "numeric_claim_conflict/citation_not_visible": 4,
+      "numeric_claim_conflict/formula_not_evaluable": 1,
+      "numeric_claim_conflict/no_symbol": 6
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "c31ec3e98602",
+   "attempt": "a3e79ccffce6",
+   "outcome": "passed",
+   "passing_draft": 3,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_unavailable/no_evidence": 5
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_unavailable/no_evidence": 5
+     }
+    },
+    {
+     "draft": 3,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "c31ec3e98602",
+   "attempt": "9b164aec8ef6",
+   "outcome": "fallback",
+   "passing_draft": null,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figures_block_malformed/unparseable_declaration": 1,
+      "numeric_claim_conflict/formula_not_evaluable": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figures_block_malformed/unparseable_declaration": 1,
+      "numeric_claim_conflict/cited_as_observed": 2,
+      "numeric_claim_conflict/formula_not_evaluable": 3
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figures_block_malformed/unparseable_declaration": 1,
+      "numeric_claim_conflict/cited_as_observed": 2,
+      "numeric_claim_conflict/formula_not_evaluable": 3
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figures_block_malformed/unparseable_declaration": 1,
+      "numeric_claim_conflict/cited_as_observed": 2,
+      "numeric_claim_conflict/formula_not_evaluable": 3
+     }
+    },
+    {
+     "draft": 5,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/cited_as_observed": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "c31ec3e98602",
+   "attempt": "5f38b7063c2b",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "c31ec3e98602",
+   "attempt": "f92101434170",
+   "outcome": "fallback",
+   "passing_draft": null,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_unavailable/no_evidence": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/no_symbol": 2,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_unavailable/no_evidence": 1
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_unavailable/no_evidence": 1
+     }
+    },
+    {
+     "draft": 5,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_unavailable/no_evidence": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "d8adc8e191d9",
+   "attempt": "dfc15a769b79",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 3,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 3
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 3
+     }
+    },
+    {
+     "draft": 3,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 3
+     }
+    },
+    {
+     "draft": 4,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 3
+     }
+    },
+    {
+     "draft": 5,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "d8adc8e191d9",
+   "attempt": "30c32e0d0c03",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "d8adc8e191d9",
+   "attempt": "93be1644e714",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "d8adc8e191d9",
+   "attempt": "ff44caee8b11",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 3,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 2,
+      "numeric_claim_conflict/operand_not_observed": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "d8adc8e191d9",
+   "attempt": "2d084e8b1c6d",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  }
+ ]
+}

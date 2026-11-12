@@ -36,14 +36,14 @@ from src.agent.tuning import (
     _stall_timeout_seconds as _stall_timeout_seconds,
 )
 
-from src.agent.pea_mode import PEA_SOURCE_ID, PEA_STANDING_MARKET, wrap_user_message as wrap_pea_message
+from src.agent.pea_mode import wrap_user_message as wrap_pea_message
 from src.agent.loop_grounding import validate_and_release
 from src.agent.loop_streaming import TurnStream
 from src.agent.user_language import writes_french
 from src.agent.context import ContextBuilder
 from src.agent.tool_loading import prepare_registry, request_definitions
 from src.agent.grounding import GroundingLedger
-from src.agent.grounding.ledger import load_prior_evidence, load_prior_identities
+from src.agent.grounding_setup import build_grounding_ledger
 from src.agent.grounding.release import MAX_GROUNDING_REVISIONS
 from src.agent.memory import WorkspaceMemory
 from src.agent.progress import HeartbeatTimer as HeartbeatTimer, ProgressEvent as ProgressEvent, _set_emitter as _set_emitter
@@ -112,27 +112,6 @@ from src.agent.tool_lifecycle import (
 RUNS_DIR = get_runs_dir()
 SESSIONS_DIR = get_sessions_dir()
 
-
-def _earlier_session_runs(session_id: str, current_run_dir: Path) -> list[Path]:
-    """Run directories of the session's earlier attempts, oldest first.
-
-    Each attempt records the run it used; the current one is left out. An
-    unreadable attempt is skipped: losing a carried identity only costs the
-    model one more ``search_symbol``.
-    """
-    if not session_id:
-        return []
-    attempts: list[tuple[str, Path]] = []
-    for path in (SESSIONS_DIR / session_id / "attempts").glob("*/attempt.json"):
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            continue
-        run_dir = data.get("run_dir") if isinstance(data, dict) else None
-        if not run_dir or Path(run_dir) == Path(current_run_dir):
-            continue
-        attempts.append((str(data.get("created_at") or ""), Path(run_dir)))
-    return [run_dir for _, run_dir in sorted(attempts)]
 
 # An LLM may return a transient empty completion (no text, no tool calls);
 # retry once with a nudge before failing the run on a second consecutive one.
@@ -481,19 +460,13 @@ class AgentLoop(ToolCallLifecycle):
             self.memory.run_dir = str(run_dir)
 
         state_store.save_request(run_dir, user_message, {"session_id": session_id})
-        earlier_runs = _earlier_session_runs(session_id, run_dir)
-        self._grounding = GroundingLedger(
+        self._grounding = build_grounding_ledger(
             run_dir=run_dir,
             user_message=user_message,
             history=history,
-            contextual_identity_constraints=(
-                get_env_config().agent_tuning.vibe_contextual_identity_constraints
-            ),
-            standing_markets=(
-                ((PEA_STANDING_MARKET, PEA_SOURCE_ID),) if pea_mode else ()
-            ),
-            prior_identities=load_prior_identities(earlier_runs),
-            prior_evidence=load_prior_evidence(earlier_runs),
+            session_id=session_id,
+            sessions_dir=SESSIONS_DIR,
+            pea_mode=pea_mode,
         )
 
         context = ContextBuilder(self.registry, self.memory,
