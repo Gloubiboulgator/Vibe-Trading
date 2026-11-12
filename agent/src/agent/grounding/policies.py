@@ -241,6 +241,11 @@ def _note_tokens(note: str) -> set[str]:
     return tokens
 
 
+def _singulars(tokens: set[str]) -> set[str]:
+    """Note tokens with a plural "s" dropped from words of five letters or more."""
+    return {token[:-1] if len(token) >= 5 and token.endswith("s") else token for token in tokens}
+
+
 def _strip_sign(node: ast.AST) -> ast.AST:
     """The operand under any unary ``+`` or ``-``."""
     while isinstance(node, ast.UnaryOp):
@@ -683,7 +688,8 @@ class _PolicyMixin:
             # such as "w"; it must not match a letter inside an unrelated word.
             label = declared.note.strip()
             label_visible = bool(label) and (
-                bool(_note_tokens(label) & _note_tokens(line))
+                # "trimestres" in the note, "trimestre" in the sentence.
+                bool(_singulars(_note_tokens(label)) & _singulars(_note_tokens(line)))
                 or re.search(
                     r"(?<![^\W\d_])" + re.escape(label) + r"(?![^\W\d_])",
                     line,

@@ -884,6 +884,55 @@ def _document_figure(text: str, figure: Figure, opening: Figure | None) -> Figur
     )
 
 
+#: A column header's currency: "Limite ($)", "Montant (EUR)", "Prix en €".
+_HEADER_CURRENCY_RE = re.compile(
+    r"\(\s*(?P<paren>\$|€|£|USD|EUR|GBP)\s*\)|\ben\s+(?P<word>€|\$|USD|EUR)(?![A-Za-z])",
+    re.IGNORECASE,
+)
+_HEADER_CURRENCY_CODES = {"$": "USD", "€": "EUR", "£": "GBP", "USD": "USD", "EUR": "EUR", "GBP": "GBP"}
+
+
+def _currency_column_cells(text: str) -> list[tuple[int, int, str]]:
+    """The spans of Markdown table cells under a header naming one currency.
+
+    A screenshot read back as a table writes "| Limite ($) | **85** (rempli) |":
+    the amount is bare, its currency is in the header, and the word in the
+    cell made it a count (2026-11-12).
+    """
+    spans: list[tuple[int, int, str]] = []
+    offset = 0
+    header: dict[int, str] | None = None
+    for line in text.splitlines(keepends=True):
+        if line.count("|") < 2:
+            header = None
+            offset += len(line)
+            continue
+        bounds = [offset + index for index, char in enumerate(line) if char == "|"]
+        cells = [(bounds[k] + 1, bounds[k + 1]) for k in range(len(bounds) - 1)]
+        if header is None:
+            header = {}
+            for position, (low, high) in enumerate(cells):
+                found = _HEADER_CURRENCY_RE.search(text, low, high)
+                if found is not None:
+                    mark = (found.group("paren") or found.group("word")).upper()
+                    header[position] = _HEADER_CURRENCY_CODES[mark]
+        elif not re.fullmatch(r"[\s|:\-]*", line):
+            # A key/value table names the currency in the row's label instead.
+            label = _HEADER_CURRENCY_RE.search(text, *cells[0]) if cells else None
+            row_code = (
+                _HEADER_CURRENCY_CODES[(label.group("paren") or label.group("word")).upper()]
+                if label is not None
+                else None
+            )
+            spans.extend(
+                (low, high, header.get(position) or row_code)
+                for position, (low, high) in enumerate(cells)
+                if position in header or (row_code is not None and position > 0)
+            )
+        offset += len(line)
+    return spans
+
+
 #: Signs that name one currency wherever they stand ("en €" in a header).
 _CURRENCY_SIGNS = {"€": "EUR", "£": "GBP", "₩": "KRW", "₹": "INR", "¥": "JPY"}
 _ISO_WORD_RE = re.compile(r"(?<![A-Za-z])[A-Z]{3}(?![A-Za-z])")
@@ -1794,9 +1843,17 @@ class _EvidenceMixin:
         previous: Figure | None = None
         figures = scan_figures(text, parse_figures_block(text))
         sole_currency = _sole_document_currency(text, figures)
+        money_cells = _currency_column_cells(text)
         for figure in figures:
             if room <= 0:
                 return
+            if figure.shape == "bare":
+                code = next(
+                    (code for low, high, code in money_cells if low <= figure.start and figure.end <= high),
+                    None,
+                )
+                if code is not None:
+                    figure = replace(figure, shape="measured", currency=True, currency_code=code)
             opens_range = previous is not None and previous.shape == "measured"
             figure, previous = _document_figure(text, figure, previous if opens_range else None), figure
             if figure is None:

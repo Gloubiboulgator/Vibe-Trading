@@ -405,6 +405,19 @@ class GroundingLedger(
             # A web page is prose too: an answer citing a figure from an
             # article it read was refused as "not in the referenced call".
             self._ingest_document_text(arguments, payload, call_id, tool_name=tool_name)
+        elif tool_name == "analyze_image" and payload is not None and payload.get("ok") is True:
+            # The model's reading of an uploaded screenshot is what the answer
+            # quotes from it ("votre limite de 85 $"); without it every such
+            # figure was "no evidence" and the gate asked for market data on a
+            # stock not yet listed (2026-11-12).
+            data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
+            if isinstance(data.get("answer"), str) and isinstance(data.get("path"), str):
+                self._ingest_document_text(
+                    {"file_path": data["path"]},
+                    {"content": data["answer"]},
+                    call_id,
+                    tool_name=tool_name,
+                )
         elif tool_name in ("web_search", "get_stock_news") and payload is not None and _headlines(payload):
             # Search snippets and news headlines are prose as well ("Priced For
             # Perfection After 125% Run"); each item is read on its own.

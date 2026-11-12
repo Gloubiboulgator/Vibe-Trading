@@ -9,11 +9,27 @@ what the registry contract means by figure state living on the ledger.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from src.agent.grounding.figures import FiguresBlock, _lines_with_offsets
 from src.agent.grounding.identity import _scan_symbols
 from src.agent.grounding.registry import grounding_check
+
+
+#: Where a sentence ends inside a line: a stop, then a space or the line's end.
+_SENTENCE_END_RE = re.compile(r"[.!?;。！？；](?=\s|$)")
+
+
+def _sentences(line: str) -> list[tuple[int, int]]:
+    """The spans of a line's sentences; a table row's cells stay one sentence each way."""
+    spans, start = [], 0
+    for match in _SENTENCE_END_RE.finditer(line):
+        spans.append((start, match.end()))
+        start = match.end()
+    if start < len(line):
+        spans.append((start, len(line)))
+    return spans
 
 
 def _active_block(ledger: Any) -> FiguresBlock:
@@ -59,15 +75,35 @@ def _unsourced_symbol_figures(ledger: Any, content: str) -> list[dict[str, Any]]
     issues: list[dict[str, Any]] = []
     reported: set[str] = set()
     for index, (line, offset) in enumerate(_lines_with_offsets(content)):
-        unknown = sorted(
-            symbol
-            for symbol in _scan_symbols(line) - ledger._session_symbols - reported
-            if symbol.rsplit(".", 1)[0] not in ledger._session_symbol_roots
-        )
-        if not unknown:
+        unknown_in_line = _scan_symbols(line) - ledger._session_symbols - reported
+        if not unknown_in_line:
             continue
-        carried = [figure for figure in figures if figure.line == index and figure.shape == "measured"]
-        if not carried:
+        # A symbol carries the figures of its own sentence. "Je n'ai pas
+        # récupéré le taux EUR/USD" after "votre espace libre de 1 525,61 €"
+        # in one table cell reported the rate as not retrieved, as asked, and
+        # was refused for the amount before it (2026-11-12).
+        unknown_set: set[str] = set()
+        carried = []
+        for low, high in _sentences(line):
+            in_sentence = {
+                symbol
+                for symbol in _scan_symbols(line[low:high]) & unknown_in_line
+                if symbol.rsplit(".", 1)[0] not in ledger._session_symbol_roots
+            }
+            if not in_sentence:
+                continue
+            figures_here = [
+                figure
+                for figure in figures
+                if figure.line == index
+                and figure.shape == "measured"
+                and offset + low <= figure.start < offset + high
+            ]
+            if figures_here:
+                unknown_set |= in_sentence
+                carried.extend(figures_here)
+        unknown = sorted(unknown_set)
+        if not unknown:
             continue
         # A figure declared ``cited`` is exempt, since a citation is an origin.
         if all(
