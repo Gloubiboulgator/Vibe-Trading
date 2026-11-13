@@ -312,8 +312,23 @@ class SymbolSearchTool(BaseTool):
             if public_source is not None:
                 sources[public_source] = public_status or "ok"
                 candidates.extend(public_hits)
+            if (
+                not public_hits
+                and not _CRYPTO_PAIR_RE.fullmatch(query.strip())
+                and str(public_status or "").startswith(_SKIPPED)
+            ):
+                # A spelling with no separator is only a pair when a venue
+                # lists it. "Airbnb" reads as AIR + BNB, and treating it as a
+                # pair dropped every equity candidate, so the company came
+                # back as not listed. Both venues answered that no such pair
+                # exists: search it as the name it is.
+                crypto_pair = None
 
-        em_hits, sources["eastmoney"] = _search_eastmoney(provider_query)
+        if crypto_pair is not None:
+            em_hits = []
+            sources["eastmoney"] = f"{_SKIPPED}eastmoney has no crypto exchange-pair coverage"
+        else:
+            em_hits, sources["eastmoney"] = _search_eastmoney(provider_query)
         candidates.extend(em_hits)
 
         # An explicit FX pair searches Yahoo by its canonical ``XXXYYY=X``
@@ -700,14 +715,13 @@ def _search_eastmoney(query: str) -> tuple[List[Dict[str, Any]], str]:
     so the endpoint is skipped instead of raising a parse error.
 
     Args:
-        query: Free-text name or ticker fragment.
+        query: Free-text name or ticker fragment. The caller skips this
+            source for a crypto pair, which it has no coverage for.
 
     Returns:
         ``(candidates, status)`` where ``status`` is ``"ok"`` on success or a
         short error string when the source failed (candidates is then empty).
     """
-    if _canonical_crypto_pair(query) is not None:
-        return [], f"{_SKIPPED}eastmoney has no crypto exchange-pair coverage"
     if _is_canadian_symbol(query):
         logger.info(
             "eastmoney skipped for Canadian symbol %r (no Canada coverage)",

@@ -761,6 +761,51 @@ class TestCryptoPairWithoutABrokerConnection:
         assert data["candidates"] == []
         assert data["sources"]["public_exchange"].startswith("skipped:")
 
+    def _run_name(self, monkeypatch, query, markets, yahoo):
+        monkeypatch.setattr(
+            "src.tools.gildata_identity.search_candidates", lambda q, n: ([], None)
+        )
+        with patch.object(
+            ss.eastmoney_client, "get_json", return_value={"QuotationCodeTable": {"Data": []}}
+        ), patch.object(ss.sec_edgar_client, "cik_for", return_value=None):
+            return self._run(monkeypatch, query, markets, yahoo=yahoo)
+
+    def test_a_name_ending_in_a_quote_asset_is_searched_as_a_name(self, monkeypatch):
+        # "Roombnb" spells ROOM + BNB with no separator. No venue lists that
+        # pair, so it is the company name it looks like, not a crypto pair
+        # whose filter would drop every equity candidate.
+        data = self._run_name(
+            monkeypatch,
+            "Roombnb",
+            {"binance": self._markets("ETH/BNB"), "okx": self._markets("ETH/BNB")},
+            yahoo=[
+                {
+                    "symbol": "RMBB",
+                    "shortname": "Roombnb Inc.",
+                    "exchange": "NMS",
+                    "quoteType": "EQUITY",
+                }
+            ],
+        )
+        assert [c["symbol"] for c in data["candidates"]] == ["RMBB.US"]
+        assert data["sources"]["eastmoney"] == "ok"
+
+    def test_a_spliced_pair_a_venue_lists_stays_a_pair(self, monkeypatch):
+        data = self._run_name(
+            monkeypatch,
+            "SOLBNB",
+            {"binance": self._markets("SOL/BNB")},
+            yahoo=[
+                {
+                    "symbol": "SOLB",
+                    "shortname": "Solbnb Corp.",
+                    "exchange": "NMS",
+                    "quoteType": "EQUITY",
+                }
+            ],
+        )
+        assert [c["symbol"] for c in data["candidates"]] == ["SOL-BNB"]
+
     def test_an_equity_query_never_reaches_the_venue_catalogs(self, monkeypatch):
         called: list[str] = []
 
