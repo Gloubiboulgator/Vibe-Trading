@@ -720,6 +720,7 @@ export const api = {
   sendMessage: (sid: string, content: string, llm?: RunLLMSelection | null, peaMode?: boolean) => request<{ message_id: string; attempt_id: string }>(`/sessions/${sid}/messages`, { method: "POST", body: JSON.stringify({ content, ...(llm ? { llm } : {}), ...(peaMode !== undefined ? { pea_mode: peaMode } : {}) }) }),
   cancelSession: (sid: string) => request<{ status: string }>(`/sessions/${sid}/cancel`, { method: "POST" }),
   getSessionMessages: (sid: string) => request<MessageItem[]>(`/sessions/${sid}/messages`),
+  getSessionUsage: (sid: string) => request<SessionUsage>(`/sessions/${sid}/usage`, undefined, METADATA_TIMEOUT_MS),
   createGoal: (sid: string, body: CreateGoalRequest) =>
     request<GoalSnapshot>(`/sessions/${sid}/goal`, {
       method: "POST",
@@ -1770,6 +1771,18 @@ export interface ArtifactInfo {
 export interface PineScriptResult {
   exists: boolean;
   content: string | null;
+}
+
+/** Tokens and USD cost of every run of a session; cost is null when no run's model has a known price. */
+export interface SessionUsage {
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  cache_creation_tokens: number;
+  total_tokens: number;
+  cost_usd: number | null;
+  runs: number;
+  unpriced_runs: number;
 }
 
 export interface SessionItem {

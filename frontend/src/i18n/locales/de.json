@@ -1336,6 +1336,13 @@
       "on": "PEA-Modus an: Der Agent schlägt nur PEA-fähige Wertpapiere vor und bevorzugt Euro-Notierungen. Klicken zum Ausschalten.",
       "off": "PEA-Modus einschalten: Der Agent schlägt nur PEA-fähige Wertpapiere vor (Unternehmen aus EU/EWR, zulässige ETFs).",
       "labelOn": "PEA an"
+    },
+    "usage": {
+      "aria": "Kosten der Unterhaltung",
+      "label": "{{cost}} · {{tokens}} Tokens",
+      "tokensOnly": "{{tokens}} Tokens",
+      "detail": "Diese Unterhaltung: {{input}} Eingabe-Tokens ({{cacheRead}} aus dem Cache gelesen, {{cacheWrite}} in den Cache geschrieben), {{output}} Ausgabe-Tokens, in {{runs}} Antworten.",
+      "unpriced": "Antworten eines Modells ohne bekannten Preis, nicht in den Kosten: {{count}}."
     }
   },
   "runDetail": {

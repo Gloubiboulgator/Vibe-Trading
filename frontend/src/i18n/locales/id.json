@@ -1336,6 +1336,13 @@
       "on": "Mode PEA aktif: agen hanya mengusulkan efek yang memenuhi syarat PEA dan memilih pencatatan dalam euro. Klik untuk menonaktifkan.",
       "off": "Aktifkan mode PEA: agen hanya akan mengusulkan efek yang memenuhi syarat PEA (perusahaan UE/EEA, ETF yang memenuhi syarat).",
       "labelOn": "PEA aktif"
+    },
+    "usage": {
+      "aria": "Biaya percakapan",
+      "label": "{{cost}} · {{tokens}} token",
+      "tokensOnly": "{{tokens}} token",
+      "detail": "Percakapan ini: {{input}} token masukan ({{cacheRead}} dibaca dari cache, {{cacheWrite}} ditulis ke cache), {{output}} token keluaran, dalam {{runs}} jawaban.",
+      "unpriced": "Jawaban dari model tanpa harga yang diketahui, tidak termasuk biaya: {{count}}."
     }
   },
   "runDetail": {

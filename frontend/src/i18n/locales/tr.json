@@ -1296,6 +1296,13 @@
       "on": "PEA modu açık: ajan yalnızca PEA'ya uygun menkul kıymetler önerir ve euro kotasyonlarını tercih eder. Kapatmak için tıklayın.",
       "off": "PEA modunu aç: ajan yalnızca PEA'ya uygun menkul kıymetler önerir (AB/AEA şirketleri, uygun ETF'ler).",
       "labelOn": "PEA açık"
+    },
+    "usage": {
+      "aria": "Sohbet maliyeti",
+      "label": "{{cost}} · {{tokens}} token",
+      "tokensOnly": "{{tokens}} token",
+      "detail": "Bu sohbet: {{input}} girdi tokenı ({{cacheRead}} önbellekten okunan, {{cacheWrite}} önbelleğe yazılan), {{output}} çıktı tokenı, {{runs}} yanıtta.",
+      "unpriced": "Fiyatı bilinmeyen bir modelin yanıtları, maliyete dahil değil: {{count}}."
     }
   },
   "runDetail": {

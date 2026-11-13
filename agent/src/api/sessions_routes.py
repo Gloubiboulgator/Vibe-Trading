@@ -10,6 +10,7 @@ import json
 import logging
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
@@ -540,6 +541,19 @@ def register_sessions_routes(app: FastAPI) -> None:
             updated_at=session.updated_at,
             last_attempt_id=session.last_attempt_id,
         )
+
+    @app.get("/sessions/{session_id}/usage", dependencies=[Depends(require_auth)])
+    async def get_session_usage(session_id: str):
+        """Tokens and USD cost of every run of one session."""
+        _host_validate_path_param(session_id, "session_id")
+        svc = _host_get_session_service()
+        if not svc:
+            raise HTTPException(status_code=501, detail="Session runtime not enabled")
+        if not svc.get_session(session_id):
+            raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
+        from src.session.usage import session_usage
+
+        return session_usage(Path(svc.store.base_dir), session_id)
 
     # -----------------------------------------------------------------------
     # Goal sub-group routes

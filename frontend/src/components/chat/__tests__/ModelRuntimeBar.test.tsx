@@ -24,7 +24,31 @@ const settings: LLMSettings = {
   }],
 };
 
+const usage = {
+  input_tokens: 1_200_000, output_tokens: 34_000, cache_read_tokens: 800_000,
+  cache_creation_tokens: 300_000, total_tokens: 1_234_000, cost_usd: 4.2, runs: 3, unpriced_runs: 0,
+};
+
 describe("ModelRuntimeBar", () => {
+  it("shows the conversation's cost and tokens, with the breakdown on hover", () => {
+    render(<ModelRuntimeBar settings={settings} usage={usage} />);
+
+    const chip = screen.getByText("$4.20 · 1.2M tokens");
+    expect(chip.parentElement).toHaveAttribute("title", expect.stringContaining("over 3 answers"));
+  });
+
+  it("shows tokens alone for a model without a known price, and nothing before any run", () => {
+    const { rerender } = render(
+      <ModelRuntimeBar settings={settings} usage={{ ...usage, cost_usd: null, unpriced_runs: 3 }} />,
+    );
+    expect(screen.getByText("1.2M tokens")).toBeInTheDocument();
+    expect(screen.getByText("1.2M tokens").parentElement)
+      .toHaveAttribute("title", expect.stringContaining("not in the cost: 3"));
+
+    rerender(<ModelRuntimeBar settings={settings} usage={{ ...usage, total_tokens: 0 }} />);
+    expect(screen.queryByText(/tokens/)).not.toBeInTheDocument();
+  });
+
   it("shows provider, provider-reported model and configured reasoning effort", () => {
     render(
       <ModelRuntimeBar

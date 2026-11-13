@@ -130,6 +130,11 @@ export function formatDecimal(
   return signed && value > 0 ? `+${body}` : body;
 }
 
+/** Short count in the UI language (1234567 -> "1.2M" in en, "1,2 M" in fr). */
+export function formatCompact(value: number): string {
+  return new Intl.NumberFormat(uiLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}
+
 /** Date/time label in the UI language. */
 export function formatDateTime(value: Date | string | number, options?: Intl.DateTimeFormatOptions): string {
   return new Date(value).toLocaleString(uiLocale(), options);

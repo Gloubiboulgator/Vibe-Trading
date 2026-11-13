@@ -1324,6 +1324,13 @@
       "on": "PEAモード オン：エージェントはPEA適格銘柄のみを提案し、ユーロ建ての上場を優先します。クリックでオフ。",
       "off": "PEAモードをオンにする：エージェントはPEA適格銘柄（EU/EEA企業、適格ETF）のみを提案します。",
       "labelOn": "PEA オン"
+    },
+    "usage": {
+      "aria": "会話のコスト",
+      "label": "{{cost}} · {{tokens}} トークン",
+      "tokensOnly": "{{tokens}} トークン",
+      "detail": "この会話：入力 {{input}} トークン（キャッシュ読み取り {{cacheRead}}、キャッシュ書き込み {{cacheWrite}}）、出力 {{output}}、回答 {{runs}} 件。",
+      "unpriced": "価格が不明なモデルの回答（コストに含まれない）：{{count}} 件。"
     }
   },
   "runDetail": {

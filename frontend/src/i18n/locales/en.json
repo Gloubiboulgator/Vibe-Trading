@@ -1336,6 +1336,13 @@
       "on": "PEA mode on: the agent proposes only PEA-eligible securities and prefers euro listings. Click to turn off.",
       "off": "Turn on PEA mode: the agent will propose only PEA-eligible securities (EU/EEA companies, eligible ETFs).",
       "labelOn": "PEA on"
+    },
+    "usage": {
+      "aria": "Conversation cost",
+      "label": "{{cost}} · {{tokens}} tokens",
+      "tokensOnly": "{{tokens}} tokens",
+      "detail": "This conversation: {{input}} input tokens ({{cacheRead}} read from cache, {{cacheWrite}} written to it), {{output}} output tokens, over {{runs}} answers.",
+      "unpriced": "Answers from a model without a known price, not in the cost: {{count}}."
     }
   },
   "runDetail": {

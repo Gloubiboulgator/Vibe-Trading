@@ -1336,6 +1336,13 @@
       "on": "Mode PEA activé : l'agent ne propose que des titres éligibles au PEA et préfère les cotations en euros. Cliquer pour désactiver.",
       "off": "Activer le mode PEA : l'agent ne proposera que des titres éligibles au PEA (sièges UE/EEE, ETF éligibles).",
       "labelOn": "PEA activé"
+    },
+    "usage": {
+      "aria": "Coût de la conversation",
+      "label": "{{cost}} · {{tokens}} tokens",
+      "tokensOnly": "{{tokens}} tokens",
+      "detail": "Cette conversation : {{input}} tokens en entrée (dont {{cacheRead}} lus en cache et {{cacheWrite}} écrits en cache), {{output}} en sortie, sur {{runs}} réponses.",
+      "unpriced": "Réponses d'un modèle sans tarif connu, non comptées dans le coût : {{count}}."
     }
   },
   "runDetail": {

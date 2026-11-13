@@ -1324,6 +1324,13 @@
       "on": "PEA 모드 켜짐: 에이전트가 PEA 적격 종목만 제안하고 유로 상장을 우선합니다. 클릭하면 꺼집니다.",
       "off": "PEA 모드 켜기: 에이전트가 PEA 적격 종목(EU/EEA 기업, 적격 ETF)만 제안합니다.",
       "labelOn": "PEA 켜짐"
+    },
+    "usage": {
+      "aria": "대화 비용",
+      "label": "{{cost}} · {{tokens}} 토큰",
+      "tokensOnly": "{{tokens}} 토큰",
+      "detail": "이 대화: 입력 {{input}} 토큰(캐시 읽기 {{cacheRead}}, 캐시 쓰기 {{cacheWrite}}), 출력 {{output}}, 답변 {{runs}}개.",
+      "unpriced": "가격을 알 수 없는 모델의 답변(비용에 미포함): {{count}}개."
     }
   },
   "runDetail": {

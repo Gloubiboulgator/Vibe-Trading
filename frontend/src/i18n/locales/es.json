@@ -1336,6 +1336,13 @@
       "on": "Modo PEA activado: el agente solo propone valores aptos para el PEA y prefiere las cotizaciones en euros. Pulsa para desactivarlo.",
       "off": "Activar el modo PEA: el agente solo propondrá valores aptos para el PEA (empresas de la UE/EEE, ETF aptos).",
       "labelOn": "PEA activado"
+    },
+    "usage": {
+      "aria": "Coste de la conversación",
+      "label": "{{cost}} · {{tokens}} tokens",
+      "tokensOnly": "{{tokens}} tokens",
+      "detail": "Esta conversación: {{input}} tokens de entrada ({{cacheRead}} leídos de la caché, {{cacheWrite}} escritos en ella), {{output}} de salida, en {{runs}} respuestas.",
+      "unpriced": "Respuestas de un modelo sin precio conocido, fuera del coste: {{count}}."
     }
   },
   "runDetail": {

@@ -1324,6 +1324,13 @@
       "on": "PEA 模式已开启：智能体只推荐符合 PEA 条件的证券，并优先选择欧元上市。点击关闭。",
       "off": "开启 PEA 模式：智能体只推荐符合 PEA 条件的证券（欧盟/欧洲经济区公司、合格 ETF）。",
       "labelOn": "PEA 已开启"
+    },
+    "usage": {
+      "aria": "对话费用",
+      "label": "{{cost}} · {{tokens}} tokens",
+      "tokensOnly": "{{tokens}} tokens",
+      "detail": "本对话：输入 {{input}} tokens（其中缓存读取 {{cacheRead}}，缓存写入 {{cacheWrite}}），输出 {{output}}，共 {{runs}} 次回答。",
+      "unpriced": "未计入费用的回答（模型无已知价格）：{{count}}。"
     }
   },
   "runDetail": {

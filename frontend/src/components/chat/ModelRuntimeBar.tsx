@@ -1,7 +1,8 @@
 import { useEffect, useId, useState } from "react";
-import { ChevronDown, Cpu, RotateCcw } from "lucide-react";
+import { ChevronDown, Coins, Cpu, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { LLMProviderOption, LLMSettings, RunLLMSelection } from "@/lib/api";
+import type { LLMProviderOption, LLMSettings, RunLLMSelection, SessionUsage } from "@/lib/api";
+import { formatCompact, formatCurrency } from "@/lib/formatters";
 import { effortLabelKey } from "@/lib/reasoningEffort";
 import { ModelPicker } from "@/components/settings/ModelPicker";
 
@@ -18,6 +19,37 @@ interface Props {
   running?: boolean;
   /** Live model ids for a provider, loaded when the picker opens on it. */
   loadModels?: (provider: string) => Promise<string[]>;
+  /** What this conversation has used so far; hidden until a run reported tokens. */
+  usage?: SessionUsage | null;
+}
+
+/** Cost and tokens of the conversation, with the breakdown in the tooltip. */
+function UsageChip({ usage }: { usage: SessionUsage }) {
+  const { t } = useTranslation();
+  const tokens = formatCompact(usage.total_tokens);
+  const label = usage.cost_usd == null
+    ? t("agent.usage.tokensOnly", { tokens })
+    : t("agent.usage.label", { cost: formatCurrency(usage.cost_usd, "USD", 2), tokens });
+  const detail = [
+    t("agent.usage.detail", {
+      input: formatCompact(usage.input_tokens),
+      cacheRead: formatCompact(usage.cache_read_tokens),
+      cacheWrite: formatCompact(usage.cache_creation_tokens),
+      output: formatCompact(usage.output_tokens),
+      runs: usage.runs,
+    }),
+    usage.unpriced_runs ? t("agent.usage.unpriced", { count: usage.unpriced_runs }) : "",
+  ].filter(Boolean).join(" ");
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground tabular-nums"
+      title={detail}
+      aria-label={`${t("agent.usage.aria")} : ${label}. ${detail}`}
+    >
+      <Coins className="h-3 w-3" aria-hidden="true" />
+      <span className="truncate">{label}</span>
+    </span>
+  );
 }
 
 /** Providers a run may switch to: saved API key, plus the saved provider itself. */
@@ -57,6 +89,7 @@ export function ModelRuntimeBar({
   onSelectionChange,
   running = false,
   loadModels,
+  usage = null,
 }: Props) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -153,7 +186,12 @@ export function ModelRuntimeBar({
             <ChevronDown className={`h-3 w-3 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
           </button>
         ) : summary}
-        <span className="ml-auto inline-flex shrink-0 max-sm:hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground">
+        {usage && usage.total_tokens > 0 && (
+          <span className="ml-auto inline-flex shrink-0">
+            <UsageChip usage={usage} />
+          </span>
+        )}
+        <span className={`${usage && usage.total_tokens > 0 ? "" : "ml-auto "}inline-flex shrink-0 max-sm:hidden items-center gap-1.5 rounded-full border border-border/70 bg-muted/35 px-2 py-0.5 text-[10px] text-muted-foreground`}>
           <Cpu className="h-3 w-3" aria-hidden="true" />
           <span className="truncate">{t("agent.reasoningStrength")}: {effortLabel}</span>
         </span>

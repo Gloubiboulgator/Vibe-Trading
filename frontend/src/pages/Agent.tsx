@@ -12,7 +12,7 @@ import {
 } from "@/stores/agent";
 import { useSSE } from "@/hooks/useSSE";
 import { useLlmUsageCounter } from "@/hooks/useLlmUsageCounter";
-import { ApiError, AUTH_REQUIRED_MESSAGE, api, isAuthRequiredError, type GoalSnapshot, type MandateProposal, type MandateCommitted, type ScheduledResearchProposal, type LiveAction, type LiveHalted, type LLMSettings, type RunLLMSelection, type RunPreview } from "@/lib/api";
+import { ApiError, AUTH_REQUIRED_MESSAGE, api, isAuthRequiredError, type GoalSnapshot, type MandateProposal, type MandateCommitted, type ScheduledResearchProposal, type LiveAction, type LiveHalted, type LLMSettings, type RunLLMSelection, type RunPreview, type SessionUsage } from "@/lib/api";
 import { safeGet, safeRemove, safeSet } from "@/lib/storage";
 import {
   extractUploadedAttachments,
@@ -335,6 +335,31 @@ export function Agent() {
   const swarmRuns = useAgentStore(s => s.swarmRuns);
   const sessionLoading = useAgentStore(s => s.sessionLoading);
   const previousStatusRef = useRef(status);
+  const [sessionUsage, setSessionUsage] = useState<SessionUsage | null>(null);
+
+  // The conversation's cost: fetched on opening it and when a run ends, and
+  // every few seconds while one runs, since each model call adds to it.
+  useEffect(() => {
+    setSessionUsage(null);
+  }, [sessionId]);
+  useEffect(() => {
+    if (!sessionId) return;
+    let cancelled = false;
+    const load = () => {
+      // Started inside a promise so any failure, even a synchronous one,
+      // only leaves the bar without a cost: it never breaks the chat.
+      Promise.resolve()
+        .then(() => api.getSessionUsage(sessionId))
+        .then((usage) => { if (!cancelled) setSessionUsage(usage); })
+        .catch(() => { /* the bar simply keeps its last value */ });
+    };
+    load();
+    const timer = status === "streaming" ? window.setInterval(load, 10_000) : undefined;
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, [sessionId, status]);
 
   const { connect, disconnect, onStatusChange } = useSSE();
 
@@ -1874,6 +1899,7 @@ export function Agent() {
         onSelectionChange={setRunLlm}
         running={status === "streaming"}
         loadModels={loadProviderModels}
+        usage={sessionUsage}
       />
       {historyError && (
         <div role="alert" className="flex flex-wrap items-center gap-2 border-b border-warning/30 bg-warning/10 px-4 py-2 text-xs">
