@@ -863,7 +863,10 @@ class _PolicyMixin:
                     )
                 elif _additive_formula(declaration.note) is not None:
                     pending_totals.append((figure, declaration, found))
-                elif all(issue.get("reason") == "operand_not_observed" for issue in found):
+                elif all(
+                    issue.get("reason") in ("operand_not_observed", "formula_not_anchored")
+                    for issue in found
+                ):
                     pending_chained.append(
                         (figure, declaration, symbol, records, tuple(scalar_parameters), found)
                     )
@@ -907,7 +910,8 @@ class _PolicyMixin:
         removed. It was refused as unobserved, with advice to fetch data that
         did not exist (2026-11-11). An operand matches a verified figure as the
         answer wrote it or as its formula evaluates; the formula still needs an
-        observed operand of its own and must reach the stated result. Chains
+        operand that is observed or itself a verified line, and must reach
+        the stated result. Chains
         resolve in any order; what never resolves keeps its original issue.
         """
         issues: list[dict[str, Any]] = []
@@ -923,10 +927,19 @@ class _PolicyMixin:
             )
             for item in list(pending):
                 figure, declaration, symbol, records, parameters, _ = item
-                found = GROUNDING_CHECKS.run(
-                    "figure-derived", self, figure, declaration, symbol, records,
-                    parameters + chained,
-                )
+                # "16,9 × 4" (a quarter annualized) or "281 / 67,7": every data
+                # operand is a verified line of this answer, so the formula is
+                # anchored one step removed, as its operands are. Both were
+                # refused as unanchored and the whole valuation table fell to
+                # the fallback (2026-11-13).
+                self._chain_anchors = chained
+                try:
+                    found = GROUNDING_CHECKS.run(
+                        "figure-derived", self, figure, declaration, symbol, records,
+                        parameters + chained,
+                    )
+                finally:
+                    self._chain_anchors = ()
                 if not found:
                     evaluated = _formula_in_note(declaration.note)
                     verified.append((figure, evaluated[0] if evaluated is not None else figure.value))
@@ -2679,7 +2692,12 @@ class _PolicyMixin:
         def observed(operand: float) -> bool:
             return _close_any(abs(operand), magnitudes)
 
-        if not any(observed(operand) for operand in operands):
+        chain_anchors = getattr(self, "_chain_anchors", ())
+        if not any(
+            observed(operand)
+            or any(math.isclose(abs(operand), abs(value), rel_tol=1e-4, abs_tol=0.006) for value in chain_anchors)
+            for operand in operands
+        ):
             return "no_symbol" if unattributed else "formula_not_anchored"
         # "100 − 35,67": the whole, for a percent share, is the unit itself.
         # Only as a term of its own: "125 / 100" still needs its 100 observed.

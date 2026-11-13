@@ -154,3 +154,66 @@ def test_an_annual_rate_over_a_fractional_horizon(tmp_path) -> None:
         "18,6 % | derived | (180 / 50)^(1/7,5) − 1 | read_url",
     )
     assert issues == []
+
+
+# A quarter annualized, then a multiple over it (2026-11-13): "16 × 4" has no
+# observed operand of its own, only a verified line and a count, and every
+# multiple divided by it was refused in turn; the table fell to the fallback.
+_QUARTERS = "Revenue was $30 billion for the first nine months and $14 billion for the first half."
+
+
+def _quarter_ledger(tmp_path: Path) -> GroundingLedger:
+    ledger = _ledger(tmp_path)
+    ledger.ingest_tool_result(
+        tool_name="read_url",
+        arguments={"url": "https://ipo.example.com/quarters"},
+        result=json.dumps({"status": "ok", "url": "https://ipo.example.com/quarters", "content": _QUARTERS}),
+        call_id="read_url-2",
+        success=True,
+    )
+    return ledger
+
+
+_CHAIN = (
+    "30 | observed | revenu 9 mois | read_url",
+    "14 | observed | revenu semestre | read_url",
+    "16 | derived | 30 − 14 | read_url",
+    "4 | count | trimestres par an",
+    "64 | derived | 16 × 4 | read_url",
+    "12345678901 | observed | actions | read_url",
+    "60 | observed | prix bas | read_url",
+    "741 | derived | 12,345,678,901 × 60 / 1e9 | read_url",
+)
+
+
+def test_a_derivation_over_verified_lines_only_is_anchored(tmp_path) -> None:
+    issues = _issues(
+        _quarter_ledger(tmp_path),
+        "Le dernier trimestre a rapporté 16 Md$ (30 − 14), soit 64 Md$ sur 4 trimestres. "
+        "À 60 $, les 12 345 678 901 actions valent 741 Md$, soit 11,6 fois ce rythme.",
+        *_CHAIN,
+        "11,6 | derived | 741 / 64 | read_url",
+    )
+    assert issues == []
+
+
+def test_a_wrong_result_over_verified_lines_is_still_refused(tmp_path) -> None:
+    issues = _issues(
+        _quarter_ledger(tmp_path),
+        "Le dernier trimestre a rapporté 16 Md$ (30 − 14), soit 64 Md$ sur 4 trimestres. "
+        "À 60 $, les 12 345 678 901 actions valent 741 Md$, soit 13,2 fois ce rythme.",
+        *_CHAIN,
+        "13,2 | derived | 741 / 64 | read_url",
+    )
+    assert issues and all(issue.startswith("13,2:") for issue in issues)
+
+
+def test_a_verified_line_does_not_excuse_an_unobserved_operand(tmp_path) -> None:
+    issues = _issues(
+        _quarter_ledger(tmp_path),
+        "Le dernier trimestre a rapporté 16 Md$ (30 − 14), soit 64 Md$ sur 4 trimestres, "
+        "et 46 Md$ de marge sur 4 trimestres de 11,5 Md$.",
+        *_CHAIN,
+        "46 | derived | 11,5 × 4 | read_url",
+    )
+    assert any(issue.startswith("46:") for issue in issues)
