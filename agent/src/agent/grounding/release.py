@@ -196,38 +196,8 @@ class _ReleaseMixin:
             "[GROUNDING GATE] The previous draft was rejected and was not released to the user.",
             "Reply with the corrected answer only, in the user's language, written as the "
             "answer itself: do not mention this rejection, the check or the figures block.",
-            "Every figure below, exactly as you wrote it, with what you declared and what the evidence says:",
         ]
-        figures, others = [], []
-        for issue in validation.issues[:24]:
-            (figures if issue.get("value") is not None else others).append(issue)
-        lines.extend(f"- {_correction_line(issue)}" for issue in figures)
-        lines.extend(
-            f"- {issue.get('message', issue.get('code', 'grounding error'))}" for issue in others
-        )
-        omitted = len(validation.issues) - 24
-        if omitted > 0:
-            lines.append(
-                f"{omitted} additional findings are not shown in this bounded feedback. "
-                "Do not assume unlisted figures passed; check their declarations and evidence too."
-            )
-        if figures:
-            lines.extend(
-                [
-                    "Fix EVERY figure above in one of exactly three ways:",
-                    "  (1) DECLARE it with the role it really has, in the figures block;",
-                    "  (2) REWRITE it to a value this session's tools actually returned;",
-                    "  (3) REMOVE it from the answer.",
-                    "Restating a rejected value in another format is none of the three and fails again.",
-                ]
-            )
-            repeated = self._repeatedly_rejected(figures)
-            if repeated:
-                lines.append(
-                    "These value(s) have now been rejected across more than one draft: "
-                    + ", ".join(repeated)
-                    + ". Take option (2) or (3) for them."
-                )
+        lines.extend(self._figure_feedback(validation))
         passed = list(validation.passed_figures)
         if passed:
             shown = passed[:24]
@@ -299,6 +269,54 @@ class _ReleaseMixin:
             )
         return "\n".join(lines)
 
+    def _figure_feedback(self, validation: ValidationResult) -> list[str]:
+        """List every rejected figure and the three ways to fix it.
+
+        Shared by the correction and the recovery prompts: a recovery turn that
+        does not name the rejected figures gets the same draft back, with the
+        same undeclared figures (95% of them on the 2026-11 corpus).
+
+        Args:
+            validation: The rejected draft's validation result.
+
+        Returns:
+            The feedback lines, without the prompt's header.
+        """
+        lines = [
+            "Every figure below, exactly as you wrote it, with what you declared and what the evidence says:",
+        ]
+        figures, others = [], []
+        for issue in validation.issues[:24]:
+            (figures if issue.get("value") is not None else others).append(issue)
+        lines.extend(f"- {_correction_line(issue)}" for issue in figures)
+        lines.extend(
+            f"- {issue.get('message', issue.get('code', 'grounding error'))}" for issue in others
+        )
+        omitted = len(validation.issues) - 24
+        if omitted > 0:
+            lines.append(
+                f"{omitted} additional findings are not shown in this bounded feedback. "
+                "Do not assume unlisted figures passed; check their declarations and evidence too."
+            )
+        if figures:
+            lines.extend(
+                [
+                    "Fix EVERY figure above in one of exactly three ways:",
+                    "  (1) DECLARE it with the role it really has, in the figures block;",
+                    "  (2) REWRITE it to a value this session's tools actually returned;",
+                    "  (3) REMOVE it from the answer.",
+                    "Restating a rejected value in another format is none of the three and fails again.",
+                ]
+            )
+            repeated = self._repeatedly_rejected(figures)
+            if repeated:
+                lines.append(
+                    "These value(s) have now been rejected across more than one draft: "
+                    + ", ".join(repeated)
+                    + ". Take option (2) or (3) for them."
+                )
+        return lines
+
     def _repeatedly_rejected(self, issues: Sequence[dict[str, Any]]) -> list[str]:
         """Figures in this draft that an earlier draft was already refused for.
 
@@ -366,9 +384,14 @@ class _ReleaseMixin:
             self._price_evidence_attempts += 1
 
     def recovery_prompt(self, action: str, validation: ValidationResult) -> str:
-        """Build an executable next-step message for one bounded recovery turn."""
+        """Build an executable next-step message for one bounded recovery turn.
+
+        The fetch only answers the price claims; every other rejected figure is
+        listed too, so the draft written after the fetch fixes them as well
+        instead of coming back unchanged.
+        """
         if action == _RESOLVER_TOOL:
-            return (
+            step = (
                 "[GROUNDING RECOVERY] Instrument identity is not yet locked and is "
                 "recoverable with read-only tools. Call `search_symbol` for the candidate "
                 "name in a separate assistant tool-call turn, lock and reuse the exact "
@@ -376,8 +399,8 @@ class _ReleaseMixin:
                 "Do NOT ask the user to confirm or continue while this read-only recovery "
                 "remains available, and do NOT finalize yet."
             )
-        if action == "get_market_data":
-            return (
+        elif action == "get_market_data":
+            step = (
                 "[GROUNDING RECOVERY] Identity is locked but price evidence is missing. "
                 "Call `get_market_data` for the locked canonical symbol and venue in a "
                 "separate tool-call turn and use its existing bounded provider fallback, "
@@ -385,7 +408,14 @@ class _ReleaseMixin:
                 "confirm or continue while this read-only recovery remains available, and "
                 "do NOT finalize yet."
             )
-        return self.correction_prompt(validation)
+        else:
+            return self.correction_prompt(validation)
+        if not any(issue.get("value") is not None for issue in validation.issues):
+            return step
+        return "\n".join(
+            [step, "The answer you write after that fetch must also fix the rejected draft's figures."]
+            + self._figure_feedback(validation)
+        )
 
     def safe_fallback(self) -> str:
         """Return a deterministic fail-closed answer after repeated rejection."""

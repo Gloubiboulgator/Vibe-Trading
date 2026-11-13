@@ -19,6 +19,7 @@ from unittest.mock import patch
 import pytest
 
 from src.agent.grounding import GroundingLedger
+from src.agent.grounding.policies import ValidationResult
 from src.agent.grounding.release import (
     MAX_GROUNDING_RECOVERY_ROUNDS,
     MAX_PRICE_EVIDENCE_ATTEMPTS,
@@ -309,6 +310,36 @@ class TestRecoveryPrompts:
 
         assert "search_symbol" in prompt
         assert "Do NOT ask the user to confirm or continue" in prompt
+
+    def test_price_recovery_lists_the_other_rejected_figures(self, tmp_path: Path) -> None:
+        # Invented values. A recovery turn that named no figure got the same
+        # draft back, undeclared figures included, three rounds in a row.
+        ledger = _ledger(tmp_path, message="Analyse ZZZ.US")
+        validation = ValidationResult(
+            valid=False,
+            issues=[
+                {"code": "numeric_claim_unavailable", "reason": "no_evidence", "value": "12.34", "symbol": "ZZZ.US"},
+                {"code": "figure_undeclared", "reason": "undeclared", "value": "2.5x"},
+                {"code": "numeric_claim_conflict", "reason": "citation_not_visible", "value": "7.1%", "role": "cited"},
+            ],
+        )
+
+        prompt = ledger.recovery_prompt("get_market_data", validation)
+
+        assert prompt.startswith("[GROUNDING RECOVERY]")
+        assert "- 2.5x | not declared | it is not declared at all" in prompt
+        assert "- 7.1% | declared cited | its source is not named on the figure's own line" in prompt
+        assert "Fix EVERY figure above in one of exactly three ways:" in prompt
+        assert "do NOT finalize yet" in prompt
+
+    def test_recovery_without_figures_stays_the_bare_step(self, tmp_path: Path) -> None:
+        ledger = _ledger(tmp_path)
+        validation = ValidationResult(valid=False, issues=[{"code": "identity_unresolved", "message": "x"}])
+
+        prompt = ledger.recovery_prompt("search_symbol", validation)
+
+        assert "Every figure below" not in prompt
+        assert "\n" not in prompt
 
     def test_recovery_summary_reflects_budget_state(self, tmp_path: Path) -> None:
         ledger = _ledger(tmp_path)
