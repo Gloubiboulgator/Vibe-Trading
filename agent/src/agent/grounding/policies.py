@@ -864,7 +864,7 @@ class _PolicyMixin:
                 elif _additive_formula(declaration.note) is not None:
                     pending_totals.append((figure, declaration, found))
                 elif all(
-                    issue.get("reason") in ("operand_not_observed", "formula_not_anchored")
+                    issue.get("reason") in ("operand_not_observed", "formula_not_anchored", "no_symbol")
                     for issue in found
                 ):
                     pending_chained.append(
@@ -2681,7 +2681,10 @@ class _PolicyMixin:
             )
             if not money and not unattributed:
                 anchors.extend(scoped[1])
-        if not anchors:
+        chain_anchors = getattr(self, "_chain_anchors", ())
+        # "70,5 / 0,25" after a multi-instrument search: no instrument to
+        # anchor on, but 70,5 is a verified line of this answer (2026-11-13).
+        if not anchors and not chain_anchors:
             return "no_symbol" if unattributed else "no_evidence"
 
         # A formula's constants are parsed unsigned ("−0.2099 − (−0.2158)"
@@ -2692,7 +2695,6 @@ class _PolicyMixin:
         def observed(operand: float) -> bool:
             return _close_any(abs(operand), magnitudes)
 
-        chain_anchors = getattr(self, "_chain_anchors", ())
         if not any(
             observed(operand)
             or any(math.isclose(abs(operand), abs(value), rel_tol=1e-4, abs_tol=0.006) for value in chain_anchors)

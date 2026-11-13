@@ -1164,3 +1164,24 @@ def test_a_worded_cell_still_checks_an_integer_price_in_the_thousands(tmp_path: 
     assert invented.valid is False
     assert observed.valid is True, observed.issues
     assert horizon.valid is True, horizon.issues
+
+
+def test_an_unattributed_chain_anchors_on_a_verified_line(tmp_path: Path) -> None:
+    """"70,5 / 0,25" after a two-instrument search (2026-11-13).
+
+    No instrument anchors the formula, but its data operand is a line of the
+    same answer that passed its own check. A coincidental value does not.
+    """
+    ledger = _ledger(tmp_path, MARKET_A, MARKET_B, message=f"对比 {A} 和 {B}")
+    lines = (ROW_B, f"15.00 | derived | 1410.00 − 1395.00, {B} | c2", "0.2 | count | margin")
+    chained = ledger.validate_final_answer(
+        TWO + f"{B} 收盘 1410.00 元，振幅 15.00 元。\n\n{A} 与 {B} 合计：margin 0.2，得 75.00。"
+        + _block(*lines, "75.00 | derived | 15.00 / 0.2 |")
+    )
+    loose = ledger.validate_final_answer(
+        TWO + f"{B} 收盘 1410.00 元，振幅 15.00 元。\n\n{A} 与 {B} 合计：margin 0.2，得 80.00。"
+        + _block(*lines, "80.00 | derived | 16.00 / 0.2 |")
+    )
+
+    assert chained.valid is True, chained.issues
+    assert loose.valid is False

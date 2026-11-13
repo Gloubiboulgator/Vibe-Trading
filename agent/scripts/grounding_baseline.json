@@ -933,6 +933,31 @@
    ]
   },
   {
+   "session": "69b6db51c4bc",
+   "attempt": "d53a883c8f8b",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 4,
+      "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
    "session": "805e36777c66",
    "attempt": "7b04e5395db5",
    "outcome": "passed",
