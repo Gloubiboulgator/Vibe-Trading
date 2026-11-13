@@ -556,6 +556,21 @@ def fetch_market_data(
     return results
 
 
+def _every_source_had_no_bars(diagnostics: dict, unresolved: list) -> bool:
+    """Whether at least two sources answered, and all with ``no_data``.
+
+    A failed or unavailable source leaves another one worth trying; two
+    sources that both answered "no bars" say the window holds none.
+    """
+    for code in unresolved:
+        attempts = (diagnostics.get(code) or {}).get("attempts") or []
+        if len({item.get("source") for item in attempts}) < 2:
+            return False
+        if any(item.get("reason") != "no_data" for item in attempts):
+            return False
+    return bool(unresolved)
+
+
 def fetch_market_data_json(**kwargs: Any) -> str:
     """Fetch market data and return strict JSON.
 
@@ -575,8 +590,16 @@ def fetch_market_data_json(**kwargs: Any) -> str:
             "error": (
                 f"No data returned for any requested symbol: {', '.join(map(str, unresolved))} "
                 f"({kwargs.get('start_date')}..{kwargs.get('end_date')}, "
-                f"source={kwargs.get('source', 'auto')}). Check the symbol suffix and the date "
-                "range or try another source. Read _diagnostics for attempted sources and recovery steps."
+                f"source={kwargs.get('source', 'auto')}). "
+                + (
+                    "Every source tried answered with no bars for this range, so another "
+                    "source will not help: the instrument may not trade in this window "
+                    "(not yet listed, delisted or suspended). Check the symbol and the date "
+                    "range instead. "
+                    if _every_source_had_no_bars(payload.get("_diagnostics") or {}, unresolved)
+                    else "Check the symbol suffix and the date range or try another source. "
+                )
+                + "Read _diagnostics for attempted sources and recovery steps."
             ),
             **payload,
         }

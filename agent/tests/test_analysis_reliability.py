@@ -291,3 +291,29 @@ def test_empty_after_resampling_does_not_stop_fallback(monkeypatch):
         loader_resolver=lambda name: Primary if name == "yahoo" else Secondary, fallback_chain_provider=lambda _: ["yahoo", "stooq"])
     assert result["AAPL.US"]
     assert "_unresolved" not in result
+
+
+def test_no_bars_from_every_source_does_not_send_the_model_to_another_source():
+    """Every source answering "no bars" is an answer, not an outage.
+
+    The error said "try another source" here too, so the model retried the
+    same window source by source (finnhub, tiingo, yfinance) for a listing
+    that simply had no trades in it.
+    """
+    class Empty:
+        def fetch(self, *_args, **_kw):
+            return {}
+    output = json.loads(fetch_market_data_json(codes=["NEWCO.US"], start_date="2026-01-01", end_date="2026-01-12",
+        loader_resolver=lambda _: Empty, fallback_chain_provider=lambda _: ["yahoo", "stooq"]))
+    assert output["error_code"] == "no_market_data"
+    assert "try another source" not in output["error"]
+    assert "another source will not help" in output["error"]
+
+
+def test_a_failed_source_still_suggests_another_one():
+    class Broken:
+        def fetch(self, *_args, **_kw):
+            raise RuntimeError("down")
+    output = json.loads(fetch_market_data_json(codes=["NEWCO.US"], start_date="2026-01-01", end_date="2026-01-12",
+        loader_resolver=lambda _: Broken, fallback_chain_provider=lambda _: ["yahoo", "stooq"]))
+    assert "try another source" in output["error"]
