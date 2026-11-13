@@ -696,6 +696,49 @@ class TestTickerNameQueryYahooSkip:
         search.assert_called_once()
         assert data["sources"]["yahoo"] == "ok"
 
+    @pytest.mark.parametrize(
+        "query", ["FAKQ Fakeco valuation 2026", "Fakeco FAKQ Otherco OTHQ"]
+    )
+    def test_empty_keyword_query_says_to_search_one_instrument(self, query):
+        """An empty answer to a keyword string must say what to search instead.
+
+        The model packed tickers, names and topic words into one query, got
+        ``count: 0`` with nothing else, and retried with another keyword
+        string, up to six times in a row.
+        """
+        with patch.object(
+            ss.eastmoney_client,
+            "get_json",
+            return_value={"QuotationCodeTable": {"Data": []}},
+        ), patch.object(ss.yahoo_client, "search", return_value=[]):
+            data = json.loads(ss.SymbolSearchTool().execute(query=query))["data"]
+
+        assert data["count"] == 0
+        assert "one company name or one ticker" in data["hint"]
+        assert "web_search" in data["hint"]
+
+    def test_empty_single_token_query_says_not_listed(self):
+        with patch.object(
+            ss.eastmoney_client,
+            "get_json",
+            return_value={"QuotationCodeTable": {"Data": []}},
+        ), patch.object(ss.yahoo_client, "search", return_value=[]):
+            data = json.loads(ss.SymbolSearchTool().execute(query="Fakeco"))["data"]
+
+        assert "one company name or one ticker" not in data["hint"]
+        assert "web_search" in data["hint"]
+
+    def test_a_match_carries_no_hint(self):
+        with patch.object(
+            ss.eastmoney_client, "get_json", return_value=_eastmoney_payload()
+        ), patch.object(ss.yahoo_client, "search", return_value=[]), patch.object(
+            ss.sec_edgar_client, "cik_for", return_value=None
+        ):
+            data = json.loads(ss.SymbolSearchTool().execute(query="AAPL"))["data"]
+
+        assert data["count"] > 0
+        assert "hint" not in data
+
 
 class TestCryptoPairWithoutABrokerConnection:
     """Resolving an exchange pair must not require a broker account.

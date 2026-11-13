@@ -267,7 +267,8 @@ class SymbolSearchTool(BaseTool):
             A JSON envelope string. On success:
             ``{"ok": true, "market": "multi", "source": "symbol_search",
             "data": {"query": str, "count": int, "candidates": [...],
-            "sources": {<name>: "ok"|<error>}}}``. On failure (only when the
+            "sources": {<name>: "ok"|<error>}}}``, plus ``data.hint`` when
+            nothing matched. On failure (only when the
             query itself is invalid):
             ``{"ok": false, "error": str}``.
         """
@@ -424,20 +425,40 @@ class SymbolSearchTool(BaseTool):
             del sources["sec_edgar"]
         merged = merged[:limit]
 
+        data: Dict[str, Any] = {
+            "query": query,
+            "count": len(merged),
+            "candidates": merged,
+            "sources": sources,
+        }
+        if not merged:
+            data["hint"] = _empty_result_hint(query)
         return json.dumps(
-            {
-                "ok": True,
-                "market": "multi",
-                "source": "symbol_search",
-                "data": {
-                    "query": query,
-                    "count": len(merged),
-                    "candidates": merged,
-                    "sources": sources,
-                },
-            },
+            {"ok": True, "market": "multi", "source": "symbol_search", "data": data},
             ensure_ascii=False,
         )
+
+
+def _empty_result_hint(query: str) -> str:
+    """Tell the model what to do after a search that matched nothing.
+
+    A bare ``count: 0`` sent the model into chains of keyword strings
+    (tickers, names, a year, a theme) that no provider can match, up to six
+    in a row for one company.
+    """
+    if len(query.split()) > 1:
+        return (
+            "No listed instrument matched. search_symbol takes one company name "
+            "or one ticker per call: a string of several names, tickers or topic "
+            "words matches nothing. Search each instrument on its own. If the "
+            "company is not publicly listed, stop searching symbols and use "
+            "web_search instead."
+        )
+    return (
+        "No listed instrument matched this name or ticker. Try its other "
+        "spelling once (full legal name, or ticker); if that also matches "
+        "nothing, treat it as not listed and use web_search instead."
+    )
 
 
 def _clamp_limit(value: Any) -> int:
