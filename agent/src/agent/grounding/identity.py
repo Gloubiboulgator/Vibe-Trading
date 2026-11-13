@@ -577,7 +577,10 @@ class _IdentityMixin:
             hints = [
                 hint
                 for symbol in mismatched
-                for hint in self._venue_mismatch_hints(symbol, authorized)
+                for hint in (
+                    self._venue_mismatch_hints(symbol, authorized)
+                    or self._unlocked_symbol_hints(symbol)
+                )
             ]
             if hints:
                 message += " " + " ".join(hints)
@@ -629,6 +632,39 @@ class _IdentityMixin:
                 f"({', '.join(matches)}); use the full venue-suffixed symbol.]"
             ]
         return []
+
+    def _unlocked_symbol_hints(self, requested_symbol: str) -> list[str]:
+        """Name the resolution that would lock a venue-suffixed symbol.
+
+        The model most often lands here by taking the first row of a shortlist
+        that stayed ambiguous. Told only that its symbol "differs from the
+        locked resolver identity", it tended to drop the instrument rather than
+        resolve it. Searching the exact symbol locks that one listing.
+        """
+        requested = _normalize_symbol(requested_symbol)
+        if "." not in requested:
+            return []
+        shortlists = sorted(
+            record.query
+            for record in self._identities.values()
+            if record.status == "ambiguous"
+            and any(
+                _normalize_symbol(candidate.get("symbol")) == requested
+                for candidate in record.candidates
+            )
+        )
+        if shortlists:
+            return [
+                f"[{requested_symbol} is one candidate of the unresolved shortlist "
+                f"for '{shortlists[0]}', not a locked identity; call "
+                f"search_symbol('{requested_symbol}') in a separate turn to lock "
+                f"that listing before querying it.]"
+            ]
+        return [
+            f"[{requested_symbol} was never resolved; call "
+            f"search_symbol('{requested_symbol}') in a separate turn before "
+            f"querying it.]"
+        ]
 
     @staticmethod
     def _match_authorized_symbol(

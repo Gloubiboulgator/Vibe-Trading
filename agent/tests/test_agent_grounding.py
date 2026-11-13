@@ -3620,3 +3620,87 @@ def test_a_currency_written_the_usual_way_counts_as_named(
     result = _declared_currency_ledger(tmp_path, symbol, None).validate_final_answer(answer)
 
     assert result.valid is True, result.issues
+
+
+def test_identity_mismatch_names_the_search_that_locks_the_symbol(
+    tmp_path: Path,
+) -> None:
+    """A blocked symbol must say which search_symbol call would lock it.
+
+    The model took the first row of a shortlist that stayed ambiguous and was
+    told only that its symbol "differs from the locked resolver identity". With
+    no next step named, it often gave up on that instrument instead of
+    resolving it.
+    """
+    ledger = GroundingLedger(run_dir=tmp_path, user_message="compare two widget makers")
+    _resolve_candidate(ledger, "FAKE.US", "Fakeco", "lock")
+    ledger.authorize_tool_call(
+        "search_symbol",
+        {"query": "widget makers"},
+        batch_authorized_symbols=ledger.authorized_symbols,
+        call_id="shortlist",
+    )
+    ledger.ingest_tool_result(
+        tool_name="search_symbol",
+        arguments={"query": "widget makers"},
+        result=_resolver_payload(
+            query="widget makers",
+            candidates=[
+                {"symbol": "WDGA.PA", "name": "Alpha Widgets SA", "market": "eu", "source": "yahoo"},
+                {"symbol": "WDGB.US", "name": "Beta Widgets Inc", "market": "us", "source": "yahoo"},
+            ],
+        ),
+        call_id="shortlist",
+        success=True,
+    )
+    statuses = {record["query"]: record["status"] for record in ledger.identity_summary()["records"]}
+    assert statuses["widget makers"] == "ambiguous"
+
+    shortlisted = ledger.authorize_tool_call(
+        "get_market_data",
+        {"codes": ["WDGA.PA"]},
+        batch_authorized_symbols=ledger.authorized_symbols,
+        call_id="prices",
+        batch_identity_status="locked",
+    )
+    assert shortlisted.error_code == "identity_mismatch"
+    assert "search_symbol('WDGA.PA')" in shortlisted.message
+    assert "'widget makers'" in shortlisted.message
+
+    unseen = ledger.authorize_tool_call(
+        "get_market_data",
+        {"codes": ["ZZQ.DE"]},
+        batch_authorized_symbols=ledger.authorized_symbols,
+        call_id="prices-2",
+        batch_identity_status="locked",
+    )
+    assert unseen.error_code == "identity_mismatch"
+    assert "search_symbol('ZZQ.DE')" in unseen.message
+
+    # The search the hint names does lock that listing.
+    ledger.authorize_tool_call(
+        "search_symbol",
+        {"query": "WDGA.PA"},
+        batch_authorized_symbols=ledger.authorized_symbols,
+        call_id="exact",
+    )
+    ledger.ingest_tool_result(
+        tool_name="search_symbol",
+        arguments={"query": "WDGA.PA"},
+        result=_resolver_payload(
+            query="WDGA.PA",
+            candidates=[
+                {"symbol": "WDGA.PA", "name": "Alpha Widgets SA", "market": "eu", "source": "yahoo"},
+                {"symbol": "WDGA.DE", "name": "Alpha Widgets SA", "market": "eu", "source": "yahoo"},
+            ],
+        ),
+        call_id="exact",
+        success=True,
+    )
+    retried = ledger.authorize_tool_call(
+        "get_market_data",
+        {"codes": ["WDGA.PA"]},
+        batch_authorized_symbols=ledger.authorized_symbols,
+        call_id="prices-3",
+    )
+    assert retried.allowed is True
