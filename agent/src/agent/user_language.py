@@ -17,6 +17,10 @@ FRENCH_WORDS = frozenset(
         "je", "j'ai", "j’ai", "les", "des", "est", "une", "pour", "mon", "mes",
         "avec", "dans", "veux", "vous", "nous", "c'est", "c’est", "quelles", "quel",
         "moi", "suis", "sur", "aide", "acheter", "actions", "euros", "maintenant",
+        # "L'entreprise est-elle bien valorisée ?" counted only "est" and the
+        # grounding note came out in English (2026-11-13).
+        "elle", "elles", "ils", "du", "cette", "comment", "combien", "pourquoi",
+        "entreprise", "l'entreprise", "l’entreprise", "société", "valorisée", "valorisé",
     }
 )
 

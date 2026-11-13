@@ -22,7 +22,11 @@ EN = "Build my portfolio with CW8.PA please"
 
 @pytest.mark.parametrize(
     ("text", "expected"),
-    [(FR, True), (EN, False), ("帮我分析 CW8.PA 的走势", False), ("", False), (None, False)],
+    [
+        (FR, True), ("L'entreprise est-elle bien valorisée ?", True),
+        ("Is the company fairly valued?", False), (EN, False),
+        ("帮我分析 CW8.PA 的走势", False), ("", False), (None, False),
+    ],
 )
 def test_writes_french(text, expected) -> None:
     assert writes_french(text) is expected
