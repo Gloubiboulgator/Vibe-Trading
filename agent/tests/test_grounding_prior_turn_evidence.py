@@ -149,3 +149,31 @@ def test_carried_closes_of_an_unnamed_instrument_ask_for_no_provenance(tmp_path)
         "+9,6 % | derived | 131,475 / 120 − 1 | read_url",
     )
     assert issues == []
+
+
+def test_the_release_note_names_no_earlier_turn_s_instrument(tmp_path) -> None:
+    """One wrong figure is cut, not the whole answer (2026-11-13).
+
+    The note listed the closes carried from earlier turns; the gate refused
+    those tickers as never handled this turn, and the answer fell to the
+    fallback.
+    """
+    ledger = GroundingLedger(
+        run_dir=tmp_path / "turn2", user_message="L'entreprise est-elle bien valorisée ?",
+        prior_evidence=_carried_closes("OLDCO.US", 5),
+    )
+    _read_page(ledger)
+    answer = (
+        f"{_FRENCH}Introduite à 120 USD, l'action a clôturé à 131,475 USD, soit +12 %.\n\n"
+        "```figures\n"
+        "120 | observed | prix d'introduction, USD | read_url\n"
+        "131,475 | observed | dernière clôture, USD | read_url\n"
+        "+12 % | derived | 131,475 / 120 − 1 | read_url\n"
+        "```\n"
+    )
+    validation = ledger.validate_final_answer(answer)
+    assert not validation.valid
+    released = ledger.redacted_release(answer, validation)
+    assert released is not None
+    assert "OLDCO" not in released
+    assert "masqué" in released

@@ -557,7 +557,19 @@ class _ReleaseMixin:
         Returns:
             One fact per symbol, or None when the run observed no price.
         """
-        price_records = self._price_records()
+        # Closes carried from earlier turns join only for an instrument this
+        # answer names, as in the provenance check: a valuation answer's note
+        # listed five earlier turns' tickers, the gate refused the note as
+        # symbols this turn never handled, and the answer fell to the
+        # fallback for one wrong percent (2026-11-13).
+        prior_calls = getattr(self, "_prior_calls", ())
+        text = (content or "").casefold()
+        price_records = [
+            record
+            for record in self._price_records()
+            if record.call_id not in prior_calls
+            or (record.symbol and record.symbol.casefold() in text)
+        ]
         if not price_records:
             return None
         by_symbol: dict[str, list[EvidenceRecord]] = {}

@@ -834,9 +834,9 @@
   {
    "session": "69b6db51c4bc",
    "attempt": "6dd1b309fbec",
-   "outcome": "fallback",
+   "outcome": "redacted",
    "passing_draft": null,
-   "figures_removed": 0,
+   "figures_removed": 5,
    "error": "",
    "drafts": [
     {
@@ -860,6 +860,75 @@
       "numeric_claim_conflict/not_in_referenced_call": 2,
       "numeric_claim_conflict/operand_not_observed": 1
      }
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "615b42cf3b26",
+   "outcome": "redacted",
+   "passing_draft": null,
+   "figures_removed": 1,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 2,
+      "numeric_claim_conflict/no_symbol": 3,
+      "numeric_claim_conflict/not_in_referenced_call": 2,
+      "numeric_claim_conflict/operand_not_observed": 4
+     }
+    },
+    {
+     "draft": 2,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/derivation_result_mismatch": 1
+     }
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "506f19b5caec",
+   "outcome": "passed",
+   "passing_draft": 1,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "3678de1df37e",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "numeric_claim_conflict/formula_not_evaluable": 2
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
     }
    ]
   },
@@ -1257,9 +1326,9 @@
   {
    "session": "bfe957b59903",
    "attempt": "48abd4d00fce",
-   "outcome": "fallback",
+   "outcome": "redacted",
    "passing_draft": null,
-   "figures_removed": 0,
+   "figures_removed": 1,
    "error": "",
    "drafts": [
     {
@@ -1403,9 +1472,9 @@
   {
    "session": "c31ec3e98602",
    "attempt": "9b164aec8ef6",
-   "outcome": "fallback",
+   "outcome": "redacted",
    "passing_draft": null,
-   "figures_removed": 0,
+   "figures_removed": 3,
    "error": "",
    "drafts": [
     {
