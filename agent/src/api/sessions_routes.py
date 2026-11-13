@@ -553,7 +553,9 @@ def register_sessions_routes(app: FastAPI) -> None:
             raise HTTPException(status_code=404, detail=f"Session {session_id} not found")
         from src.session.usage import session_usage
 
-        return session_usage(Path(svc.store.base_dir), session_id)
+        # Off the event loop: the files are read and OpenRouter's catalog may
+        # be fetched once a day.
+        return await asyncio.to_thread(session_usage, Path(svc.store.base_dir), session_id)
 
     # -----------------------------------------------------------------------
     # Goal sub-group routes
