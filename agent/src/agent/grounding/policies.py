@@ -1954,6 +1954,17 @@ class _PolicyMixin:
             candidates = [record for record in candidates if record.field != "indicator"]
         if column:
             candidates = [record for record in candidates if record.field == column]
+            if not candidates:
+                # The price records carry no volume; the market-data rows do.
+                # A "| 10 nov | … | 0,66 M |" cell found none (2026-11-14).
+                candidates = [
+                    record
+                    for record in getattr(self, "_evidence", ())
+                    if record.field == column
+                    and record.status == "observed"
+                    and record.tool in {"get_market_data", "bash"}
+                    and (not symbol or record.symbol == symbol)
+                ]
         if date:
             candidates = [
                 record
@@ -2440,6 +2451,17 @@ class _PolicyMixin:
                 )
             ]
         if self._matches_evidence(figure, direct, scaled, legacy_direct=True):
+            return []
+        if (
+            figure.column
+            and figure.date
+            and not figure.percent
+            and prices
+            and self._matches_evidence(figure, prices, [], referenced=True)
+        ):
+            # A cell under a field header on a dated row names one bar's
+            # value, so a correct rounding to its written digits is that
+            # value: 663 907 shares written "0,66 M" (2026-11-14).
             return []
         if tail_risk:
             return [
@@ -3059,7 +3081,10 @@ class _PolicyMixin:
         folded = line.casefold()
         if self._is_user_amount(figure, line):
             return []
-        if not any(token in folded for token in _note_tokens(declaration.note)):
+        tokens = _note_tokens(declaration.note)
+        if not any(token in folded for token in tokens) and not self._cited_visibly_elsewhere(
+            figure, tokens
+        ):
             return [
                 self._figure_issue(
                     "numeric_claim_conflict",
@@ -3072,6 +3097,31 @@ class _PolicyMixin:
                 )
             ]
         return []
+
+    def _cited_visibly_elsewhere(self, figure: Figure, tokens: set[str]) -> bool:
+        """Whether the answer already shows the same value beside its source.
+
+        "après une année de +17,8 %" repeats the "17,80 % | BlackRock" row of
+        the table above it; the reader has seen the source, and redacting the
+        repeat broke the sentence (2026-11-14).
+        """
+        if not tokens:
+            return False
+        lines = _lines_with_offsets(getattr(self, "_active_content", ""))
+        block = getattr(self, "_active_block", None)
+        spans = (block.spans or ((block.span,) if block.span else ())) if block else ()
+        for other in getattr(self, "_active_figures", ()) or ():
+            if other is figure or other.line == figure.line or bool(other.percent) != bool(figure.percent):
+                continue
+            if any(start <= other.start < end for start, end in spans):
+                continue  # the block's own row is stripped; the reader never sees it
+            if not _close(other.value * other.scale, figure.value * figure.scale):
+                continue
+            if 0 <= other.line < len(lines) and any(
+                token in lines[other.line][0].casefold() for token in tokens
+            ):
+                return True
+        return False
 
     def _is_user_amount(self, figure: Figure, line: str) -> bool:
         """Whether a cited figure is an amount the user wrote, or a share of one.

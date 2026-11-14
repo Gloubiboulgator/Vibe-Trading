@@ -1095,6 +1095,9 @@ class _IdentityMixin:
         that only relay a foreign listing (a digit-led Milan code, the German
         regional floors) last. A tie on the best venue stays ambiguous.
         """
+        by_isin = _IdentityMixin._isin_listing(query, candidates)
+        if by_isin is not None:
+            return by_isin
         exact = _IdentityMixin._exact_candidate(query, candidates)
         query_words = _name_words(query)
         if not query_words:
@@ -1139,6 +1142,41 @@ class _IdentityMixin:
         return top[0] if len(top) == 1 else None
 
     @staticmethod
+    def _isin_listing(
+        query: str,
+        candidates: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        """The primary listing among the lines an ISIN search returns.
+
+        An ISIN names one security, so every line found for it is that security
+        on some venue. Yahoo also answers a line whose ticker is the ISIN itself
+        (IE0002XZSHO1.SG, a Stuttgart relay of the WPEA ETF); matching the query
+        "exactly", it was locked over WPEA.PA, and every Paris call was then
+        refused (2026-11-14). Lines named differently stay out, and the best
+        euro venue must be unique; an ISIN-ticker line ranks last.
+        """
+        isin = query.strip().upper()
+        if not _ISIN_RE.fullmatch(isin):
+            return None
+        named = {
+            tuple(_name_words(str(candidate.get("name") or "")))
+            for candidate in candidates
+        }
+        if len(named) != 1 or not next(iter(named)):
+            return None
+
+        def rank(candidate: dict[str, Any]) -> int:
+            symbol = _normalize_symbol(candidate.get("symbol"))
+            if symbol.split(".", 1)[0] == isin:
+                return len(_EURO_VENUE_ORDER) + 2
+            return _euro_venue_rank(symbol)
+
+        ranks = [rank(candidate) for candidate in candidates]
+        best = min(ranks)
+        top = [candidate for candidate, value in zip(candidates, ranks) if value == best]
+        return top[0] if len(top) == 1 else None
+
+    @staticmethod
     def _choose_candidate(
         query: str,
         candidates: list[dict[str, Any]],
@@ -1156,6 +1194,9 @@ class _IdentityMixin:
         candidates = list(by_symbol.values())
         if len(candidates) == 1:
             return candidates[0]
+        by_isin = _IdentityMixin._isin_listing(query, candidates)
+        if by_isin is not None:
+            return by_isin
         normalized_query = re.sub(r"[^a-z0-9\u3400-\u9fff]", "", query.casefold())
         exact: list[dict[str, Any]] = []
         strong: list[dict[str, Any]] = []
@@ -1305,6 +1346,7 @@ _OTC_EXCHANGES = frozenset({"PNK", "OQX", "OQB", "OTC", "OEM", "OBB"})
 # Primary euro-area venues, Paris first for a PEA investor. Other euro
 # suffixes (German regional floors, Vienna's global market) rank after.
 _EURO_VENUE_ORDER = ("PA", "AS", "BR", "LS", "IR", "MI", "MC", "DE", "HE", "AT")
+_ISIN_RE = re.compile(r"[A-Z]{2}[A-Z0-9]{9}[0-9]")
 
 
 def _name_words(name: str) -> list[str]:

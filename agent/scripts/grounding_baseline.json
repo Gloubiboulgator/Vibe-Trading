@@ -262,6 +262,31 @@
    ]
   },
   {
+   "session": "3111e0144d14",
+   "attempt": "7fa32b1566dd",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 7,
+      "numeric_claim_conflict/not_in_referenced_call": 2
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
    "session": "41a1947cb39e",
    "attempt": "5bfc8d116745",
    "outcome": "passed",
@@ -423,7 +448,7 @@
    "attempt": "b3f334c1c15b",
    "outcome": "redacted",
    "passing_draft": null,
-   "figures_removed": 7,
+   "figures_removed": 2,
    "error": "",
    "drafts": [
     {
@@ -431,7 +456,7 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 3,
+      "numeric_claim_conflict/citation_not_visible": 1,
       "numeric_claim_conflict/operand_not_observed": 3
      }
     },
@@ -440,7 +465,6 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 4,
       "numeric_claim_conflict/operand_not_observed": 2
      }
     },
@@ -449,7 +473,7 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 3,
+      "numeric_claim_conflict/citation_not_visible": 1,
       "numeric_claim_conflict/operand_not_observed": 2
      }
     },
@@ -458,7 +482,7 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 4,
+      "numeric_claim_conflict/citation_not_visible": 1,
       "numeric_claim_conflict/operand_not_observed": 2
      }
     },
@@ -485,7 +509,7 @@
      "refusals": {
       "figure_undeclared/undeclared": 5,
       "numeric_claim_conflict/additive_operand_not_observed": 1,
-      "numeric_claim_conflict/citation_not_visible": 13,
+      "numeric_claim_conflict/citation_not_visible": 7,
       "numeric_claim_conflict/operand_not_observed": 4
      }
     },
@@ -561,7 +585,7 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 3
+      "numeric_claim_conflict/citation_not_visible": 1
      }
     },
     {
@@ -609,7 +633,6 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 1,
       "numeric_claim_conflict/formula_not_evaluable": 2,
       "numeric_claim_unavailable/no_evidence": 8
      }
@@ -657,7 +680,6 @@
      "valid": false,
      "repaired": false,
      "refusals": {
-      "numeric_claim_conflict/citation_not_visible": 1,
       "numeric_claim_conflict/formula_not_evaluable": 1
      }
     },
@@ -845,7 +867,6 @@
      "repaired": false,
      "refusals": {
       "figure_undeclared/undeclared": 1,
-      "numeric_claim_conflict/citation_not_visible": 1,
       "numeric_claim_conflict/formula_not_evaluable": 1,
       "numeric_claim_conflict/no_symbol": 2,
       "numeric_claim_unavailable/no_evidence": 3
@@ -947,6 +968,54 @@
      "refusals": {
       "figure_undeclared/undeclared": 4,
       "numeric_claim_conflict/not_in_referenced_call": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "96f2f5a98521",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 7
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
+   "session": "69b6db51c4bc",
+   "attempt": "50b35e92ae62",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 3
      }
     },
     {

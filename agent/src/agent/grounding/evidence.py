@@ -444,15 +444,59 @@ def _timestamp_matches_claim_date(timestamp: str, date_value: str) -> bool:
         return True
     match = _CLAIM_DATE_RE.match(claim)
     parts = stamp[:10].split("-")
-    if match is None or len(parts) != 3:
+    if len(parts) != 3:
         return False
     try:
         stamp_year, stamp_month, stamp_day = map(int, parts)
     except ValueError:
         return False
+    if match is None:
+        named = _named_month_date(claim)
+        if named is None:
+            return False
+        year, month, day = named
+        return (year is None or year == stamp_year) and (stamp_month, stamp_day) == (month, day)
     if match.group(1) is not None and stamp_year != int(match.group(1)):
         return False
     return (stamp_month, stamp_day) == (int(match.group(2)), int(match.group(3)))
+
+
+# Month words of a date cell: "10 nov", "13 novembre 2026", "Nov 10, 2026".
+# French table rows wrote "| 10 nov | 7,053 € |" and bound no trade date
+# (2026-11-14).
+_MONTH_WORDS = {
+    **dict.fromkeys(("jan", "janv", "janvier", "january"), 1),
+    **dict.fromkeys(("feb", "fév", "fev", "févr", "fevr", "février", "fevrier", "february"), 2),
+    **dict.fromkeys(("mar", "mars", "march"), 3),
+    **dict.fromkeys(("apr", "avr", "avril", "april"), 4),
+    **dict.fromkeys(("mai", "may"), 5),
+    **dict.fromkeys(("jun", "juin", "june"), 6),
+    **dict.fromkeys(("jul", "juil", "juillet", "july"), 7),
+    **dict.fromkeys(("aug", "août", "aout", "august"), 8),
+    **dict.fromkeys(("sep", "sept", "septembre", "september"), 9),
+    **dict.fromkeys(("oct", "octobre", "october"), 10),
+    **dict.fromkeys(("nov", "novembre", "november"), 11),
+    **dict.fromkeys(("dec", "déc", "décembre", "decembre", "december"), 12),
+}
+_DAY_MONTH_RE = re.compile(r"^(\d{1,2})(?:er)?\s+([^\W\d_]+)\.?(?:\s+((?:19|20)\d{2}))?$")
+_MONTH_DAY_RE = re.compile(r"^([^\W\d_]+)\.?\s+(\d{1,2})(?:,?\s+((?:19|20)\d{2}))?$")
+
+
+def _named_month_date(claim: str) -> tuple[int | None, int, int] | None:
+    """``(year or None, month, day)`` of a date written with a month word."""
+    text = " ".join(claim.casefold().split())
+    match = _DAY_MONTH_RE.match(text)
+    if match is not None:
+        day, word, year = match.groups()
+    else:
+        match = _MONTH_DAY_RE.match(text)
+        if match is None:
+            return None
+        word, day, year = match.groups()
+    month = _MONTH_WORDS.get(word)
+    if month is None or not 1 <= int(day) <= 31:
+        return None
+    return (int(year) if year else None), month, int(day)
 
 
 def _leaf_name(path: str) -> str:

@@ -62,7 +62,13 @@ _DATE_RE = re.compile(
     r"(?:19|20)\d{2}(?!\d|[.,]\d)"
     # A month and year ("175.61 (07/2018)"): its month read as a measured "07"
     # in a table of past drawdowns (2026-11-11).
-    r"|(?<![\d.,/])(?:0?[1-9]|1[0-2])/(?:19|20)\d{2}(?![\d/]|[.,]\d))"
+    r"|(?<![\d.,/])(?:0?[1-9]|1[0-2])/(?:19|20)\d{2}(?![\d/]|[.,]\d)"
+    # A month word and year ("175.61 (juillet 2018)"): its year sat under a
+    # "Plus haut" price column and read as a price (2026-11-14).
+    r"|(?i:(?<![^\W\d_])(?:janv(?:ier)?|f[ée]vr(?:ier)?|mars|avr(?:il)?|mai|juin|juil(?:let)?"
+    r"|ao[uû]t|sept(?:embre)?|oct(?:obre)?|nov(?:embre)?|d[ée]c(?:embre)?"
+    r"|jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
+    r"|sep(?:tember)?|october|november|december)\.?\s+(?:19|20)\d{2}(?!\d|[.,]\d)))"
     # A year-less MM-DD / MM/DD; see _short_date_is_structural.
     r"|(?P<short>(?<![\d.])(?:0[1-9]|1[0-2])[-/](?:0[1-9]|[12]\d|3[01])(?!\d|\.\d))"
     r"|(?<![\d.:])(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d+)?)?(?![\d:]|\.\d)"
@@ -387,6 +393,16 @@ _TABLE_FIELD_ALIASES = {
     "closing price": "close",
     "收盘": "close",
     "收盘价": "close",
+    # French headers: "| Date | Clôture | Volume |" bound nothing, so a
+    # correctly rounded "0,66 M" volume was checked against the whole session
+    # at the 0.5% cap and redacted (2026-11-14).
+    "ouverture": "open",
+    "plus haut": "high",
+    "plus bas": "low",
+    "clôture": "close",
+    "cloture": "close",
+    "volume": "volume",
+    "成交量": "volume",
 }
 
 _DATE_HEADERS = {"date", "datetime", "trade date", "timestamp", "日期", "交易日", "时间"}

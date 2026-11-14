@@ -206,6 +206,23 @@ def test_a_source_only_the_note_names_is_no_citation(tmp_path: Path) -> None:
     assert visible_english.valid is True, visible_english.issues
 
 
+def test_a_cited_value_repeated_on_another_line_keeps_its_visible_source(tmp_path: Path) -> None:
+    """A table names the source once; the summary repeats the value (2026-11-14)."""
+    ledger = _ledger(tmp_path, MARKET_A)
+    row = "9.99 | cited | 新浪财经"
+
+    repeated = ledger.validate_final_answer(
+        HDR + "\n新浪财经报道其单位净值 9.99 元。\n小结：单位净值 9.99 元。" + _block(ROW, row)
+    )
+    other_value = ledger.validate_final_answer(
+        HDR + "\n新浪财经报道其单位净值 8.88 元。\n小结：单位净值 9.99 元。"
+        + _block(ROW, row, "8.88 | cited | 新浪财经")
+    )
+
+    assert repeated.valid is True, repeated.issues
+    assert _reasons(other_value) == ["citation_not_visible"]
+
+
 def test_a_note_token_is_a_cjk_pair_or_a_four_letter_word() -> None:
     assert _note_tokens("2026 Q2 财报毛利率, WSJ ok 新") == {"财报", "报毛", "毛利", "利率"}
     assert _note_tokens("新浪 abc Reuters") == {"新浪", "reuters"}
