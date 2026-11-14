@@ -1002,12 +1002,17 @@ def _parse_value(
 # A percent range written as one value ("20%-30%"): the dash runs between two
 # percent marks. Narrow on purpose — plain numeric or currency ranges keep
 # their existing readings.
+# "6 à 7 %" writes the mark once, after a worded separator (2026-11-14).
+_RANGE_SEP = r"(?:[-–—~～]|\s(?:à|a|to|au)\s|至)"
 _PERCENT_RANGE_RE = re.compile(
-    r"^(?P<low>[+-]?[\d.,]+)\s*[%％]\s*[-–—~～]\s*(?P<high>[+-]?[\d.,]+)\s*[%％]$"
+    r"^(?P<low>[+-]?[\d.,]+)\s*(?:[%％]\s*[-–—~～]|\s*" + _RANGE_SEP + r")\s*(?P<high>[+-]?[\d.,]+)\s*[%％]$"
 )
 # "2-3" (a horizon in years, a count of analysts): the endpoints carry no
 # unit. The high side takes no sign, so "2-3" never reads as 2 and -3.
 _BARE_RANGE_RE = re.compile(r"^(?P<low>[+-]?\d[\d.,]*)\s*[-–—~～]\s*(?P<high>\d[\d.,]*)$")
+
+
+_COUNT_WITH_UNIT_RE = re.compile(r"(\d+)\s+[^\W\d_]{2,}(?:\s+[^\W\d_]+)?")
 
 
 def _parse_range(
@@ -1103,6 +1108,11 @@ def parse_figures_block(content: str) -> FiguresBlock:
         reading = False if block_points and "." in parts[0] else document_reading
         parsed = _parse_value(parts[0], reading) if parts else None
         role = parts[1].casefold() if len(parts) > 1 else ""
+        if parsed is None and role == "count":
+            # "3 mois | count": a count written with its unit word (2026-11-14).
+            counted = _COUNT_WITH_UNIT_RE.fullmatch(_normalize(parts[0]).text.strip())
+            if counted is not None:
+                parsed = _parse_value(counted.group(1), reading)
         if parsed is None:
             # "20%-30%" declares both endpoints: one range, two declarations.
             endpoints = _parse_range(parts[0], reading) if parts else []

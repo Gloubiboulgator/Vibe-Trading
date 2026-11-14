@@ -104,3 +104,16 @@ def test_a_year_after_a_month_word_is_a_date_not_a_price(tmp_path: Path) -> None
     )
     result = _ledger(tmp_path).validate_final_answer(draft)
     assert result.valid is True, result.issues
+
+
+def test_a_french_range_and_a_count_with_its_unit_are_declarations() -> None:
+    from src.agent.grounding.figures import parse_figures_block
+
+    block = parse_figures_block(
+        "Texte.\n\n```figures\n4 à 5 % | derived | estimation | FXMD.PA\n"
+        "2 mois | count | horizon\n2 mois | observed | x\n```"
+    )
+    assert [(d.value_text, d.role) for d in block.declarations] == [
+        ("4%", "derived"), ("5%", "derived"), ("2", "count"),
+    ]
+    assert [raw for _, raw in block.malformed] == ["2 mois | observed | x"]

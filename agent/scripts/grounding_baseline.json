@@ -287,6 +287,31 @@
    ]
   },
   {
+   "session": "3111e0144d14",
+   "attempt": "14793cf879d7",
+   "outcome": "passed",
+   "passing_draft": 2,
+   "figures_removed": 0,
+   "error": "",
+   "drafts": [
+    {
+     "draft": 1,
+     "valid": false,
+     "repaired": false,
+     "refusals": {
+      "figure_undeclared/undeclared": 1,
+      "numeric_claim_conflict/derivation_result_mismatch": 1
+     }
+    },
+    {
+     "draft": 2,
+     "valid": true,
+     "repaired": false,
+     "refusals": {}
+    }
+   ]
+  },
+  {
    "session": "41a1947cb39e",
    "attempt": "5bfc8d116745",
    "outcome": "passed",
